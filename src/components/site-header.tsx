@@ -1,6 +1,7 @@
 import Link from "next/link"
 
 import { signOutAction } from "@/app/sign-in/actions"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
 
 export function SiteHeader({ signedIn = false }: { signedIn?: boolean }) {
@@ -13,17 +14,20 @@ export function SiteHeader({ signedIn = false }: { signedIn?: boolean }) {
         >
           The Bridge
         </Link>
-        {signedIn ? (
-          <form action={signOutAction}>
-            <Button type="submit" variant="ghost">
-              Sign out
+        <div className="flex items-center gap-1">
+          <ThemeToggle />
+          {signedIn ? (
+            <form action={signOutAction}>
+              <Button type="submit" variant="ghost">
+                Sign out
+              </Button>
+            </form>
+          ) : (
+            <Button asChild variant="ghost">
+              <Link href="/sign-in">Sign in</Link>
             </Button>
-          </form>
-        ) : (
-          <Button asChild variant="ghost">
-            <Link href="/sign-in">Sign in</Link>
-          </Button>
-        )}
+          )}
+        </div>
       </div>
     </header>
   )
