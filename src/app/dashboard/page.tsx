@@ -1,4 +1,5 @@
-import { asc, desc, eq } from "drizzle-orm"
+import { and, asc, desc, eq, inArray } from "drizzle-orm"
+import { CircleCheck } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { Suspense } from "react"
@@ -12,7 +13,7 @@ import { db } from "@/db"
 import { foodRequests, type FoodRequest } from "@/db/schema"
 import { requireUser } from "@/lib/current-user"
 
-import { ClaimButton } from "./claim-button"
+import { RequestActionButton } from "./request-action-button"
 
 export const metadata: Metadata = { title: "Dashboard · The Bridge" }
 
@@ -44,7 +45,11 @@ async function DashboardContent() {
         </p>
         <h1 className="mt-1 text-3xl font-semibold tracking-tight">Hi, {greeting}</h1>
       </BlurFade>
-      {user.role === "outreach" ? <OutreachDashboard userId={user.id} /> : <DonorDashboard />}
+      {user.role === "outreach" ? (
+        <OutreachDashboard userId={user.id} />
+      ) : (
+        <DonorDashboard userId={user.id} />
+      )}
     </>
   )
 }
@@ -80,18 +85,36 @@ async function OutreachDashboard({ userId }: { userId: string }) {
           You haven&apos;t asked for food yet. Start a request and nearby donors will see it.
         </EmptyState>
       ) : (
-        <RequestGrid requests={requests} />
+        <RequestGrid requests={requests} footer={outreachFooter} />
       )}
     </>
   )
 }
 
-async function DonorDashboard() {
-  const open = await db
-    .select()
-    .from(foodRequests)
-    .where(eq(foodRequests.status, "open"))
-    .orderBy(asc(foodRequests.windowStart))
+function outreachFooter(r: FoodRequest) {
+  if (r.status === "open") return <RequestActionButton kind="cancel" requestId={r.id} />
+  if (r.status === "claimed") return <RequestActionButton kind="deliver" requestId={r.id} />
+  return null
+}
+
+async function DonorDashboard({ userId }: { userId: string }) {
+  const [open, mine] = await Promise.all([
+    db
+      .select()
+      .from(foodRequests)
+      .where(eq(foodRequests.status, "open"))
+      .orderBy(asc(foodRequests.windowStart)),
+    db
+      .select()
+      .from(foodRequests)
+      .where(
+        and(
+          eq(foodRequests.claimedBy, userId),
+          inArray(foodRequests.status, ["claimed", "delivered"])
+        )
+      )
+      .orderBy(desc(foodRequests.windowStart)),
+  ])
 
   const waiting = open.reduce((n, r) => n + r.peopleCount, 0)
 
@@ -113,10 +136,26 @@ async function DonorDashboard() {
       ) : (
         <RequestGrid
           requests={open}
-          footer={() => <ClaimButton />}
+          footer={(r) => <RequestActionButton kind="claim" requestId={r.id} />}
         />
       )}
+
+      {mine.length > 0 && (
+        <>
+          <h2 className="mt-12 text-xl font-semibold">Your claims</h2>
+          <RequestGrid requests={mine} footer={() => <ClaimedByYou />} />
+        </>
+      )}
     </>
+  )
+}
+
+function ClaimedByYou() {
+  return (
+    <p className="flex min-h-tap items-center gap-2 font-medium text-primary-text">
+      <CircleCheck aria-hidden="true" className="size-5" />
+      Claimed by you
+    </p>
   )
 }
 
