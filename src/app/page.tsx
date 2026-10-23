@@ -21,65 +21,68 @@ export default function Home() {
     <>
       <SiteHeader />
       <main className="flex-1">
-        {/* Dark-first hero: `dark` scopes the dark tokens to this section in both themes. */}
-        <section className="dark relative isolate flex min-h-[78svh] items-center overflow-hidden bg-background px-4 py-20 text-foreground sm:py-28">
+        {/* One wave layer behind the hero and the journey steps. `dark` scopes the dark
+            tokens here, so this area stays dark even when the rest of the page is light. */}
+        <div className="dark relative isolate overflow-hidden bg-background text-foreground">
           <HeroBackground />
-          <BlurFade className="mx-auto w-full max-w-3xl">
-            <div className="flex flex-col items-center text-center">
-              <p className="inline-flex items-center rounded-full bg-accent px-3 py-1 text-sm font-medium text-accent-foreground">
-                Chicago · Food first
-              </p>
-              <h1 className="mt-6 text-4xl font-semibold tracking-tight text-balance sm:text-6xl">
-                The Bridge
-              </h1>
-              <p className="mt-6 text-lg leading-relaxed text-pretty sm:text-xl">{MISSION}</p>
-              <div className="mt-10 flex w-full flex-col justify-center gap-3 sm:flex-row">
-                <Button asChild size="lg" className="sm:min-w-56">
-                  <Link href="/sign-in?role=outreach">I&apos;m an outreach worker</Link>
-                </Button>
-                <Button
-                  asChild
-                  size="lg"
-                  variant="outline"
-                  className="border-primary bg-background/60 text-primary-text backdrop-blur-sm hover:bg-primary/10 hover:text-primary-text sm:min-w-56"
-                >
-                  <Link href="/sign-in?role=donor">I want to donate food</Link>
-                </Button>
+          <section className="flex min-h-[78svh] items-center px-4 py-20 sm:py-28">
+            <BlurFade className="mx-auto w-full max-w-3xl">
+              <div className="flex flex-col items-center text-center">
+                <p className="inline-flex items-center rounded-full bg-accent px-3 py-1 text-sm font-medium text-accent-foreground">
+                  Chicago · Food first
+                </p>
+                <h1 className="mt-6 text-4xl font-semibold tracking-tight text-balance sm:text-6xl">
+                  The Bridge
+                </h1>
+                <p className="mt-6 text-lg leading-relaxed text-pretty sm:text-xl">{MISSION}</p>
+                <div className="mt-10 flex w-full flex-col justify-center gap-3 sm:flex-row">
+                  <Button asChild size="lg" className="sm:min-w-56">
+                    <Link href="/sign-in?role=outreach">I&apos;m an outreach worker</Link>
+                  </Button>
+                  <Button
+                    asChild
+                    size="lg"
+                    variant="outline"
+                    className="border-primary bg-background/60 text-primary-text backdrop-blur-sm hover:bg-primary/10 hover:text-primary-text sm:min-w-56"
+                  >
+                    <Link href="/sign-in?role=donor">I want to donate food</Link>
+                  </Button>
+                </div>
               </div>
-            </div>
-          </BlurFade>
-        </section>
+            </BlurFade>
+          </section>
 
-        <section aria-labelledby="journey" className="border-t border-border">
-          <BlurFade inView className="mx-auto max-w-5xl px-4 py-20 sm:py-24">
-            <h2 id="journey" className="text-2xl font-semibold tracking-tight sm:text-3xl">
-              How it works
-            </h2>
-            <ol className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
-              {JOURNEY.map((step, i) => (
-                <li key={step.label}>
-                  <Card className="h-full border-primary/20 bg-surface/70 backdrop-blur-md">
-                    <CardHeader>
-                      <span
-                        aria-hidden="true"
-                        className="inline-flex size-8 items-center justify-center rounded-full bg-secondary text-sm font-semibold text-primary-text"
-                      >
-                        {i + 1}
-                      </span>
-                      <CardTitle className="text-lg">{step.label}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-muted-foreground">
-                      {step.description}
-                    </CardContent>
-                  </Card>
-                </li>
-              ))}
-            </ol>
-            <p className="mt-10 text-center text-lg font-medium">
-              Every connection is a step forward.
-            </p>
-          </BlurFade>
-        </section>
+          <section aria-labelledby="journey">
+            <BlurFade inView className="mx-auto max-w-5xl px-4 py-20 sm:py-24">
+              <h2 id="journey" className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                How it works
+              </h2>
+              <ol className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
+                {JOURNEY.map((step, i) => (
+                  <li key={step.label}>
+                    <Card className="h-full border-primary/20 bg-surface/70 backdrop-blur-md">
+                      <CardHeader>
+                        <span
+                          aria-hidden="true"
+                          className="inline-flex size-8 items-center justify-center rounded-full bg-secondary text-sm font-semibold text-primary-text"
+                        >
+                          {i + 1}
+                        </span>
+                        <CardTitle className="text-lg">{step.label}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="text-muted-foreground">
+                        {step.description}
+                      </CardContent>
+                    </Card>
+                  </li>
+                ))}
+              </ol>
+              <p className="mt-10 text-center text-lg font-medium">
+                Every connection is a step forward.
+              </p>
+            </BlurFade>
+          </section>
+        </div>
 
         <section aria-labelledby="what-is" className="border-t border-border bg-card">
           <BlurFade inView className="mx-auto max-w-2xl px-4 py-20 sm:py-24">

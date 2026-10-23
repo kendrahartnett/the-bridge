@@ -9,10 +9,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     // next-themes injects a tiny blocking script that sets the .dark class before
     // first paint, so there is no flash of the wrong theme. The choice is saved in
-    // localStorage ("theme"); first visits follow the system setting.
+    // localStorage ("theme"); first visits start in dark mode.
     <ThemeProvider
       attribute="class"
-      defaultTheme="system"
+      defaultTheme="dark"
       enableSystem
       disableTransitionOnChange
     >

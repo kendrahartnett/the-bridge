@@ -21,11 +21,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  // Browser chrome matches the page background in each mode.
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#F5F2EA" },
-    { media: "(prefers-color-scheme: dark)", color: "#0F1F2B" },
-  ],
+  // Browser chrome matches the default (dark) page background.
+  themeColor: "#0F1F2B",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
