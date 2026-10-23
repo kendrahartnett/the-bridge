@@ -5,7 +5,7 @@ import { SiteHeader } from "@/components/site-header"
 import { BlurFade } from "@/components/ui/blur-fade"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { HERO_LINE } from "@/lib/copy"
+import { HERO_LINE, MISSION } from "@/lib/copy"
 
 // Exact wording; do not edit without sign-off.
 const JOURNEY = [
@@ -107,6 +107,17 @@ export default function Home() {
                 or where they stay. Requests only show the neighborhood.
               </p>
             </div>
+          </BlurFade>
+        </section>
+
+        <section aria-labelledby="mission" className="border-t border-border">
+          <BlurFade inView className="mx-auto max-w-2xl px-4 py-10">
+            <h2 id="mission" className="text-xl font-semibold tracking-tight sm:text-2xl">
+              Mission Statement
+            </h2>
+            <Card className="mt-4">
+              <CardContent className="text-base leading-relaxed">{MISSION}</CardContent>
+            </Card>
           </BlurFade>
         </section>
       </main>
