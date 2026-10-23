@@ -1,3 +1,4 @@
+import { Lock } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { redirect } from "next/navigation"
@@ -26,11 +27,28 @@ export default function NewRequestPage() {
           Tell donors how many people you&apos;re serving and when. Only the neighborhood is
           shared. Please don&apos;t include names, addresses, or camp locations.
         </p>
+        <PrivacyNotice />
         <Suspense fallback={<p className="mt-8 text-muted-foreground">Loading…</p>}>
           <OutreachOnlyForm />
         </Suspense>
       </main>
     </>
+  )
+}
+
+// Exact wording; do not edit without sign-off. No database fields back this notice.
+function PrivacyNotice() {
+  return (
+    <aside
+      aria-label="Privacy"
+      className="mt-6 flex items-start gap-3 rounded-lg border border-border bg-card p-4 text-sm text-card-foreground shadow-sm"
+    >
+      <Lock aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-primary-text" />
+      <p>
+        Bridge stores only the neighborhood, the food needed, and the time window. We never
+        store names, addresses, or locations of the people being served.
+      </p>
+    </aside>
   )
 }
 
