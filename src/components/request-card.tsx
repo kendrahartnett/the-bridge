@@ -6,11 +6,17 @@ import { neighborhoodLabel } from "@/lib/neighborhoods"
 
 export function RequestCard({
   request,
+  claimedByName,
   footer,
 }: {
   request: FoodRequest
+  /** Shown to outreach workers on claimed and delivered requests. */
+  claimedByName?: string
   footer?: React.ReactNode
 }) {
+  const showClaimer =
+    claimedByName && (request.status === "claimed" || request.status === "delivered")
+
   return (
     <Card className="h-full">
       <CardHeader className="flex flex-row items-start justify-between gap-3">
@@ -29,6 +35,12 @@ export function RequestCard({
           <span className="font-medium">When: </span>
           {formatWindow(request.windowStart, request.windowEnd)}
         </p>
+        {showClaimer && (
+          <p>
+            <span className="font-medium">Claimed by </span>
+            {claimedByName}
+          </p>
+        )}
         {request.dietaryNotes && (
           <p className="text-muted-foreground">
             <span className="font-medium text-foreground">Notes: </span>

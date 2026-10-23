@@ -20,7 +20,7 @@ const KINDS = {
   claim: {
     action: claimRequestAction,
     label: "Claim",
-    question: "Claim this request? You'll see pickup details after claiming.",
+    question: "Claim this request? You'll be able to coordinate pickup with the outreach team.",
     confirm: "Yes, claim it",
     variant: "default",
   },

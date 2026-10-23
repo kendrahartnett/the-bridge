@@ -1,4 +1,5 @@
 import { and, asc, desc, eq, inArray } from "drizzle-orm"
+import { alias } from "drizzle-orm/pg-core"
 import { CircleCheck } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
@@ -10,7 +11,7 @@ import { SiteHeader } from "@/components/site-header"
 import { BlurFade } from "@/components/ui/blur-fade"
 import { Button } from "@/components/ui/button"
 import { db } from "@/db"
-import { foodRequests, type FoodRequest } from "@/db/schema"
+import { foodRequests, users, type FoodRequest } from "@/db/schema"
 import { requireUser } from "@/lib/current-user"
 
 import { RequestActionButton } from "./request-action-button"
@@ -54,12 +55,25 @@ async function DashboardContent() {
   )
 }
 
+// The donor who claimed a request. Only their organization or display name is
+// selected; email and user ID are never read for this view.
+const claimer = alias(users, "claimer")
+
 async function OutreachDashboard({ userId }: { userId: string }) {
-  const requests = await db
-    .select()
+  const rows = await db
+    .select({
+      request: foodRequests,
+      claimerOrg: claimer.organizationName,
+      claimerName: claimer.displayName,
+    })
     .from(foodRequests)
+    .leftJoin(claimer, eq(claimer.id, foodRequests.claimedBy))
     .where(eq(foodRequests.createdBy, userId))
     .orderBy(desc(foodRequests.windowStart))
+  const requests = rows.map((r) => ({
+    ...r.request,
+    claimedByName: r.claimerOrg ?? r.claimerName ?? "a donor",
+  }))
 
   const delivered = requests.filter((r) => r.status === "delivered")
   const peopleFed = delivered.reduce((n, r) => n + r.peopleCount, 0)
@@ -127,8 +141,8 @@ async function DonorDashboard({ userId }: { userId: string }) {
 
       <h2 className="mt-12 text-xl font-semibold">Open requests</h2>
       <p className="mt-1 text-muted-foreground">
-        Each request shows the neighborhood and time window. The outreach team shares the exact
-        drop-off spot after you claim it.
+        Each request shows the neighborhood and time window. After you claim one, you&apos;ll
+        coordinate pickup with the outreach team.
       </p>
 
       {open.length === 0 ? (
@@ -159,18 +173,20 @@ function ClaimedByYou() {
   )
 }
 
+type CardRequest = FoodRequest & { claimedByName?: string }
+
 function RequestGrid({
   requests,
   footer,
 }: {
-  requests: FoodRequest[]
-  footer?: (r: FoodRequest) => React.ReactNode
+  requests: CardRequest[]
+  footer?: (r: CardRequest) => React.ReactNode
 }) {
   return (
     <ul className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
       {requests.map((r) => (
         <li key={r.id}>
-          <RequestCard request={r} footer={footer?.(r)} />
+          <RequestCard request={r} claimedByName={r.claimedByName} footer={footer?.(r)} />
         </li>
       ))}
     </ul>
