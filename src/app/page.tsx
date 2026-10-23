@@ -21,15 +21,15 @@ export default function Home() {
     <>
       <SiteHeader />
       <main className="flex-1">
-        <section className="relative isolate overflow-hidden px-4 pt-12 pb-16 sm:pt-20 sm:pb-24">
+        {/* Dark-first hero: `dark` scopes the dark tokens to this section in both themes. */}
+        <section className="dark relative isolate flex min-h-[78svh] items-center overflow-hidden bg-background px-4 py-20 text-foreground sm:py-28">
           <HeroBackground />
-          {/* Semi-opaque panel keeps text readable over the moving waves. */}
-          <BlurFade className="mx-auto max-w-3xl">
-            <div className="flex flex-col items-center rounded-xl bg-background/90 px-5 py-10 text-center shadow-sm backdrop-blur-sm sm:px-12 sm:py-16">
+          <BlurFade className="mx-auto w-full max-w-3xl">
+            <div className="flex flex-col items-center text-center">
               <p className="inline-flex items-center rounded-full bg-accent px-3 py-1 text-sm font-medium text-accent-foreground">
                 Chicago · Food first
               </p>
-              <h1 className="mt-6 text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
+              <h1 className="mt-6 text-4xl font-semibold tracking-tight text-balance sm:text-6xl">
                 The Bridge
               </h1>
               <p className="mt-6 text-lg leading-relaxed text-pretty sm:text-xl">{MISSION}</p>
@@ -41,7 +41,7 @@ export default function Home() {
                   asChild
                   size="lg"
                   variant="outline"
-                  className="border-primary bg-transparent text-primary-text hover:bg-primary/10 hover:text-primary-text sm:min-w-56"
+                  className="border-primary bg-background/60 text-primary-text backdrop-blur-sm hover:bg-primary/10 hover:text-primary-text sm:min-w-56"
                 >
                   <Link href="/sign-in?role=donor">I want to donate food</Link>
                 </Button>
@@ -58,7 +58,7 @@ export default function Home() {
             <ol className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
               {JOURNEY.map((step, i) => (
                 <li key={step.label}>
-                  <Card className="h-full">
+                  <Card className="h-full border-primary/20 bg-surface/70 backdrop-blur-md">
                     <CardHeader>
                       <span
                         aria-hidden="true"
