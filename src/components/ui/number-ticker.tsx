@@ -1,7 +1,12 @@
 "use client"
 
 import { useEffect, useRef, type ComponentPropsWithoutRef } from "react"
-import { useInView, useMotionValue, useSpring } from "motion/react"
+import {
+  useInView,
+  useMotionValue,
+  useReducedMotion,
+  useSpring,
+} from "motion/react"
 
 import { cn } from "@/lib/utils"
 
@@ -29,9 +34,21 @@ export function NumberTicker({
     stiffness: 100,
   })
   const isInView = useInView(ref, { once: true, margin: "0px" })
+  const prefersReducedMotion = useReducedMotion()
+  const format = (n: number) =>
+    Intl.NumberFormat("en-US", {
+      minimumFractionDigits: decimalPlaces,
+      maximumFractionDigits: decimalPlaces,
+    }).format(Number(n.toFixed(decimalPlaces)))
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null
+
+    if (prefersReducedMotion) {
+      // Skip the count-up and show the final number immediately.
+      if (ref.current) ref.current.textContent = format(value)
+      return
+    }
 
     if (isInView) {
       timer = setTimeout(() => {
@@ -44,18 +61,17 @@ export function NumberTicker({
         clearTimeout(timer)
       }
     }
-  }, [motionValue, isInView, delay, value, direction, startValue])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- format only depends on decimalPlaces
+  }, [motionValue, isInView, delay, value, direction, startValue, prefersReducedMotion, decimalPlaces])
 
   useEffect(
     () =>
       springValue.on("change", (latest) => {
         if (ref.current) {
-          ref.current.textContent = Intl.NumberFormat("en-US", {
-            minimumFractionDigits: decimalPlaces,
-            maximumFractionDigits: decimalPlaces,
-          }).format(Number(latest.toFixed(decimalPlaces)))
+          ref.current.textContent = format(latest)
         }
       }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- format only depends on decimalPlaces
     [springValue, decimalPlaces]
   )
 
@@ -63,7 +79,7 @@ export function NumberTicker({
     <span
       ref={ref}
       className={cn(
-        "inline-block tracking-wider text-black tabular-nums dark:text-white",
+        "inline-block tracking-wider text-foreground tabular-nums",
         className
       )}
       {...props}
