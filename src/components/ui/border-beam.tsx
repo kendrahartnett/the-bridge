@@ -1,6 +1,11 @@
 "use client"
 
-import { motion, type MotionStyle, type Transition } from "motion/react"
+import {
+  motion,
+  useReducedMotion,
+  type MotionStyle,
+  type Transition,
+} from "motion/react"
 
 import { cn } from "@/lib/utils"
 
@@ -64,6 +69,9 @@ export const BorderBeam = ({
   initialOffset = 0,
   borderWidth = 1,
 }: BorderBeamProps) => {
+  // Purely decorative and endlessly looping, so drop it entirely for reduced motion.
+  if (useReducedMotion()) return null
+
   return (
     <div
       className="pointer-events-none absolute inset-0 rounded-[inherit] border-(length:--border-beam-width) border-transparent mask-[linear-gradient(transparent,transparent),linear-gradient(#000,#000)] mask-intersect [mask-clip:padding-box,border-box]"
