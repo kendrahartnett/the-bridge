@@ -10,7 +10,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core"
 
-import { COMMUNITY_AREAS } from "../lib/neighborhoods"
+import { COMMUNITY_AREAS } from "../lib/neighborhoods.ts"
 
 // PRIVACY RULE: never add columns for names, addresses, camp locations, GPS
 // coordinates, or any identifying details of the people being served.
