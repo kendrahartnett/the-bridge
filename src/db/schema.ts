@@ -71,6 +71,13 @@ export const foodRequests = pgTable(
     ),
     check("neighborhood_community_area", sql`${t.neighborhood} IN (${areaList})`),
     check("window_order", sql`${t.windowEnd} > ${t.windowStart}`),
+    // Open and cancelled requests have no donor; claimed and delivered ones always do.
+    check(
+      "claim_status_consistency",
+      sql`(${t.status} = 'open' AND ${t.claimedBy} IS NULL)
+        OR (${t.status} IN ('claimed', 'delivered') AND ${t.claimedBy} IS NOT NULL)
+        OR (${t.status} = 'cancelled' AND ${t.claimedBy} IS NULL)`
+    ),
     index("food_requests_created_by_idx").on(t.createdBy),
     index("food_requests_status_idx").on(t.status),
   ]
