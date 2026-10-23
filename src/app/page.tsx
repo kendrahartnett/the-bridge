@@ -1,29 +1,30 @@
 import Link from "next/link"
 
+import { HeroBackground } from "@/components/hero-background"
 import { SiteHeader } from "@/components/site-header"
 import { BlurFade } from "@/components/ui/blur-fade"
 import { Button } from "@/components/ui/button"
-import { DotPattern } from "@/components/ui/dot-pattern"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { MISSION } from "@/lib/copy"
-import { cn } from "@/lib/utils"
+
+// Exact wording; do not edit without sign-off.
+const JOURNEY = [
+  { label: "Request", description: "An outreach worker describes a need." },
+  { label: "Connect", description: "A donor claims it." },
+  { label: "Deliver", description: "Food reaches the people who need it." },
+  { label: "Support", description: "The outreach worker and the person connect to care." },
+  { label: "Rebuild", description: "Work toward lasting stability." },
+] as const
 
 export default function Home() {
   return (
     <>
       <SiteHeader />
       <main className="flex-1">
-        <section className="relative isolate overflow-hidden">
-          <DotPattern
-            width={22}
-            height={22}
-            cr={1.2}
-            aria-hidden="true"
-            className={cn(
-              "-z-10 text-primary/25",
-              "mask-[radial-gradient(520px_circle_at_center,white,transparent)]"
-            )}
-          />
-          <div className="mx-auto flex max-w-3xl flex-col items-center px-4 pt-16 pb-20 text-center sm:pt-24">
+        <section className="relative isolate overflow-hidden px-4 pt-12 pb-16 sm:pt-20 sm:pb-24">
+          <HeroBackground />
+          {/* Semi-opaque panel keeps text readable over the moving waves. */}
+          <div className="mx-auto flex max-w-3xl flex-col items-center rounded-xl bg-background/90 px-5 py-10 text-center shadow-sm backdrop-blur-sm sm:px-10 sm:py-14">
             <BlurFade delay={0.05}>
               <p className="inline-flex items-center rounded-full bg-accent px-3 py-1 text-sm font-medium text-accent-foreground">
                 Chicago · Food first
@@ -45,11 +46,47 @@ export default function Home() {
                 <Button
                   asChild
                   size="lg"
-                  className="bg-accent text-accent-foreground hover:bg-accent/85 sm:min-w-56"
+                  variant="outline"
+                  className="border-primary bg-transparent text-primary-text hover:bg-primary/10 hover:text-primary-text sm:min-w-56"
                 >
                   <Link href="/sign-in?role=donor">I want to donate food</Link>
                 </Button>
               </div>
+            </BlurFade>
+          </div>
+        </section>
+
+        <section aria-labelledby="journey" className="border-t border-border">
+          <div className="mx-auto max-w-5xl px-4 py-16">
+            <BlurFade inView>
+              <h2 id="journey" className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                How it works
+              </h2>
+            </BlurFade>
+            <BlurFade inView delay={0.1}>
+              <ol className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                {JOURNEY.map((step, i) => (
+                  <li key={step.label}>
+                    <Card className="h-full">
+                      <CardHeader>
+                        <span
+                          aria-hidden="true"
+                          className="inline-flex size-8 items-center justify-center rounded-full bg-secondary text-sm font-semibold text-primary-text"
+                        >
+                          {i + 1}
+                        </span>
+                        <CardTitle className="text-lg">{step.label}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="text-muted-foreground">
+                        {step.description}
+                      </CardContent>
+                    </Card>
+                  </li>
+                ))}
+              </ol>
+              <p className="mt-8 text-center text-lg font-medium">
+                Every connection is a step forward.
+              </p>
             </BlurFade>
           </div>
         </section>

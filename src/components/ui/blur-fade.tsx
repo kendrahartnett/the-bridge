@@ -5,11 +5,12 @@ import {
   AnimatePresence,
   motion,
   useInView,
-  useReducedMotion,
   type MotionProps,
   type UseInViewOptions,
   type Variants,
 } from "motion/react"
+
+import { cn } from "@/lib/utils"
 
 type MarginType = UseInViewOptions["margin"]
 
@@ -46,7 +47,6 @@ export function BlurFade({
   ...props
 }: BlurFadeProps) {
   const ref = useRef(null)
-  const prefersReducedMotion = useReducedMotion()
   const inViewResult = useInView(ref, { once: true, margin: inViewMargin })
   const isInView = !inView || inViewResult
   const defaultVariants: Variants = {
@@ -72,10 +72,8 @@ export function BlurFade({
     visibleFilter != null &&
     hiddenFilter !== visibleFilter
 
-  if (prefersReducedMotion) {
-    return <div className={className}>{children}</div>
-  }
-
+  // Reduced motion is handled in CSS (motion-reduce:*), not by rendering different
+  // markup, so server and client HTML always match during hydration.
   return (
     <AnimatePresence>
       <motion.div
@@ -90,7 +88,10 @@ export function BlurFade({
           ease: "easeOut",
           ...(shouldTransitionFilter ? { filter: { duration } } : {}),
         }}
-        className={className}
+        className={cn(
+          "motion-reduce:transform-none! motion-reduce:opacity-100! motion-reduce:filter-none!",
+          className
+        )}
         {...props}
       >
         {children}
