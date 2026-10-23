@@ -7,7 +7,6 @@ import { ImpactStat } from "@/components/impact-stat"
 import { RequestCard } from "@/components/request-card"
 import { SiteHeader } from "@/components/site-header"
 import { BlurFade } from "@/components/ui/blur-fade"
-import { BorderBeam } from "@/components/ui/border-beam"
 import { Button } from "@/components/ui/button"
 import { db } from "@/db"
 import { foodRequests, type FoodRequest } from "@/db/schema"
@@ -23,7 +22,7 @@ export default function DashboardPage() {
   return (
     <>
       <SiteHeader signedIn />
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:py-14">
         <Suspense fallback={<p className="text-muted-foreground">Loading your dashboard…</p>}>
           <DashboardContent />
         </Suspense>
@@ -63,13 +62,13 @@ async function OutreachDashboard({ userId }: { userId: string }) {
 
   return (
     <>
-      <section aria-label="Your impact" className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <section aria-label="Your impact" className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
         <ImpactStat value={peopleFed} label="People fed through your requests" />
         <ImpactStat value={delivered.length} label="Deliveries completed" />
         <ImpactStat value={open} label="Requests waiting for a donor" />
       </section>
 
-      <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+      <div className="mt-12 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-xl font-semibold">Your requests</h2>
         <Button asChild size="lg">
           <Link href="/requests/new">New request</Link>
@@ -98,12 +97,12 @@ async function DonorDashboard() {
 
   return (
     <>
-      <section aria-label="Right now" className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <section aria-label="Right now" className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
         <ImpactStat value={open.length} label="Open requests" />
         <ImpactStat value={waiting} label="People who could use a meal" />
       </section>
 
-      <h2 className="mt-8 text-xl font-semibold">Open requests</h2>
+      <h2 className="mt-12 text-xl font-semibold">Open requests</h2>
       <p className="mt-1 text-muted-foreground">
         Each request shows the neighborhood and time window. The outreach team shares the exact
         drop-off spot after you claim it.
@@ -129,12 +128,10 @@ function RequestGrid({
   footer?: (r: FoodRequest) => React.ReactNode
 }) {
   return (
-    <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {requests.map((r, i) => (
+    <ul className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {requests.map((r) => (
         <li key={r.id}>
-          <BlurFade delay={Math.min(i, 6) * 0.05} inView className="h-full">
-            <RequestCard request={r} footer={footer?.(r)} />
-          </BlurFade>
+          <RequestCard request={r} footer={footer?.(r)} />
         </li>
       ))}
     </ul>
@@ -143,9 +140,8 @@ function RequestGrid({
 
 function EmptyState({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative mt-4 overflow-hidden rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
+    <div className="mt-6 rounded-xl border border-border bg-card p-10 text-center text-muted-foreground shadow-sm">
       {children}
-      <BorderBeam size={120} duration={10} colorFrom="var(--accent)" colorTo="var(--primary)" />
     </div>
   )
 }

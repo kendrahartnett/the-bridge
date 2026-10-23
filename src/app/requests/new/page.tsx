@@ -15,7 +15,7 @@ export default function NewRequestPage() {
   return (
     <>
       <SiteHeader signedIn />
-      <main className="mx-auto w-full max-w-xl flex-1 px-4 py-8">
+      <main className="mx-auto w-full max-w-xl flex-1 px-4 py-10 sm:py-14">
         <Link
           href="/dashboard"
           className="inline-flex min-h-tap items-center text-sm font-medium text-primary-text underline-offset-4 hover:underline"

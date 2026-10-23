@@ -66,7 +66,7 @@ export function NewRequestForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="mt-8 flex flex-col gap-6" noValidate>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="mt-8 flex flex-col gap-7" noValidate>
         <FormField
           control={form.control}
           name="peopleCount"

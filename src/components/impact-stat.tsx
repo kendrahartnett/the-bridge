@@ -2,7 +2,7 @@ import { NumberTicker } from "@/components/ui/number-ticker"
 
 export function ImpactStat({ value, label }: { value: number; label: string }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
+    <div className="rounded-lg border border-border bg-card p-5 shadow-sm">
       <p className="text-3xl font-semibold">
         <NumberTicker value={value} className="text-primary-text" />
       </p>
