@@ -17,7 +17,7 @@ export default function NewRequestPage() {
       <main className="mx-auto w-full max-w-xl flex-1 px-4 py-8">
         <Link
           href="/dashboard"
-          className="inline-flex min-h-tap items-center text-sm font-medium text-primary underline-offset-4 hover:underline"
+          className="inline-flex min-h-tap items-center text-sm font-medium text-primary-text underline-offset-4 hover:underline"
         >
           ← Back to dashboard
         </Link>

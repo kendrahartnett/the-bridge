@@ -9,7 +9,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     // "user" turns off transform/layout animations when the OS asks for reduced motion.
     <MotionConfig reducedMotion="user">
       {children}
-      <Toaster theme="light" richColors position="top-center" />
+      <Toaster theme="light" position="top-center" />
     </MotionConfig>
   )
 }

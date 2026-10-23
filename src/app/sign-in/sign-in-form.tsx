@@ -24,7 +24,7 @@ const ROLES = [
 
 function FieldError({ messages }: { messages?: string[] }) {
   if (!messages?.length) return null
-  return <p className="text-sm text-destructive">{messages[0]}</p>
+  return <p className="text-sm font-medium text-destructive">{messages[0]}</p>
 }
 
 export function SignInForm({ initialRole }: { initialRole?: "outreach" | "donor" }) {
@@ -121,7 +121,7 @@ export function SignInForm({ initialRole }: { initialRole?: "outreach" | "donor"
       </div>
 
       {state?.error && (
-        <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <p role="alert" className="rounded-md border border-foreground bg-muted px-3 py-2 text-sm font-medium text-foreground">
           {state.error}
         </p>
       )}

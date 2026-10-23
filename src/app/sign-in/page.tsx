@@ -11,7 +11,7 @@ export default function SignInPage({ searchParams }: PageProps<"/sign-in">) {
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-10">
       <Link
         href="/"
-        className="mb-6 inline-flex min-h-tap items-center text-sm font-medium text-primary underline-offset-4 hover:underline"
+        className="mb-6 inline-flex min-h-tap items-center text-sm font-medium text-primary-text underline-offset-4 hover:underline"
       >
         ← Back to home
       </Link>

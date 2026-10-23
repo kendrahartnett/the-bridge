@@ -2,49 +2,79 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* `dark:` utilities follow the .dark class on <html> (set by the theme toggle). */
+@custom-variant dark (&:is(.dark *));
+
 /*
- * The Bridge design tokens.
- * Warm, trustworthy, not clinical: deep teal primary, warm amber accent, off-white ground.
- * Every text/background pair below is checked against WCAG AA (4.5:1 for text).
- * Light theme only for Day 1; the palette was not tuned for dark mode.
+ * The Bridge design tokens. These ten colors per mode are the ONLY colors in the UI.
+ * Everything else below is an alias of them (or a tint of one), never a new color.
+ *
+ * Rules:
+ *  - Gold (--accent) is a fill/highlight only. Never use it for text (1.65:1 on ivory).
+ *  - Teal text and links use --primary-text; --primary is for fills and graphics.
+ *
+ * Measured WCAG contrast (light / dark):
+ *  foreground on background        11.38 / 15.00
+ *  foreground on surface           12.73 / 12.82
+ *  muted-foreground on background   5.87 /  8.26
+ *  muted-foreground on muted        5.12 /  5.81
+ *  primary-text on background       5.68 /  9.48
+ *  primary-foreground on primary    4.78 /  6.68
+ *  accent-foreground on accent      6.88 /  6.88
  */
 :root {
+  --background: #f5f2ea; /* warm ivory */
+  --foreground: #19354a; /* deep navy text */
+  --primary: #287f78; /* teal: buttons, graphics */
+  --primary-text: #1f6a64; /* deeper teal: text and links, for contrast */
+  --primary-foreground: #ffffff;
+  --accent: #e5b85c; /* warm gold: fills and highlights only, never text */
+  --accent-foreground: #19354a;
+  --surface: #ffffff;
+  --muted: #e8e3d6;
+  --muted-foreground: #4a6070;
+}
+
+.dark {
+  --background: #0f1f2b; /* deep navy base */
+  --foreground: #f5f2ea; /* ivory text */
+  --primary: #4fb3a9; /* lightened teal for dark backgrounds */
+  --primary-text: #7fd1c8;
+  --primary-foreground: #0f1f2b;
+  --accent: #e5b85c;
+  --accent-foreground: #19354a;
+  --surface: #172c3d;
+  --muted: #223a4d;
+  --muted-foreground: #a9b8c4;
+}
+
+/* Aliases shadcn/ui components expect, all derived from the tokens above. */
+:root,
+.dark {
   --radius: 0.75rem;
 
-  /* Surfaces */
-  --background: #faf7f2; /* off-white, warm */
-  --foreground: #1f2a2e; /* 13.8:1 on background */
-  --card: #ffffff;
-  --card-foreground: #1f2a2e;
-  --popover: #ffffff;
-  --popover-foreground: #1f2a2e;
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --popover: var(--surface);
+  --popover-foreground: var(--foreground);
+  --secondary: var(--muted);
+  --secondary-foreground: var(--foreground);
+  --border: var(--muted);
+  --input: var(--muted-foreground); /* 6.57:1 / 7.06:1 on surface; meets 3:1 for controls */
+  --ring: var(--primary); /* 4.27:1 / 6.68:1 on background */
+  /* No red in the palette: errors use full-strength text plus wording and borders. */
+  --destructive: var(--foreground);
+  --destructive-foreground: var(--background);
 
-  /* Brand */
-  --primary: #0f5e5c; /* deep teal */
-  --primary-foreground: #ffffff; /* 7.6:1 */
-  --accent: #f2a93b; /* warm amber */
-  --accent-foreground: #3a2600; /* 7.2:1 */
-  --secondary: #e3efec; /* teal tint */
-  --secondary-foreground: #0f4745; /* 8.9:1 */
-
-  /* Supporting */
-  --muted: #f1ece4;
-  --muted-foreground: #545e62; /* 5.7:1 on muted, 6.2:1 on background */
-  --destructive: #b42318;
-  --destructive-foreground: #ffffff;
-  --border: #e2dad0;
-  --input: #8a8278; /* 3.8:1 non-text contrast on white */
-  --ring: #0f5e5c;
-
-  /* Request status (badge background / text) */
-  --status-open: #d5eae6;
-  --status-open-foreground: #0f4745;
-  --status-claimed: #fce7c2;
-  --status-claimed-foreground: #6b3f00;
-  --status-delivered: #dcf0e1;
-  --status-delivered-foreground: #1e5631;
-  --status-cancelled: #ece8e2;
-  --status-cancelled-foreground: #4a4f52;
+  /* Request status badges */
+  --status-open: color-mix(in srgb, var(--primary) 15%, var(--surface));
+  --status-open-foreground: var(--primary-text); /* 5.25:1 / 6.24:1 */
+  --status-claimed: var(--accent);
+  --status-claimed-foreground: var(--accent-foreground);
+  --status-delivered: var(--primary);
+  --status-delivered-foreground: var(--primary-foreground);
+  --status-cancelled: var(--muted);
+  --status-cancelled-foreground: var(--muted-foreground);
 
   /* Minimum touch target */
   --tap-min: 44px;
@@ -55,23 +85,25 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
+  --color-primary: var(--primary);
+  --color-primary-text: var(--primary-text);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-surface: var(--surface);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
   --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
   --color-status-open: var(--status-open);
   --color-status-open-foreground: var(--status-open-foreground);
   --color-status-claimed: var(--status-claimed);
@@ -96,6 +128,9 @@
   }
   html {
     color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
   }
   body {
     @apply bg-background text-foreground font-sans;
