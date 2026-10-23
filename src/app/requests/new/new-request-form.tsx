@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useTransition } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -62,7 +62,7 @@ export function NewRequestForm() {
     })
   }
 
-  const notesLength = form.watch("dietaryNotes")?.length ?? 0
+  const notesLength = useWatch({ control: form.control, name: "dietaryNotes" })?.length ?? 0
 
   return (
     <Form {...form}>

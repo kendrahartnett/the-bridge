@@ -1,6 +1,7 @@
 import { asc, desc, eq } from "drizzle-orm"
 import type { Metadata } from "next"
 import Link from "next/link"
+import { Suspense } from "react"
 
 import { ImpactStat } from "@/components/impact-stat"
 import { RequestCard } from "@/components/request-card"
@@ -16,27 +17,35 @@ import { ClaimButton } from "./claim-button"
 
 export const metadata: Metadata = { title: "Dashboard · The Bridge" }
 
-export default async function DashboardPage() {
+export default function DashboardPage() {
+  // Header is static; everything that reads the session streams in behind Suspense
+  // (required with cacheComponents).
+  return (
+    <>
+      <SiteHeader signedIn />
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+        <Suspense fallback={<p className="text-muted-foreground">Loading your dashboard…</p>}>
+          <DashboardContent />
+        </Suspense>
+      </main>
+    </>
+  )
+}
+
+async function DashboardContent() {
   const user = await requireUser()
   const greeting = user.displayName ?? user.email
 
   return (
     <>
-      <SiteHeader signedIn />
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
-        <BlurFade>
-          <p className="text-sm text-muted-foreground">
-            {user.organizationName ? `${user.organizationName} · ` : ""}
-            {user.role === "outreach" ? "Outreach" : "Food donor"}
-          </p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight">Hi, {greeting}</h1>
-        </BlurFade>
-        {user.role === "outreach" ? (
-          <OutreachDashboard userId={user.id} />
-        ) : (
-          <DonorDashboard />
-        )}
-      </main>
+      <BlurFade>
+        <p className="text-sm text-muted-foreground">
+          {user.organizationName ? `${user.organizationName} · ` : ""}
+          {user.role === "outreach" ? "Outreach" : "Food donor"}
+        </p>
+        <h1 className="mt-1 text-3xl font-semibold tracking-tight">Hi, {greeting}</h1>
+      </BlurFade>
+      {user.role === "outreach" ? <OutreachDashboard userId={user.id} /> : <DonorDashboard />}
     </>
   )
 }

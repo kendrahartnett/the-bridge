@@ -1,6 +1,7 @@
 import "server-only"
 
 import { eq } from "drizzle-orm"
+import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
 import { db } from "@/db"
@@ -9,6 +10,9 @@ import { auth } from "@/lib/auth/server"
 
 /** The signed-in person's app record, or null if signed out or not set up yet. */
 export async function getCurrentUser(): Promise<User | null> {
+  // Touch cookies first: during a build prerender this never resolves, so the auth
+  // SDK isn't called (and doesn't log a spurious "cookie validation error").
+  await cookies()
   const { data: session } = await auth.getSession()
   const email = session?.user?.email?.toLowerCase()
   if (!email) return null

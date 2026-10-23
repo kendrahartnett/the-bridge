@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { redirect } from "next/navigation"
+import { Suspense } from "react"
 
 import { SiteHeader } from "@/components/site-header"
 import { requireUser } from "@/lib/current-user"
@@ -9,10 +10,7 @@ import { NewRequestForm } from "./new-request-form"
 
 export const metadata: Metadata = { title: "New request · The Bridge" }
 
-export default async function NewRequestPage() {
-  const user = await requireUser()
-  if (user.role !== "outreach") redirect("/dashboard")
-
+export default function NewRequestPage() {
   return (
     <>
       <SiteHeader signedIn />
@@ -28,8 +26,16 @@ export default async function NewRequestPage() {
           Tell donors how many people you&apos;re serving and when. Only the neighborhood is
           shared. Please don&apos;t include names, addresses, or camp locations.
         </p>
-        <NewRequestForm />
+        <Suspense fallback={<p className="mt-8 text-muted-foreground">Loading…</p>}>
+          <OutreachOnlyForm />
+        </Suspense>
       </main>
     </>
   )
+}
+
+async function OutreachOnlyForm() {
+  const user = await requireUser()
+  if (user.role !== "outreach") redirect("/dashboard")
+  return <NewRequestForm />
 }

@@ -184,9 +184,8 @@ async function main() {
     },
   ]
 
-  for (const r of requests) {
-    const { id: _id, ...rest } = r
-    await db.insert(foodRequests).values(r).onConflictDoUpdate({
+  for (const { id, ...rest } of requests) {
+    await db.insert(foodRequests).values({ id, ...rest }).onConflictDoUpdate({
       target: foodRequests.id,
       set: rest,
     })

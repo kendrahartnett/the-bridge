@@ -5,6 +5,12 @@ import { motion } from "motion/react"
 
 import { cn } from "@/lib/utils"
 
+/** Stable pseudo-random number in [0, 1) for a given index. */
+const jitter = (n: number) => {
+  const s = Math.sin(n * 12.9898) * 43758.5453
+  return s - Math.floor(s)
+}
+
 /**
  *  DotPattern Component Props
  *
@@ -102,8 +108,9 @@ export function DotPattern({
       return {
         x: col * width + cx + x,
         y: row * height + cy + y,
-        delay: Math.random() * 5,
-        duration: Math.random() * 3 + 2,
+        // Deterministic per-dot jitter instead of Math.random(), so render stays pure.
+        delay: jitter(i) * 5,
+        duration: jitter(i + 7919) * 3 + 2,
       }
     }
   )

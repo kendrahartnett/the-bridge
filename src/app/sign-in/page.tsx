@@ -1,14 +1,12 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { Suspense } from "react"
 
 import { SignInForm } from "./sign-in-form"
 
 export const metadata: Metadata = { title: "Sign in · The Bridge" }
 
-export default async function SignInPage({ searchParams }: PageProps<"/sign-in">) {
-  const { role } = await searchParams
-  const initialRole = role === "outreach" || role === "donor" ? role : undefined
-
+export default function SignInPage({ searchParams }: PageProps<"/sign-in">) {
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-10">
       <Link
@@ -21,7 +19,20 @@ export default async function SignInPage({ searchParams }: PageProps<"/sign-in">
       <p className="mt-2 text-muted-foreground">
         Sign in or create an account. It takes about a minute.
       </p>
-      <SignInForm initialRole={initialRole} />
+      {/* searchParams is request data, so it is read behind Suspense (cacheComponents). */}
+      <Suspense fallback={<SignInForm />}>
+        <SignInFormWithRole searchParams={searchParams} />
+      </Suspense>
     </main>
   )
+}
+
+async function SignInFormWithRole({
+  searchParams,
+}: {
+  searchParams: PageProps<"/sign-in">["searchParams"]
+}) {
+  const { role } = await searchParams
+  const initialRole = role === "outreach" || role === "donor" ? role : undefined
+  return <SignInForm initialRole={initialRole} />
 }
