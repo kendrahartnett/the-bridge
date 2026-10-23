@@ -45,8 +45,9 @@ function PrivacyNotice() {
     >
       <Lock aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-primary-text" />
       <p>
-        Bridge stores only the neighborhood, the food needed, and the time window. We never
-        store names, addresses, or locations of the people being served.
+        Bridge stores only the neighborhood, the number of people, the food needed, dietary
+        notes, and the time window. We never store names, addresses, or locations of the
+        people being served.
       </p>
     </aside>
   )
