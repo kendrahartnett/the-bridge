@@ -44,14 +44,14 @@ const TEST_USERS = [
   {
     key: "donor1",
     email: "test.donor1@example.com",
-    displayName: "Test — Donor A",
+    displayName: "Test — Organization A",
     role: "donor",
     organizationName: "Test — Corner Bakery Co-op",
   },
   {
     key: "donor2",
     email: "test.donor2@example.com",
-    displayName: "Test — Donor B",
+    displayName: "Test — Organization B",
     role: "donor",
     organizationName: "Test — Pilsen Community Kitchen",
   },
