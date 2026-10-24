@@ -7,6 +7,7 @@ import { z } from "zod"
 import { db } from "@/db"
 import { foodRequests, type FoodRequest, type User } from "@/db/schema"
 import { getCurrentUser } from "@/lib/current-user"
+import { STATUS_LABELS } from "@/lib/labels"
 
 // Identity and role always come from the session on the server. The only thing
 // the browser sends is which request it means, and that is validated as a UUID.
@@ -25,7 +26,7 @@ async function signedInAs(
       ok: false,
       error:
         role === "donor"
-          ? "Only donor accounts can claim requests."
+          ? "Only organization accounts can offer support."
           : "Only the outreach worker who made this request can change it.",
     }
   }
@@ -59,7 +60,7 @@ export async function claimRequestAction(id: unknown): Promise<RequestActionResu
       ok: false,
       error:
         status === "claimed" || status === "delivered"
-          ? "This request was just claimed by someone else."
+          ? "Someone else just offered support for this request."
           : status === "cancelled"
             ? "This request was cancelled."
             : "We couldn't find that request.",
@@ -67,7 +68,7 @@ export async function claimRequestAction(id: unknown): Promise<RequestActionResu
   }
 
   revalidatePath("/dashboard")
-  return { ok: true, message: "You claimed this request. Thank you!" }
+  return { ok: true, message: "You offered support for this request. Thank you!" }
 }
 
 export async function confirmDeliveryAction(id: unknown): Promise<RequestActionResult> {
@@ -93,7 +94,7 @@ export async function confirmDeliveryAction(id: unknown): Promise<RequestActionR
   }
 
   revalidatePath("/dashboard")
-  return { ok: true, message: "Marked as delivered." }
+  return { ok: true, message: "Marked as fulfilled." }
 }
 
 export async function cancelRequestAction(id: unknown): Promise<RequestActionResult> {
@@ -137,10 +138,10 @@ async function explainNoChange(
   }
   if (needed === "claimed") {
     return row.status === "open"
-      ? "No donor has claimed this request yet."
-      : `This request is already ${row.status}.`
+      ? "No organization has offered support for this request yet."
+      : `This request is already ${STATUS_LABELS[row.status].toLowerCase()}.`
   }
   return row.status === "claimed"
-    ? "A donor already claimed this request, so it can't be cancelled here."
-    : `This request is already ${row.status}.`
+    ? "An organization is already supporting this request, so it can't be cancelled here."
+    : `This request is already ${STATUS_LABELS[row.status].toLowerCase()}.`
 }

@@ -1,3 +1,4 @@
+import { CategoryBadge } from "@/components/category-badge"
 import { StatusBadge } from "@/components/status-badge"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import type { FoodRequest } from "@/db/schema"
@@ -27,6 +28,7 @@ export function RequestCard({
         <StatusBadge status={request.status} />
       </CardHeader>
       <CardContent className="flex flex-col gap-2 text-base">
+        <CategoryBadge category={request.category} />
         <p>
           <span className="font-medium">Where: </span>
           {neighborhoodLabel(request.neighborhood)}
@@ -37,7 +39,7 @@ export function RequestCard({
         </p>
         {showClaimer && (
           <p>
-            <span className="font-medium">Claimed by </span>
+            <span className="font-medium">Supported by </span>
             {claimedByName}
           </p>
         )}

@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { CATEGORIES, CATEGORY_LABELS } from "@/lib/labels"
 import { COMMUNITY_AREAS, neighborhoodLabel } from "@/lib/neighborhoods"
 import {
   newRequestSchema,
@@ -39,6 +40,7 @@ export function NewRequestForm() {
     resolver: zodResolver(newRequestSchema),
     defaultValues: {
       peopleCount: "",
+      category: undefined,
       items: "",
       dietaryNotes: "",
       neighborhood: undefined,
@@ -83,13 +85,41 @@ export function NewRequestForm() {
 
         <FormField
           control={form.control}
+          name="category"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Type of support</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                <FormControl>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Choose a type" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {CATEGORIES.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {CATEGORY_LABELS[c]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
           name="items"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>What kind of food?</FormLabel>
+              <FormLabel>What&apos;s needed</FormLabel>
               <FormControl>
-                <Input placeholder="For example: hot meals, sandwiches, fruit, water" {...field} />
+                <Input placeholder="Example: 10 winter coats, sizes M–XL" maxLength={200} {...field} />
               </FormControl>
+              <FormDescription>
+                Describe the items needed, not the people. Don&apos;t include names, health details, or exact locations.
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -100,12 +130,12 @@ export function NewRequestForm() {
           name="dietaryNotes"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Dietary needs (optional)</FormLabel>
+              <FormLabel>Notes (optional)</FormLabel>
               <FormControl>
                 <Textarea
                   rows={3}
                   maxLength={300}
-                  placeholder="For example: 5 vegetarian, no pork, soft foods"
+                  placeholder="Example: sizes, dietary needs, or quantities per person"
                   {...field}
                 />
               </FormControl>
@@ -123,7 +153,7 @@ export function NewRequestForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Neighborhood</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select onValueChange={field.onChange} value={field.value ?? ""}>
                 <FormControl>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Choose a neighborhood" />

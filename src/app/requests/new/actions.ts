@@ -20,7 +20,7 @@ export async function createRequestAction(
 ): Promise<CreateRequestResult> {
   const user = await requireUser()
   if (user.role !== "outreach") {
-    return { error: "Only outreach accounts can ask for food." }
+    return { error: "Only outreach worker or community member accounts can post needs." }
   }
 
   // Never trust the browser's check; validate again here.
@@ -34,6 +34,7 @@ export async function createRequestAction(
     await db.insert(foodRequests).values({
       createdBy: user.id,
       peopleCount: v.peopleCount,
+      category: v.category,
       items: v.items,
       dietaryNotes: v.dietaryNotes,
       neighborhood: v.neighborhood,

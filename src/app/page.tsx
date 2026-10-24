@@ -19,7 +19,7 @@ import {
 // Exact wording; do not edit without sign-off.
 const JOURNEY = [
   { label: "Request", description: "An outreach worker describes a need." },
-  { label: "Connect", description: "A donor claims it." },
+  { label: "Connect", description: "An organization offers support." },
   { label: "Deliver", description: "Resources reach the people who need them." },
   { label: "Support", description: "The outreach worker and the person connect to care." },
   { label: "Rebuild", description: "Work toward lasting stability." },

@@ -1,5 +1,6 @@
 import { z } from "zod"
 
+import { CATEGORIES } from "@/lib/labels"
 import { COMMUNITY_AREAS } from "@/lib/neighborhoods"
 
 // Shared by the browser (instant feedback) and server actions (the real check).
@@ -52,6 +53,7 @@ export const newRequestSchema = z
           .min(1, "At least 1 person.")
           .max(500, "500 people is the most for one request.")
       ),
+    category: z.enum(CATEGORIES, { error: "Choose the type of support." }),
     items: z
       .string()
       .trim()

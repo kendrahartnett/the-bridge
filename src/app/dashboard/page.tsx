@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { db } from "@/db"
 import { foodRequests, users, type FoodRequest } from "@/db/schema"
 import { requireUser } from "@/lib/current-user"
+import { ROLE_LABELS } from "@/lib/labels"
 
 import { RequestActionButton } from "./request-action-button"
 
@@ -42,7 +43,7 @@ async function DashboardContent() {
       <BlurFade>
         <p className="text-sm text-muted-foreground">
           {user.organizationName ? `${user.organizationName} · ` : ""}
-          {user.role === "outreach" ? "Outreach" : "Food donor"}
+          {ROLE_LABELS[user.role]}
         </p>
         <h1 className="font-heading mt-1 text-3xl font-bold tracking-tight">Hi, {greeting}</h1>
       </BlurFade>
@@ -72,7 +73,7 @@ async function OutreachDashboard({ userId }: { userId: string }) {
     .orderBy(desc(foodRequests.windowStart))
   const requests = rows.map((r) => ({
     ...r.request,
-    claimedByName: r.claimerOrg ?? r.claimerName ?? "a donor",
+    claimedByName: r.claimerOrg ?? r.claimerName ?? "an organization",
   }))
 
   const delivered = requests.filter((r) => r.status === "delivered")
@@ -82,9 +83,9 @@ async function OutreachDashboard({ userId }: { userId: string }) {
   return (
     <>
       <section aria-label="Your impact" className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <ImpactStat value={peopleFed} label="People fed through your requests" />
-        <ImpactStat value={delivered.length} label="Deliveries completed" />
-        <ImpactStat value={open} label="Requests waiting for a donor" />
+        <ImpactStat value={peopleFed} label="People helped through your requests" />
+        <ImpactStat value={delivered.length} label="Requests fulfilled" />
+        <ImpactStat value={open} label="Requests waiting for support" />
       </section>
 
       <div className="mt-12 flex flex-wrap items-center justify-between gap-3">
@@ -96,7 +97,7 @@ async function OutreachDashboard({ userId }: { userId: string }) {
 
       {requests.length === 0 ? (
         <EmptyState>
-          You haven&apos;t asked for food yet. Start a request and nearby donors will see it.
+          You haven&apos;t posted a need yet. Start a request and organizations nearby will see it.
         </EmptyState>
       ) : (
         <RequestGrid requests={requests} footer={outreachFooter} />
@@ -136,13 +137,13 @@ async function DonorDashboard({ userId }: { userId: string }) {
     <>
       <section aria-label="Right now" className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
         <ImpactStat value={open.length} label="Open requests" />
-        <ImpactStat value={waiting} label="People who could use a meal" />
+        <ImpactStat value={waiting} label="People who need support" />
       </section>
 
       <h2 className="font-heading mt-12 text-xl font-bold">Open requests</h2>
       <p className="mt-1 text-muted-foreground">
-        Each request shows the neighborhood and time window. After you claim one, you&apos;ll
-        coordinate pickup with the outreach team.
+        Each request shows the neighborhood and time window. After you offer support, you&apos;ll
+        coordinate with the person who posted it.
       </p>
 
       {open.length === 0 ? (
@@ -156,7 +157,7 @@ async function DonorDashboard({ userId }: { userId: string }) {
 
       {mine.length > 0 && (
         <>
-          <h2 className="font-heading mt-12 text-xl font-bold">Your claims</h2>
+          <h2 className="font-heading mt-12 text-xl font-bold">Requests you&apos;re supporting</h2>
           <RequestGrid requests={mine} footer={() => <ClaimedByYou />} />
         </>
       )}
@@ -168,7 +169,7 @@ function ClaimedByYou() {
   return (
     <p className="flex min-h-tap items-center gap-2 font-medium text-primary-text">
       <CircleCheck aria-hidden="true" className="size-5" />
-      Claimed by you
+      You&apos;re supporting this
     </p>
   )
 }

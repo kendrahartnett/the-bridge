@@ -25,7 +25,7 @@ const raleway = Raleway({
 export const metadata: Metadata = {
   title: "The Bridge",
   description:
-    "Connecting Chicago outreach teams with food donors, so people experiencing homelessness get a meal and a path to more help.",
+    "Connecting Chicago outreach teams with organizations and neighbors ready to help, so people experiencing homelessness get essential resources and a path to more support.",
 };
 
 export const viewport: Viewport = {
