@@ -21,7 +21,7 @@ export default function SignInPage({ searchParams }: PageProps<"/sign-in">) {
         </Link>
         <ThemeToggle />
       </div>
-      <h1 className="text-3xl font-semibold tracking-tight">Welcome to The Bridge</h1>
+      <h1 className="font-heading text-3xl font-bold tracking-tight">Welcome to The Bridge</h1>
       <p className="mt-2 text-muted-foreground">
         Sign in or create an account. It takes about a minute.
       </p>

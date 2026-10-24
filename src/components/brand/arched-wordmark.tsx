@@ -33,7 +33,7 @@ export function ArchedWordmark({ className }: { className?: string }) {
         strokeLinecap="round"
         vectorEffect="non-scaling-stroke"
       />
-      <text fill="currentColor" fontSize="18" fontWeight="600" textAnchor="middle">
+      <text className="font-heading" fill="currentColor" fontSize="18" fontWeight="700" textAnchor="middle">
         <textPath href={`#${ARC_ID}`} startOffset="50%">
           The Bridge
         </textPath>

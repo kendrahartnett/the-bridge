@@ -44,7 +44,7 @@ async function DashboardContent() {
           {user.organizationName ? `${user.organizationName} · ` : ""}
           {user.role === "outreach" ? "Outreach" : "Food donor"}
         </p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight">Hi, {greeting}</h1>
+        <h1 className="font-heading mt-1 text-3xl font-bold tracking-tight">Hi, {greeting}</h1>
       </BlurFade>
       {user.role === "outreach" ? (
         <OutreachDashboard userId={user.id} />
@@ -88,7 +88,7 @@ async function OutreachDashboard({ userId }: { userId: string }) {
       </section>
 
       <div className="mt-12 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-xl font-semibold">Your requests</h2>
+        <h2 className="font-heading text-xl font-bold">Your requests</h2>
         <Button asChild size="lg">
           <Link href="/requests/new">New request</Link>
         </Button>
@@ -139,7 +139,7 @@ async function DonorDashboard({ userId }: { userId: string }) {
         <ImpactStat value={waiting} label="People who could use a meal" />
       </section>
 
-      <h2 className="mt-12 text-xl font-semibold">Open requests</h2>
+      <h2 className="font-heading mt-12 text-xl font-bold">Open requests</h2>
       <p className="mt-1 text-muted-foreground">
         Each request shows the neighborhood and time window. After you claim one, you&apos;ll
         coordinate pickup with the outreach team.
@@ -156,7 +156,7 @@ async function DonorDashboard({ userId }: { userId: string }) {
 
       {mine.length > 0 && (
         <>
-          <h2 className="mt-12 text-xl font-semibold">Your claims</h2>
+          <h2 className="font-heading mt-12 text-xl font-bold">Your claims</h2>
           <RequestGrid requests={mine} footer={() => <ClaimedByYou />} />
         </>
       )}

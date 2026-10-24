@@ -67,8 +67,8 @@ export default function Home() {
               <p className="inline-flex items-center rounded-full bg-gold bg-(image:--gold-gradient) px-3 py-1 text-xs font-semibold tracking-wide text-gold-foreground uppercase shadow-sm sm:tracking-widest">
                 {HERO_BADGE}
               </p>
-              <h1 className="mt-5 max-w-5xl text-4xl leading-tight font-bold tracking-tight sm:text-5xl lg:text-6xl">
-                <span className="block text-foreground">{HERO_HEADLINE[0]}</span>
+              <h1 className="font-heading mt-5 max-w-5xl text-4xl leading-tight font-bold tracking-tight sm:text-5xl lg:text-6xl">
+                <span className="block font-extrabold text-foreground">{HERO_HEADLINE[0]}</span>
                 {/* One size step below line 1 at every breakpoint. */}
                 <span className="block text-3xl text-primary-text sm:text-4xl lg:text-5xl">
                   {HERO_HEADLINE[1]}
@@ -101,7 +101,7 @@ export default function Home() {
 
         <section aria-labelledby="journey" className="overflow-x-clip">
           <BlurFade inView className="mx-auto max-w-5xl px-4 py-10">
-            <h2 id="journey" className="text-xl font-semibold tracking-tight sm:text-2xl">
+            <h2 id="journey" className="font-heading text-xl font-bold tracking-tight sm:text-2xl">
               How it works
             </h2>
             <ol className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -134,7 +134,7 @@ export default function Home() {
 
         <section aria-labelledby="what-is" className="border-t border-border">
           <BlurFade inView className="mx-auto max-w-2xl px-4 py-10">
-            <h2 id="what-is" className="text-xl font-semibold tracking-tight sm:text-2xl">
+            <h2 id="what-is" className="font-heading text-xl font-bold tracking-tight sm:text-2xl">
               {WHAT_IS_HEADING}
             </h2>
             <Card className={`mt-4 ${GLASS}`}>
@@ -149,7 +149,7 @@ export default function Home() {
 
         <section aria-labelledby="mission" className="border-t border-border">
           <BlurFade inView className="mx-auto max-w-2xl px-4 py-10">
-            <h2 id="mission" className="text-xl font-semibold tracking-tight sm:text-2xl">
+            <h2 id="mission" className="font-heading text-xl font-bold tracking-tight sm:text-2xl">
               Mission Statement
             </h2>
             <Card className={`mt-4 ${GLASS}`}>

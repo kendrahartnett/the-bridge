@@ -22,7 +22,7 @@ export default function NewRequestPage() {
         >
           ← Back to dashboard
         </Link>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight">Ask for food</h1>
+        <h1 className="font-heading mt-2 text-3xl font-bold tracking-tight">Ask for food</h1>
         <p className="mt-2 text-muted-foreground">
           Tell donors how many people you&apos;re serving and when. Only the neighborhood is
           shared. Please don&apos;t include names, addresses, or camp locations.

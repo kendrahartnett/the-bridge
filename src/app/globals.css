@@ -155,6 +155,15 @@
   --shadow-lg: var(--soft-shadow-md);
 }
 
+/* Raleway for headlines and titles. A utility rather than an @theme font entry, because
+   next/font already names its variable --font-heading and a theme key of the same name
+   would refer to itself. Lining figures: Raleway's default old-style numbers look uneven
+   in titles like "12 people". */
+@utility font-heading {
+  font-family: var(--font-heading), ui-sans-serif, system-ui, sans-serif;
+  font-variant-numeric: lining-nums;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
