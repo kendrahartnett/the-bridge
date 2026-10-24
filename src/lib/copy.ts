@@ -1,5 +1,5 @@
 // Landing page hero copy. Verbatim; do not edit without sign-off.
-export const HERO_BADGE = "Chicago · Starting with food" // shown uppercase via CSS
+export const HERO_BADGE = "Rooted in Chicago · Built for change" // shown uppercase via CSS
 
 // Line 2 is provisional: the brief marked it "[REPLACE: From the Street to Stability.]".
 export const HERO_HEADLINE = ["Bridging the Gap.", "From the Street to Stability."] as const
