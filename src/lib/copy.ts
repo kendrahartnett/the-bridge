@@ -62,6 +62,15 @@ export const ASSISTANT_COPY = {
     "Sorry, I can't answer right now. The \"How it works\" section on the home page explains how The Bridge works, step by step. If you need help today with something The Bridge doesn't cover yet, you can call or text 211.",
 } as const
 
+// Contact line on request cards, shown only to the poster and the supporting organization
+// once a request is In Progress or Fulfilled.
+export const CONTACT_COPY = {
+  supportedBy: "Supported by",
+  postedBy: "Posted by",
+  emailLabel: "Email",
+  note: "Use this to arrange the handoff. Don't share names or details of the people being served.",
+} as const
+
 // The Spanish terms the assistant must use for app labels (English → Spanish). Also the
 // starting point for the Spanish toggle.
 export const SPANISH_GLOSSARY = [

@@ -1,22 +1,32 @@
+import { Mail } from "lucide-react"
+
 import { CategoryBadge } from "@/components/category-badge"
 import { StatusBadge } from "@/components/status-badge"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import type { FoodRequest } from "@/db/schema"
 import { formatWindow } from "@/lib/chicago-time"
+import { CONTACT_COPY } from "@/lib/copy"
 import { neighborhoodLabel } from "@/lib/neighborhoods"
+
+/** The other side of an offer: who they are and, when allowed, their account email. */
+export type RequestContact = {
+  label: typeof CONTACT_COPY.supportedBy | typeof CONTACT_COPY.postedBy
+  name: string
+  /** Only set by the server for the poster and the supporting organization. */
+  email: string | null
+}
 
 export function RequestCard({
   request,
-  claimedByName,
+  contact,
   footer,
 }: {
   request: FoodRequest
-  /** Shown to outreach workers on claimed and delivered requests. */
-  claimedByName?: string
+  /** Shown on In Progress and Fulfilled requests to the two people involved. */
+  contact?: RequestContact
   footer?: React.ReactNode
 }) {
-  const showClaimer =
-    claimedByName && (request.status === "claimed" || request.status === "delivered")
+  const showContact = contact && (request.status === "claimed" || request.status === "delivered")
 
   return (
     <Card className="h-full">
@@ -37,11 +47,30 @@ export function RequestCard({
           <span className="font-medium">When: </span>
           {formatWindow(request.windowStart, request.windowEnd)}
         </p>
-        {showClaimer && (
-          <p>
-            <span className="font-medium">Supported by </span>
-            {claimedByName}
-          </p>
+        {showContact && (
+          <div data-contact className="flex flex-col gap-1">
+            <p>
+              <span className="font-medium">{contact.label} </span>
+              {contact.name}
+            </p>
+            {contact.email && (
+              <>
+                <a
+                  href={`mailto:${contact.email}`}
+                  aria-label={`${CONTACT_COPY.emailLabel} ${contact.name}: ${contact.email}`}
+                  className="inline-flex min-h-tap items-center gap-2 self-start rounded-md font-medium text-primary-text underline underline-offset-4 outline-none [overflow-wrap:anywhere] hover:no-underline focus-visible:ring-[3px] focus-visible:ring-ring"
+                >
+                  <Mail aria-hidden="true" className="size-4 shrink-0" />
+                  {/* Wrap after the @ on narrow screens; break anywhere only if still too long. */}
+                  <span>
+                    {contact.email.split("@")[0]}@<wbr />
+                    {contact.email.split("@").slice(1).join("@")}
+                  </span>
+                </a>
+                <p className="text-sm text-muted-foreground">{CONTACT_COPY.note}</p>
+              </>
+            )}
+          </div>
         )}
         {request.dietaryNotes && (
           <p className="text-muted-foreground">

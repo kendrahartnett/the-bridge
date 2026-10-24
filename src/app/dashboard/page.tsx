@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray } from "drizzle-orm"
+import { and, asc, desc, eq, inArray, sql, type AnyColumn } from "drizzle-orm"
 import { alias } from "drizzle-orm/pg-core"
 import { CircleCheck } from "lucide-react"
 import type { Metadata } from "next"
@@ -6,12 +6,13 @@ import Link from "next/link"
 import { Suspense } from "react"
 
 import { ImpactStat } from "@/components/impact-stat"
-import { RequestCard } from "@/components/request-card"
+import { RequestCard, type RequestContact } from "@/components/request-card"
 import { SiteHeader } from "@/components/site-header"
 import { BlurFade } from "@/components/ui/blur-fade"
 import { Button } from "@/components/ui/button"
 import { db } from "@/db"
 import { foodRequests, users, type FoodRequest } from "@/db/schema"
+import { CONTACT_COPY } from "@/lib/copy"
 import { requireUser } from "@/lib/current-user"
 import { ROLE_LABELS } from "@/lib/labels"
 
@@ -56,9 +57,14 @@ async function DashboardContent() {
   )
 }
 
-// The donor who claimed a request. Only their organization or display name is
-// selected; email and user ID are never read for this view.
+// The two sides of an offer. Each dashboard reads the other side's account email only for
+// requests the viewer posted or supports, and only once the request is In Progress or
+// Fulfilled: the database returns null otherwise, so the email never reaches the page.
 const claimer = alias(users, "claimer")
+const poster = alias(users, "poster")
+const afterOffer = sql`${foodRequests.status} in ('claimed', 'delivered')`
+const emailAfterOffer = (email: AnyColumn) =>
+  sql<string | null>`case when ${afterOffer} then ${email} end`
 
 async function OutreachDashboard({ userId }: { userId: string }) {
   const rows = await db
@@ -66,6 +72,7 @@ async function OutreachDashboard({ userId }: { userId: string }) {
       request: foodRequests,
       claimerOrg: claimer.organizationName,
       claimerName: claimer.displayName,
+      claimerEmail: emailAfterOffer(claimer.email),
     })
     .from(foodRequests)
     .leftJoin(claimer, eq(claimer.id, foodRequests.claimedBy))
@@ -73,7 +80,11 @@ async function OutreachDashboard({ userId }: { userId: string }) {
     .orderBy(desc(foodRequests.windowStart))
   const requests = rows.map((r) => ({
     ...r.request,
-    claimedByName: r.claimerOrg ?? r.claimerName ?? "an organization",
+    contact: {
+      label: CONTACT_COPY.supportedBy,
+      name: r.claimerOrg ?? r.claimerName ?? "an organization",
+      email: r.claimerEmail,
+    },
   }))
 
   const delivered = requests.filter((r) => r.status === "delivered")
@@ -114,21 +125,40 @@ function outreachFooter(r: FoodRequest) {
 
 async function DonorDashboard({ userId }: { userId: string }) {
   const [open, mine] = await Promise.all([
+    // Open requests: request columns only. The poster is never joined, so no poster
+    // details can reach organizations before they offer support.
     db
       .select()
       .from(foodRequests)
       .where(eq(foodRequests.status, "open"))
       .orderBy(asc(foodRequests.windowStart)),
+    // Requests this organization supports, with the poster's name and email.
     db
-      .select()
+      .select({
+        request: foodRequests,
+        posterOrg: poster.organizationName,
+        posterName: poster.displayName,
+        posterEmail: emailAfterOffer(poster.email),
+      })
       .from(foodRequests)
+      .innerJoin(poster, eq(poster.id, foodRequests.createdBy))
       .where(
         and(
           eq(foodRequests.claimedBy, userId),
           inArray(foodRequests.status, ["claimed", "delivered"])
         )
       )
-      .orderBy(desc(foodRequests.windowStart)),
+      .orderBy(desc(foodRequests.windowStart))
+      .then((rows) =>
+        rows.map((r) => ({
+          ...r.request,
+          contact: {
+            label: CONTACT_COPY.postedBy,
+            name: r.posterOrg ?? r.posterName ?? "an outreach worker",
+            email: r.posterEmail,
+          },
+        }))
+      ),
   ])
 
   const waiting = open.reduce((n, r) => n + r.peopleCount, 0)
@@ -143,7 +173,7 @@ async function DonorDashboard({ userId }: { userId: string }) {
       <h2 className="font-heading mt-12 text-xl font-bold">Open requests</h2>
       <p className="mt-1 text-muted-foreground">
         Each request shows the neighborhood and time window. After you offer support, you&apos;ll
-        coordinate with the person who posted it.
+        see the poster&apos;s contact email so you can arrange the handoff.
       </p>
 
       {open.length === 0 ? (
@@ -174,7 +204,7 @@ function ClaimedByYou() {
   )
 }
 
-type CardRequest = FoodRequest & { claimedByName?: string }
+type CardRequest = FoodRequest & { contact?: RequestContact }
 
 function RequestGrid({
   requests,
@@ -187,7 +217,7 @@ function RequestGrid({
     <ul className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
       {requests.map((r) => (
         <li key={r.id}>
-          <RequestCard request={r} claimedByName={r.claimedByName} footer={footer?.(r)} />
+          <RequestCard request={r} contact={r.contact} footer={footer?.(r)} />
         </li>
       ))}
     </ul>

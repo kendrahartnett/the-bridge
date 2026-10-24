@@ -20,7 +20,7 @@ const KINDS = {
   claim: {
     action: claimRequestAction,
     label: "Offer support",
-    question: "Offer support for this request? You'll be able to coordinate with the person who posted it.",
+    question: "Offer support for this request? You'll see the poster's contact email so you can arrange the handoff.",
     confirm: "Yes, offer support",
     variant: "default",
   },
