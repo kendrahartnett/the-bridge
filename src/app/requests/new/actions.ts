@@ -2,13 +2,11 @@
 
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
-import { z } from "zod"
 
 import { db } from "@/db"
-import { foodRequests } from "@/db/schema"
-import { chicagoLocalToDate } from "@/lib/chicago-time"
 import { requireUser } from "@/lib/current-user"
-import { newRequestSchema, type NewRequestInput } from "@/lib/validation"
+import { createRequest } from "@/lib/request-rules"
+import type { NewRequestInput } from "@/lib/validation"
 
 export type CreateRequestResult = {
   error?: string
@@ -19,32 +17,9 @@ export async function createRequestAction(
   input: NewRequestInput
 ): Promise<CreateRequestResult> {
   const user = await requireUser()
-  if (user.role !== "outreach") {
-    return { error: "Only outreach worker or community member accounts can post needs." }
-  }
-
-  // Never trust the browser's check; validate again here.
-  const parsed = newRequestSchema.safeParse(input)
-  if (!parsed.success) {
-    return { fieldErrors: z.flattenError(parsed.error).fieldErrors }
-  }
-  const v = parsed.data
-
-  try {
-    await db.insert(foodRequests).values({
-      createdBy: user.id,
-      peopleCount: v.peopleCount,
-      category: v.category,
-      items: v.items,
-      dietaryNotes: v.dietaryNotes,
-      neighborhood: v.neighborhood,
-      windowStart: chicagoLocalToDate(v.windowStart),
-      windowEnd: chicagoLocalToDate(v.windowEnd),
-    })
-  } catch (err) {
-    console.error("createRequestAction insert failed", err)
-    return { error: "We couldn't save your request. Please try again." }
-  }
+  // Role check and server-side validation happen in createRequest.
+  const result = await createRequest(db, { id: user.id, role: user.role }, input)
+  if (!result.ok) return { error: result.error, fieldErrors: result.fieldErrors }
 
   revalidatePath("/dashboard")
   redirect("/dashboard")

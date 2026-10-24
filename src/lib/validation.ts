@@ -1,7 +1,7 @@
 import { z } from "zod"
 
-import { CATEGORIES } from "@/lib/labels"
-import { COMMUNITY_AREAS } from "@/lib/neighborhoods"
+import { CATEGORIES } from "./labels.ts"
+import { COMMUNITY_AREAS } from "./neighborhoods.ts"
 
 // Shared by the browser (instant feedback) and server actions (the real check).
 // No database imports here, so it is safe to bundle for the client.
