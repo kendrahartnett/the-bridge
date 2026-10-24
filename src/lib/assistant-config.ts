@@ -2,7 +2,7 @@
 // feedback). Safe to import in the browser: no secrets, no prompt text.
 
 export const ASSISTANT_MODEL = "claude-haiku-5-5"
-export const ASSISTANT_MAX_TOKENS = 400
+export const ASSISTANT_MAX_TOKENS = 600
 export const ASSISTANT_TIMEOUT_MS = 15_000
 
 /** Longest message a person can send. */

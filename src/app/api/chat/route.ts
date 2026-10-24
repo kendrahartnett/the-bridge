@@ -10,6 +10,7 @@ import {
   RATE_LIMIT_PER_HOUR,
 } from "@/lib/assistant-config"
 import { ASSISTANT_SYSTEM_PROMPT } from "@/lib/assistant-prompt"
+import { stripSpanishLabels, trimToLastSentence } from "@/lib/assistant-reply"
 import { ASSISTANT_COPY } from "@/lib/copy"
 import { clientIp, rateLimit } from "@/lib/rate-limit"
 
@@ -87,7 +88,7 @@ export async function POST(request: Request) {
         model: ASSISTANT_MODEL,
         max_tokens: ASSISTANT_MAX_TOKENS,
         // Haiku 5.5 thinks by default and thinking counts toward max_tokens; turn it off so
-        // all 400 tokens go to the answer.
+        // all the tokens go to the answer.
         thinking: { type: "disabled" },
         system: ASSISTANT_SYSTEM_PROMPT,
         messages: messages.map((m) => ({ role: m.role, content: m.content })),
@@ -97,10 +98,13 @@ export async function POST(request: Request) {
     )
 
     if (response.stop_reason === "refusal") return reply(ASSISTANT_COPY.fallback, "fallback")
-    const text = response.content
+    let text = response.content
       .flatMap((block) => (block.type === "text" ? [block.text] : []))
       .join("\n")
       .trim()
+    // Never show a reply that stops mid-sentence.
+    if (response.stop_reason === "max_tokens") text = trimToLastSentence(text)
+    text = stripSpanishLabels(text)
     return text ? reply(text, "assistant") : reply(ASSISTANT_COPY.fallback, "fallback")
   } catch (err) {
     // Log only the kind of failure: never message text, never the key.

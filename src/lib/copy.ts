@@ -62,6 +62,25 @@ export const ASSISTANT_COPY = {
     "Sorry, I can't answer right now. The \"How it works\" section on the home page explains how The Bridge works, step by step. If you need help today with something The Bridge doesn't cover yet, you can call or text 211.",
 } as const
 
+// The Spanish terms the assistant must use for app labels (English → Spanish). Also the
+// starting point for the Spanish toggle.
+export const SPANISH_GLOSSARY = [
+  ["Post a Need", "Publicar una necesidad"],
+  ["Offer Support", "Ofrecer apoyo"],
+  ["Open", "Abierta"],
+  ["In Progress", "En curso"],
+  ["Fulfilled", "Completada"],
+  ["Cancelled", "Cancelada"],
+  ["Outreach worker", "Trabajador de alcance comunitario"],
+  ["Organization", "Organización"],
+  ["Food", "Comida"],
+  ["Clothing", "Ropa"],
+  ["Hygiene supplies", "Artículos de higiene"],
+  ["Other", "Otro"],
+  ["Neighborhood", "Barrio"],
+  ["Dashboard", "Panel"],
+] as const
+
 // Full mission, shown in the landing page "Mission Statement" section. Verbatim; do not edit
 // without sign-off. (The Day 1 "mission appears verbatim" check now applies to this file.)
 export const MISSION =
