@@ -1,6 +1,7 @@
 import Link from "next/link"
 
 import { signOutAction } from "@/app/sign-in/actions"
+import { ArchedWordmark } from "@/components/brand/arched-wordmark"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
 
@@ -10,9 +11,10 @@ export function SiteHeader({ signedIn = false }: { signedIn?: boolean }) {
       <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-4 px-4">
         <Link
           href={signedIn ? "/dashboard" : "/"}
-          className="inline-flex min-h-tap items-center text-lg font-semibold text-primary-text"
+          aria-label={signedIn ? "The Bridge, dashboard" : "The Bridge, home"}
+          className="inline-flex min-h-tap items-center rounded-md px-1 text-primary-text outline-none focus-visible:ring-[3px] focus-visible:ring-ring"
         >
-          The Bridge
+          <ArchedWordmark />
         </Link>
         <div className="flex items-center gap-1">
           <ThemeToggle />
