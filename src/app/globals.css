@@ -6,30 +6,33 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * The Bridge design tokens. These ten colors per mode are the ONLY colors in the UI.
- * Everything else below is an alias of them (or a tint of one), never a new color.
+ * The Bridge design tokens. Dark-first: dark is the default theme.
+ * Everything below the two token blocks is an alias of these (or a tint of one).
  *
  * Rules:
- *  - Gold (--accent) is a fill/highlight only. Never use it for text (1.65:1 on ivory).
- *  - Teal text and links use --primary-text; --primary is for fills and graphics.
+ *  - Gold (--gold, --gold-gradient) is a fill only: the hero badge and small accents.
+ *    Never use it for text. Text on gold uses --gold-foreground.
+ *  - Blue text and links use --primary-text; --primary is for fills and graphics.
  *
  * Measured WCAG contrast (light / dark):
- *  foreground on background        11.38 / 15.00
- *  foreground on surface           12.73 / 12.82
- *  muted-foreground on background   5.87 /  8.26
- *  muted-foreground on muted        5.12 /  5.81
- *  primary-text on background       5.68 /  9.48
- *  primary-foreground on primary    4.78 /  6.68
- *  accent-foreground on accent      6.88 /  6.88
+ *  foreground on background         11.38 / 18.03
+ *  foreground on surface            12.73 / 16.74
+ *  muted-foreground on background    5.87 /  9.93
+ *  muted-foreground on muted         5.12 /  5.81
+ *  primary-text on background        7.74 /  9.93
+ *  primary-foreground on primary     8.66 /  6.59
+ *  gold-foreground on gold           6.05 (both)
+ *  gold-foreground on darkest gradient stop (#C9A13B)  5.24 (both)
  */
 :root {
   --background: #f5f2ea; /* warm ivory */
   --foreground: #19354a; /* deep navy text */
-  --primary: #287f78; /* teal: buttons, graphics */
-  --primary-text: #1f6a64; /* deeper teal: text and links, for contrast */
+  --primary: #1f4e79; /* deep blue: buttons, graphics */
+  --primary-text: #1f4e79; /* text and links on ivory */
   --primary-foreground: #ffffff;
-  --accent: #e5b85c; /* warm gold: fills and highlights only, never text */
-  --accent-foreground: #19354a;
+  --gold: #d4af37; /* metallic gold base */
+  --gold-foreground: #19354a; /* navy text on gold */
+  --gold-gradient: linear-gradient(135deg, #c9a13b 0%, #f3e3a1 45%, #d4af37 70%, #c9a13b 100%);
   --surface: #ffffff;
   --muted: #e8e3d6;
   --muted-foreground: #4a6070;
@@ -38,19 +41,20 @@
 }
 
 .dark {
-  --background: #0f1f2b; /* deep navy base */
-  --foreground: #f5f2ea; /* ivory text */
-  --primary: #4fb3a9; /* lightened teal for dark backgrounds */
-  --primary-text: #7fd1c8;
+  --background: #020617; /* slate-950 */
+  --foreground: #f5f2ea; /* warm off-white text */
+  --primary: #6fa8d6;
+  --primary-text: #8cbbe3;
   --primary-foreground: #0f1f2b;
-  --accent: #e5b85c;
-  --accent-foreground: #19354a;
-  --surface: #172c3d;
+  --gold: #d4af37;
+  --gold-foreground: #19354a;
+  --gold-gradient: linear-gradient(135deg, #c9a13b 0%, #f3e3a1 45%, #d4af37 70%, #c9a13b 100%);
+  --surface: #0b1220;
   --muted: #223a4d;
   --muted-foreground: #a9b8c4;
 
   /* In dark mode, cards are lifted by the lighter surface color and border, so the
-     shadow uses the page navy and stays nearly invisible on purpose. */
+     shadow uses the page background and stays nearly invisible on purpose. */
   --shadow-tint: var(--background);
 }
 
@@ -69,6 +73,10 @@
     0 2px 4px -1px color-mix(in srgb, var(--shadow-tint) 6%, transparent),
     0 10px 28px -6px color-mix(in srgb, var(--shadow-tint) 14%, transparent);
 
+  /* shadcn "accent" is the metallic gold (fills only). */
+  --accent: var(--gold);
+  --accent-foreground: var(--gold-foreground);
+
   --card: var(--surface);
   --card-foreground: var(--foreground);
   --popover: var(--surface);
@@ -76,17 +84,17 @@
   --secondary: var(--muted);
   --secondary-foreground: var(--foreground);
   --border: var(--muted);
-  --input: var(--muted-foreground); /* 6.57:1 / 7.06:1 on surface; meets 3:1 for controls */
-  --ring: var(--primary); /* 4.27:1 / 6.68:1 on background */
+  --input: var(--muted-foreground); /* 6.57:1 / 9.22:1 on surface; meets 3:1 for controls */
+  --ring: var(--primary); /* 7.74:1 / 7.92:1 on background */
   /* No red in the palette: errors use full-strength text plus wording and borders. */
   --destructive: var(--foreground);
   --destructive-foreground: var(--background);
 
   /* Request status badges */
   --status-open: color-mix(in srgb, var(--primary) 15%, var(--surface));
-  --status-open-foreground: var(--primary-text); /* 5.25:1 / 6.24:1 */
-  --status-claimed: var(--accent);
-  --status-claimed-foreground: var(--accent-foreground);
+  --status-open-foreground: var(--primary-text); /* 6.75:1 / 7.25:1 */
+  --status-claimed: var(--gold);
+  --status-claimed-foreground: var(--gold-foreground); /* 6.05:1 */
   --status-delivered: var(--primary);
   --status-delivered-foreground: var(--primary-foreground);
   --status-cancelled: var(--muted);
@@ -106,6 +114,8 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-gold: var(--gold);
+  --color-gold-foreground: var(--gold-foreground);
   --color-surface: var(--surface);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);

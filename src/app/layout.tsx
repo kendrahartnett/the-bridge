@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   // Browser chrome matches the default (dark) page background.
-  themeColor: "#0F1F2B",
+  themeColor: "#020617",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
