@@ -39,7 +39,7 @@ export function NewRequestForm() {
     resolver: zodResolver(newRequestSchema),
     defaultValues: {
       peopleCount: "",
-      foodType: "",
+      items: "",
       dietaryNotes: "",
       neighborhood: undefined,
       windowStart: "",
@@ -83,7 +83,7 @@ export function NewRequestForm() {
 
         <FormField
           control={form.control}
-          name="foodType"
+          name="items"
           render={({ field }) => (
             <FormItem>
               <FormLabel>What kind of food?</FormLabel>

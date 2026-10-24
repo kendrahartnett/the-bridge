@@ -21,7 +21,7 @@ export function RequestCard({
     <Card className="h-full">
       <CardHeader className="flex flex-row items-start justify-between gap-3">
         <CardTitle className="text-lg leading-snug">
-          {request.foodType} for {request.peopleCount}{" "}
+          {request.items} for {request.peopleCount}{" "}
           {request.peopleCount === 1 ? "person" : "people"}
         </CardTitle>
         <StatusBadge status={request.status} />

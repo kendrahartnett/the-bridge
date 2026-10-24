@@ -25,6 +25,14 @@ export const requestStatus = pgEnum("request_status", [
   "cancelled",
 ])
 
+// What kind of support a request asks for. Display labels live in the UI.
+export const requestCategory = pgEnum("request_category", [
+  "food",
+  "clothing",
+  "hygiene",
+  "other",
+])
+
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   email: text("email").notNull().unique(),
@@ -49,7 +57,8 @@ export const foodRequests = pgTable(
       .notNull()
       .references(() => users.id),
     peopleCount: integer("people_count").notNull(),
-    foodType: text("food_type").notNull(),
+    category: requestCategory("category").notNull().default("food"),
+    items: text("items").notNull(),
     dietaryNotes: text("dietary_notes"),
     neighborhood: text("neighborhood").notNull(),
     windowStart: timestamp("window_start", { withTimezone: true }).notNull(),
@@ -65,6 +74,7 @@ export const foodRequests = pgTable(
       "people_count_range",
       sql`${t.peopleCount} BETWEEN 1 AND 500`
     ),
+    check("items_length", sql`char_length(${t.items}) <= 200`),
     check(
       "dietary_notes_length",
       sql`${t.dietaryNotes} IS NULL OR char_length(${t.dietaryNotes}) <= 300`

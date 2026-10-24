@@ -34,7 +34,7 @@ export async function createRequestAction(
     await db.insert(foodRequests).values({
       createdBy: user.id,
       peopleCount: v.peopleCount,
-      foodType: v.foodType,
+      items: v.items,
       dietaryNotes: v.dietaryNotes,
       neighborhood: v.neighborhood,
       windowStart: chicagoLocalToDate(v.windowStart),

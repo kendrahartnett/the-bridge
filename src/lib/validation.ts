@@ -52,11 +52,11 @@ export const newRequestSchema = z
           .min(1, "At least 1 person.")
           .max(500, "500 people is the most for one request.")
       ),
-    foodType: z
+    items: z
       .string()
       .trim()
-      .min(2, "Tell donors what kind of food would help.")
-      .max(100, "Keep this under 100 characters."),
+      .min(2, "Describe what's needed.")
+      .max(200, "Keep this under 200 characters."),
     dietaryNotes: z
       .string()
       .trim()
