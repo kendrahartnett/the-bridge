@@ -5,7 +5,7 @@ import { SiteHeader } from "@/components/site-header"
 import { BlurFade } from "@/components/ui/blur-fade"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { HERO_LINE, MISSION } from "@/lib/copy"
+import { HERO_BADGE, HERO_HEADLINE, HERO_LINE, MISSION } from "@/lib/copy"
 
 // Exact wording; do not edit without sign-off.
 const JOURNEY = [
@@ -28,13 +28,17 @@ export default function Home() {
           <HeroGlows />
           <BlurFade className="mx-auto w-full max-w-3xl">
             <div className="flex flex-col items-center text-center">
-              <p className="inline-flex items-center rounded-full bg-accent px-3 py-1 text-sm font-medium text-accent-foreground">
-                Chicago · Food first
+              {/* Metallic gold badge: gradient fill only, navy text (5.24:1 on the darkest stop). */}
+              <p className="inline-flex items-center rounded-full bg-(image:--gold-gradient) px-3 py-1 text-xs font-semibold tracking-widest text-gold-foreground uppercase shadow-sm">
+                {HERO_BADGE}
               </p>
-              <h1 className="mt-5 text-3xl font-semibold tracking-tight text-balance sm:text-5xl">
-                The Bridge
+              <h1 className="mt-5 max-w-3xl text-4xl leading-tight font-bold tracking-tight text-balance sm:text-6xl">
+                <span className="block text-foreground">{HERO_HEADLINE[0]}</span>
+                <span className="block text-primary-text">{HERO_HEADLINE[1]}</span>
               </h1>
-              <p className="mt-4 max-w-xl text-base leading-relaxed text-pretty sm:text-lg">{HERO_LINE}</p>
+              <p className="mt-5 max-w-xl text-base leading-relaxed text-pretty text-foreground sm:text-lg dark:text-muted-foreground">
+                {HERO_LINE}
+              </p>
               <div className="mt-8 flex w-full flex-col justify-center gap-3 sm:flex-row">
                 <Button asChild className="px-4 text-sm sm:min-w-48">
                   <Link href="/sign-in?role=outreach">I&apos;m an outreach worker</Link>

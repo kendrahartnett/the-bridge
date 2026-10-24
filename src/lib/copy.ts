@@ -1,6 +1,11 @@
-// Landing page hero subheading. Verbatim; do not edit without sign-off.
+// Landing page hero copy. Verbatim; do not edit without sign-off.
+export const HERO_BADGE = "Chicago · Starting with food" // shown uppercase via CSS
+
+// Line 2 is provisional: the brief marked it "[REPLACE: From the Street to Stability.]".
+export const HERO_HEADLINE = ["Bridging the Gap.", "From the Street to Stability."] as const
+
 export const HERO_LINE =
-  "The Bridge brings together outreach teams, community organizations, and people who want to make a difference, connecting people with the support and resources they need."
+  "Connecting outreach teams, community organizations, and everyday Chicagoans to get essential resources to people who need them most."
 
 // Full mission, shown in the landing page "Mission Statement" section. Verbatim; do not edit
 // without sign-off. (The Day 1 "mission appears verbatim" check now applies to this file.)
