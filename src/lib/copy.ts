@@ -23,6 +23,23 @@ export const WHAT_IS_PARAGRAPHS = [
   "Privacy and dignity are central to The Bridge. The platform does not require identifying information about the individuals receiving assistance. Requests focus on what is needed and the general neighborhood, without exposing names, exact locations, or personal circumstances.",
 ] as const
 
+// AI assistant: every message the chat route returns to people. The panel's own strings
+// join these in Part 2, so the Spanish toggle can translate them all from one place.
+export const ASSISTANT_COPY = {
+  errors: {
+    tooLong: "That message is too long. Please keep it under 500 characters.",
+    empty: "Please type a question first.",
+    sessionLimit:
+      "You've reached the limit of 10 questions for this chat. Refresh the page to start a new one.",
+    rateLimited:
+      "You've sent a lot of questions in the last hour. Please wait a bit and try again.",
+    invalid: "Something went wrong with that message. Please try again.",
+  },
+  // Used when the AI service is unavailable, slow (15s), or declines to answer.
+  fallback:
+    "Sorry, I can't answer right now. The \"How it works\" section on the home page explains how The Bridge works, step by step. If you need help today with something The Bridge doesn't cover yet, you can call or text 211.",
+} as const
+
 // Full mission, shown in the landing page "Mission Statement" section. Verbatim; do not edit
 // without sign-off. (The Day 1 "mission appears verbatim" check now applies to this file.)
 export const MISSION =
