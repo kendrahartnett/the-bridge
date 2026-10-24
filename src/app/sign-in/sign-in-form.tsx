@@ -1,25 +1,20 @@
 "use client"
 
+import { CircleCheck, ClipboardPlus, HandHeart } from "lucide-react"
 import { useActionState, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { ROLE_CTAS } from "@/lib/copy"
 import { cn } from "@/lib/utils"
 
 import { signInAction } from "./actions"
 
+// Same wording and icons as the landing page buttons.
 const ROLES = [
-  {
-    value: "outreach",
-    title: "Post a Need",
-    body: "I meet people where they are and ask for food.",
-  },
-  {
-    value: "donor",
-    title: "Offer Support",
-    body: "I have food to give and can drop it off.",
-  },
+  { value: "outreach", ...ROLE_CTAS.outreach, Icon: ClipboardPlus },
+  { value: "donor", ...ROLE_CTAS.donor, Icon: HandHeart },
 ] as const
 
 function FieldError({ messages }: { messages?: string[] }) {
@@ -41,26 +36,39 @@ export function SignInForm({ initialRole }: { initialRole?: "outreach" | "donor"
 
       <fieldset className="flex flex-col gap-3">
         <legend className="mb-2 font-medium">How will you use The Bridge?</legend>
-        {ROLES.map((r) => (
+        {ROLES.map(({ value, label, help, Icon }) => (
+          // Styled like the landing buttons: glass with a blue border, and the selected
+          // option filled blue with a soft glow. The radio stays in the DOM (visually
+          // hidden) for keyboard and screen readers; a check mark shows the selection
+          // so it never relies on color alone.
           <label
-            key={r.value}
+            key={value}
             className={cn(
-              "flex min-h-tap cursor-pointer items-start gap-3 rounded-lg border border-border bg-card p-4",
-              "has-checked:border-primary has-checked:bg-secondary has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50"
+              "group flex min-h-tap cursor-pointer items-center gap-3 rounded-lg border border-primary bg-background/50 p-4 text-primary-text backdrop-blur-md transition-colors motion-reduce:transition-none",
+              "not-has-checked:hover:bg-primary/10",
+              "has-checked:bg-primary has-checked:text-primary-foreground has-checked:shadow-[0_10px_30px_-8px_color-mix(in_srgb,var(--primary)_60%,transparent)]",
+              "has-focus-visible:ring-[3px] has-focus-visible:ring-primary has-focus-visible:ring-offset-2 has-focus-visible:ring-offset-background"
             )}
           >
             <input
               type="radio"
               name="role"
-              value={r.value}
-              defaultChecked={selectedRole === r.value}
+              value={value}
+              defaultChecked={selectedRole === value}
               required
-              className="mt-1 size-5 accent-primary"
+              className="sr-only"
             />
-            <span>
-              <span className="block font-medium">{r.title}</span>
-              <span className="block text-sm text-muted-foreground">{r.body}</span>
+            <Icon aria-hidden="true" className="size-5 shrink-0" />
+            <span className="flex-1">
+              <span className="block text-base font-semibold">{label}</span>
+              <span className="block text-sm text-foreground group-has-checked:text-primary-foreground dark:text-muted-foreground dark:group-has-checked:text-primary-foreground">
+                {help}
+              </span>
             </span>
+            <CircleCheck
+              aria-hidden="true"
+              className="size-5 shrink-0 opacity-0 group-has-checked:opacity-100"
+            />
           </label>
         ))}
         <FieldError messages={errors.role} />

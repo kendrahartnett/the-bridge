@@ -4,7 +4,14 @@ export const HERO_BADGE = "Rooted in Chicago · Built for change" // shown upper
 export const HERO_HEADLINE = ["Bridging the Gap.", "Every Connection is a Step Forward."] as const
 
 export const HERO_LINE =
-  "Connecting outreach teams, community organizations, and everyday Chicagoans to get essential resources to people who need them most."
+  "The Bridge closes the gap between community needs and available resources by bringing together individuals, outreach teams, and organizations committed to helping others."
+
+// The two ways to use The Bridge. Shared by the landing page buttons and the sign-in
+// role options so the wording always matches.
+export const ROLE_CTAS = {
+  outreach: { label: "Post a Need", help: "Request support for someone you're working with." },
+  donor: { label: "Offer Support", help: "Respond with food, clothing, hygiene supplies, and more." },
+} as const
 
 // "What is The Bridge?" section. Verbatim; do not edit without sign-off.
 export const WHAT_IS_HEADING = "What is The Bridge?"

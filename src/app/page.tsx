@@ -11,6 +11,7 @@ import {
   HERO_HEADLINE,
   HERO_LINE,
   MISSION,
+  ROLE_CTAS,
   WHAT_IS_HEADING,
   WHAT_IS_PARAGRAPHS,
 } from "@/lib/copy"
@@ -30,8 +31,7 @@ const CTAS = [
   {
     id: "post",
     href: "/sign-in?role=outreach",
-    label: "Post a Need",
-    help: "Request support for someone you're working with.",
+    ...ROLE_CTAS.outreach,
     Icon: ClipboardPlus,
     className:
       "bg-primary text-primary-foreground shadow-[0_10px_30px_-8px_color-mix(in_srgb,var(--primary)_60%,transparent)] hover:bg-primary/90",
@@ -39,8 +39,7 @@ const CTAS = [
   {
     id: "respond",
     href: "/sign-in?role=donor",
-    label: "Offer Support",
-    help: "Respond with food, clothing, hygiene supplies, and more.",
+    ...ROLE_CTAS.donor,
     Icon: HandHeart,
     className:
       "border border-primary bg-background/50 text-primary-text backdrop-blur-md hover:bg-primary/10 hover:text-primary-text",
