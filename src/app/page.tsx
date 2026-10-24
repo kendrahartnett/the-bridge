@@ -107,11 +107,11 @@ export default function Home() {
             <ol className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
               {JOURNEY.map((step, i) => (
                 <li key={step.label}>
-                  {/* Grows 1.5x on hover (mouse/trackpad only; Tailwind's hover: skips touch screens).
+                  {/* Grows 1.1x on hover (mouse/trackpad only; Tailwind's hover: skips touch screens).
                       The hovered card sits on top and turns nearly opaque so overlapped
                       neighbors don't show through. Reduced motion: no animation. */}
                   <Card
-                    className={`relative h-full gap-3 p-4 ${GLASS} transition-transform duration-200 ease-out hover:z-10 hover:scale-150 hover:bg-background/95 motion-reduce:transition-none`}
+                    className={`relative h-full gap-3 p-4 ${GLASS} transition-transform duration-200 ease-out hover:z-10 hover:scale-110 hover:bg-background/95 motion-reduce:transition-none`}
                   >
                     <CardHeader className="gap-2 px-0">
                       <span
