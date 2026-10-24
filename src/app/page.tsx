@@ -1,3 +1,4 @@
+import { ClipboardPlus, HandHeart } from "lucide-react"
 import Link from "next/link"
 
 import { HeroGlows } from "@/components/hero-glows"
@@ -16,6 +17,29 @@ const JOURNEY = [
   { label: "Rebuild", description: "Work toward lasting stability." },
 ] as const
 
+// Homepage calls to action. Routes are unchanged: each still opens sign-in with the
+// matching role preselected.
+const CTAS = [
+  {
+    id: "post",
+    href: "/sign-in?role=outreach",
+    label: "Post a Need",
+    help: "Request support for someone you're working with.",
+    Icon: ClipboardPlus,
+    className:
+      "bg-primary text-primary-foreground shadow-[0_10px_30px_-8px_color-mix(in_srgb,var(--primary)_60%,transparent)] hover:bg-primary/90",
+  },
+  {
+    id: "respond",
+    href: "/sign-in?role=donor",
+    label: "Respond to a Need",
+    help: "Help your organization make a difference.",
+    Icon: HandHeart,
+    className:
+      "border border-primary bg-background/50 text-primary-text backdrop-blur-md hover:bg-primary/10 hover:text-primary-text",
+  },
+] as const
+
 // Glass card: translucent page background, blur, hairline border, soft shadow, 12px radius.
 const GLASS = "border-black/10 bg-background/50 shadow-sm backdrop-blur-md dark:border-white/10"
 
@@ -26,30 +50,36 @@ export default function Home() {
       <main className="flex-1">
         <section className="relative isolate overflow-hidden px-4 py-12 sm:py-16">
           <HeroGlows />
-          <BlurFade className="mx-auto w-full max-w-3xl">
+          <BlurFade className="mx-auto w-full max-w-5xl">
             <div className="flex flex-col items-center text-center">
-              {/* Metallic gold badge: gradient fill only, navy text (5.24:1 on the darkest stop). */}
-              <p className="inline-flex items-center rounded-full bg-(image:--gold-gradient) px-3 py-1 text-xs font-semibold tracking-widest text-gold-foreground uppercase shadow-sm">
+              {/* Metallic gold badge: gradient over a solid gold fallback; navy text (5.24:1 on the darkest stop). */}
+              <p className="inline-flex items-center rounded-full bg-gold bg-(image:--gold-gradient) px-3 py-1 text-xs font-semibold tracking-widest text-gold-foreground uppercase shadow-sm">
                 {HERO_BADGE}
               </p>
-              <h1 className="mt-5 max-w-3xl text-4xl leading-tight font-bold tracking-tight text-balance sm:text-6xl">
+              <h1 className="mt-5 max-w-5xl text-4xl leading-tight font-bold tracking-tight sm:text-5xl lg:text-6xl">
                 <span className="block text-foreground">{HERO_HEADLINE[0]}</span>
                 <span className="block text-primary-text">{HERO_HEADLINE[1]}</span>
               </h1>
               <p className="mt-5 max-w-xl text-base leading-relaxed text-pretty text-foreground sm:text-lg dark:text-muted-foreground">
                 {HERO_LINE}
               </p>
-              <div className="mt-8 flex w-full flex-col justify-center gap-3 sm:flex-row">
-                <Button asChild className="px-4 text-sm sm:min-w-48">
-                  <Link href="/sign-in?role=outreach">I&apos;m an outreach worker</Link>
-                </Button>
-                <Button
-                  asChild
-                  variant="outline"
-                  className="border-primary bg-background/60 px-4 text-sm text-primary-text backdrop-blur-sm hover:bg-primary/10 hover:text-primary-text sm:min-w-48"
-                >
-                  <Link href="/sign-in?role=donor">I want to donate food</Link>
-                </Button>
+              <div className="mt-8 flex w-full flex-col items-stretch justify-center gap-5 sm:flex-row sm:items-start">
+                {CTAS.map(({ id, href, label, help, Icon, className }) => (
+                  <div key={id} className="flex flex-col items-center gap-2 sm:w-64">
+                    <Button
+                      asChild
+                      className={`h-12 w-full rounded-lg px-6 text-base font-semibold transition-colors focus-visible:ring-[3px] focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${className}`}
+                    >
+                      <Link href={href} aria-describedby={`cta-${id}-help`}>
+                        <Icon aria-hidden="true" className="size-5" />
+                        {label}
+                      </Link>
+                    </Button>
+                    <p id={`cta-${id}-help`} className="text-center text-sm text-foreground dark:text-muted-foreground">
+                      {help}
+                    </p>
+                  </div>
+                ))}
               </div>
             </div>
           </BlurFade>

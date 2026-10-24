@@ -12,12 +12,12 @@ import { signInAction } from "./actions"
 const ROLES = [
   {
     value: "outreach",
-    title: "I'm an outreach worker",
+    title: "Post a Need",
     body: "I meet people where they are and ask for food.",
   },
   {
     value: "donor",
-    title: "I want to donate food",
+    title: "Respond to a Need",
     body: "I have food to give and can drop it off.",
   },
 ] as const
