@@ -190,3 +190,9 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Pages with the assistant chat button get extra room at the bottom, so the last buttons
+   and cards can always scroll clear of it. */
+body:has([data-assistant-launcher], [data-assistant-panel]) {
+  padding-bottom: 5.5rem;
+}

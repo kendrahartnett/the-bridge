@@ -23,8 +23,8 @@ export const WHAT_IS_PARAGRAPHS = [
   "Privacy and dignity are central to The Bridge. The platform does not require identifying information about the individuals receiving assistance. Requests focus on what is needed and the general neighborhood, without exposing names, exact locations, or personal circumstances.",
 ] as const
 
-// AI assistant: every message the chat route returns to people. The panel's own strings
-// join these in Part 2, so the Spanish toggle can translate them all from one place.
+// AI assistant: every string the chat route and chat panel show people, in one place so the
+// Spanish toggle can translate them all.
 export const ASSISTANT_COPY = {
   errors: {
     tooLong: "That message is too long. Please keep it under 500 characters.",
@@ -34,6 +34,28 @@ export const ASSISTANT_COPY = {
     rateLimited:
       "You've sent a lot of questions in the last hour. Please wait a bit and try again.",
     invalid: "Something went wrong with that message. Please try again.",
+  },
+  // The chat panel. {n} placeholders are filled in by the panel.
+  panel: {
+    openLabel: "Ask The Bridge assistant",
+    closeLabel: "Close the assistant",
+    title: "The Bridge assistant",
+    notice: "You're chatting with an AI assistant. Don't share personal details.",
+    crisis: "In crisis? Call or text 988.",
+    starters: [
+      "What is The Bridge?",
+      "How do I post a need?",
+      "How do organizations offer support?",
+    ],
+    inputLabel: "Your question",
+    placeholder: "Ask a question about The Bridge",
+    send: "Send",
+    thinking: "Thinking…",
+    you: "You",
+    assistant: "Assistant",
+    charactersLeft: "{n} characters left",
+    questionsLeft: "{n} of 10 questions left",
+    networkError: "We couldn't reach the assistant. Check your connection and try again.",
   },
   // Used when the AI service is unavailable, slow (15s), or declines to answer.
   fallback:
