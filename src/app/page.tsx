@@ -12,7 +12,6 @@ import {
   HERO_LINE,
   MISSION,
   WHAT_IS_HEADING,
-  WHAT_IS_MISSION_LINE,
   WHAT_IS_PARAGRAPHS,
 } from "@/lib/copy"
 
@@ -100,7 +99,7 @@ export default function Home() {
           </BlurFade>
         </section>
 
-        <section aria-labelledby="journey">
+        <section aria-labelledby="journey" className="overflow-x-clip">
           <BlurFade inView className="mx-auto max-w-5xl px-4 py-10">
             <h2 id="journey" className="text-xl font-semibold tracking-tight sm:text-2xl">
               How it works
@@ -108,7 +107,12 @@ export default function Home() {
             <ol className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
               {JOURNEY.map((step, i) => (
                 <li key={step.label}>
-                  <Card className={`h-full gap-3 p-4 ${GLASS}`}>
+                  {/* Grows 1.5x on hover (mouse/trackpad only; Tailwind's hover: skips touch screens).
+                      The hovered card sits on top and turns nearly opaque so overlapped
+                      neighbors don't show through. Reduced motion: no animation. */}
+                  <Card
+                    className={`relative h-full gap-3 p-4 ${GLASS} transition-transform duration-200 ease-out hover:z-10 hover:scale-150 hover:bg-background/95 motion-reduce:transition-none`}
+                  >
                     <CardHeader className="gap-2 px-0">
                       <span
                         aria-hidden="true"
@@ -138,10 +142,6 @@ export default function Home() {
                 {WHAT_IS_PARAGRAPHS.map((text) => (
                   <p key={text.slice(0, 24)}>{text}</p>
                 ))}
-                <p className="font-semibold">
-                  <span className="text-primary-text">{WHAT_IS_MISSION_LINE.lead}</span>{" "}
-                  <span className="text-foreground">{WHAT_IS_MISSION_LINE.rest}</span>
-                </p>
               </CardContent>
             </Card>
           </BlurFade>

@@ -16,9 +16,6 @@ export const WHAT_IS_PARAGRAPHS = [
   "Privacy and dignity are central to The Bridge. The platform does not require identifying information about the individuals receiving assistance. Requests focus on what is needed and the general neighborhood, without exposing names, exact locations, or personal circumstances.",
 ] as const
 
-// Fifth line of the section, shown emphasized: the lead in blue, the rest in body color.
-export const WHAT_IS_MISSION_LINE = { lead: "Our mission:", rest: "Bridge the gap. End homelessness." } as const
-
 // Full mission, shown in the landing page "Mission Statement" section. Verbatim; do not edit
 // without sign-off. (The Day 1 "mission appears verbatim" check now applies to this file.)
 export const MISSION =
