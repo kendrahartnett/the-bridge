@@ -6,13 +6,21 @@ import { SiteHeader } from "@/components/site-header"
 import { BlurFade } from "@/components/ui/blur-fade"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { HERO_BADGE, HERO_HEADLINE, HERO_LINE, MISSION } from "@/lib/copy"
+import {
+  HERO_BADGE,
+  HERO_HEADLINE,
+  HERO_LINE,
+  MISSION,
+  WHAT_IS_HEADING,
+  WHAT_IS_MISSION_LINE,
+  WHAT_IS_PARAGRAPHS,
+} from "@/lib/copy"
 
 // Exact wording; do not edit without sign-off.
 const JOURNEY = [
   { label: "Request", description: "An outreach worker describes a need." },
   { label: "Connect", description: "A donor claims it." },
-  { label: "Deliver", description: "Food reaches the people who need it." },
+  { label: "Deliver", description: "Resources reach the people who need them." },
   { label: "Support", description: "The outreach worker and the person connect to care." },
   { label: "Rebuild", description: "Work toward lasting stability." },
 ] as const
@@ -32,33 +40,40 @@ const CTAS = [
   {
     id: "respond",
     href: "/sign-in?role=donor",
-    label: "Respond to a Need",
-    help: "Help your organization make a difference.",
+    label: "Offer Support",
+    help: "Respond with food, clothing, hygiene supplies, and more.",
     Icon: HandHeart,
     className:
       "border border-primary bg-background/50 text-primary-text backdrop-blur-md hover:bg-primary/10 hover:text-primary-text",
   },
 ] as const
 
-// Glass card: translucent page background, blur, hairline border, soft shadow, 12px radius.
-const GLASS = "border-black/10 bg-background/50 shadow-sm backdrop-blur-md dark:border-white/10"
+// Glass card: translucent page background, blur, hairline border, 12px radius, the soft card
+// shadow, plus a light-blue outer glow (--primary-text at 10% light / 20% dark).
+const GLASS =
+  "border-black/10 bg-background/50 backdrop-blur-md dark:border-white/10 " +
+  "shadow-[0_0_24px_color-mix(in_srgb,var(--primary-text)_10%,transparent),var(--soft-shadow-sm)] " +
+  "dark:shadow-[0_0_24px_color-mix(in_srgb,var(--primary-text)_20%,transparent),var(--soft-shadow-sm)]"
 
 export default function Home() {
   return (
     <>
       <SiteHeader />
       <main className="flex-1">
-        <section className="relative isolate overflow-hidden px-4 py-12 sm:py-16">
+        <section className="relative isolate overflow-hidden px-4 pt-6 pb-12 sm:pt-8 sm:pb-16">
           <HeroGlows />
           <BlurFade className="mx-auto w-full max-w-5xl">
             <div className="flex flex-col items-center text-center">
               {/* Metallic gold badge: gradient over a solid gold fallback; navy text (5.24:1 on the darkest stop). */}
-              <p className="inline-flex items-center rounded-full bg-gold bg-(image:--gold-gradient) px-3 py-1 text-xs font-semibold tracking-widest text-gold-foreground uppercase shadow-sm">
+              <p className="inline-flex items-center rounded-full bg-gold bg-(image:--gold-gradient) px-3 py-1 text-xs font-semibold tracking-wide text-gold-foreground uppercase shadow-sm sm:tracking-widest">
                 {HERO_BADGE}
               </p>
               <h1 className="mt-5 max-w-5xl text-4xl leading-tight font-bold tracking-tight sm:text-5xl lg:text-6xl">
                 <span className="block text-foreground">{HERO_HEADLINE[0]}</span>
-                <span className="block text-primary-text">{HERO_HEADLINE[1]}</span>
+                {/* One size step below line 1 at every breakpoint. */}
+                <span className="block text-3xl text-primary-text sm:text-4xl lg:text-5xl">
+                  {HERO_HEADLINE[1]}
+                </span>
               </h1>
               <p className="mt-5 max-w-xl text-base leading-relaxed text-pretty text-foreground sm:text-lg dark:text-muted-foreground">
                 {HERO_LINE}
@@ -110,32 +125,22 @@ export default function Home() {
                 </li>
               ))}
             </ol>
-            <p className="mt-6 text-center text-base font-medium">
-              Every connection is a step forward.
-            </p>
           </BlurFade>
         </section>
 
         <section aria-labelledby="what-is" className="border-t border-border">
           <BlurFade inView className="mx-auto max-w-2xl px-4 py-10">
             <h2 id="what-is" className="text-xl font-semibold tracking-tight sm:text-2xl">
-              What is Bridge?
+              {WHAT_IS_HEADING}
             </h2>
             <Card className={`mt-4 ${GLASS}`}>
-              <CardContent className="flex flex-col gap-3 text-base leading-relaxed">
-                <p>
-                  Bridge connects outreach workers with people who have food to give. Outreach
-                  workers post what they need, how many people, and which neighborhood. Donors
-                  see those requests and bring food.
-                </p>
-                <p>
-                  A meal is often the first step. When people get food from the same friendly
-                  faces again and again, trust grows. That trust makes it easier to talk about
-                  other help, like a doctor visit, an ID, or a place to live.
-                </p>
-                <p>
-                  We protect the people we serve. Bridge never asks for their names, addresses,
-                  or where they stay. Requests only show the neighborhood.
+              <CardContent className="flex max-w-2xl flex-col gap-4 text-base leading-relaxed">
+                {WHAT_IS_PARAGRAPHS.map((text) => (
+                  <p key={text.slice(0, 24)}>{text}</p>
+                ))}
+                <p className="font-semibold">
+                  <span className="text-primary-text">{WHAT_IS_MISSION_LINE.lead}</span>{" "}
+                  <span className="text-foreground">{WHAT_IS_MISSION_LINE.rest}</span>
                 </p>
               </CardContent>
             </Card>

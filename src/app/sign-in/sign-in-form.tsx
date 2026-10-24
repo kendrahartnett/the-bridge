@@ -17,7 +17,7 @@ const ROLES = [
   },
   {
     value: "donor",
-    title: "Respond to a Need",
+    title: "Offer Support",
     body: "I have food to give and can drop it off.",
   },
 ] as const
