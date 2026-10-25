@@ -10,7 +10,11 @@ import {
   RATE_LIMIT_PER_HOUR,
 } from "@/lib/assistant-config"
 import { ASSISTANT_SYSTEM_PROMPT } from "@/lib/assistant-prompt"
-import { stripSpanishLabels, trimToLastSentence } from "@/lib/assistant-reply"
+import {
+  collapseNestedParentheses,
+  stripSpanishLabels,
+  trimToLastSentence,
+} from "@/lib/assistant-reply"
 import { ASSISTANT_COPY } from "@/lib/copy"
 import { clientIp, rateLimit } from "@/lib/rate-limit"
 
@@ -104,7 +108,7 @@ export async function POST(request: Request) {
       .trim()
     // Never show a reply that stops mid-sentence.
     if (response.stop_reason === "max_tokens") text = trimToLastSentence(text)
-    text = stripSpanishLabels(text)
+    text = collapseNestedParentheses(stripSpanishLabels(text))
     return text ? reply(text, "assistant") : reply(ASSISTANT_COPY.fallback, "fallback")
   } catch (err) {
     // Log only the kind of failure: never message text, never the key.

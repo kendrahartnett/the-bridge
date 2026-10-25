@@ -31,6 +31,51 @@ const LABEL_PAIRS = SPANISH_GLOSSARY.flatMap(([en, es]) => [
   [new RegExp(`(["“]?)${escape(en)}(["”]?) \\(${escape(es)}\\)`, "gi"), `$1${en}$2`],
 ] as const)
 
+/**
+ * Spanish replies sometimes nest the glossary's parentheses. Fixes the two shapes seen:
+ *   "el barrio (Barrio (Neighborhood))"  → "el barrio (Neighborhood)"
+ *   "el tipo de apoyo (Comida (Food), Ropa (Clothing) u Otro (Other))"
+ *     → "el tipo de apoyo: Comida (Food), Ropa (Clothing) u Otro (Other)"
+ * English replies, and parentheses that aren't nested, are left alone.
+ */
+export function collapseNestedParentheses(text: string) {
+  if (isEnglish(text)) return text
+  let out = text
+  for (let pass = 0; pass < 20; pass++) {
+    const group = firstNestedGroup(out)
+    if (!group) break
+    const { start, end } = group
+    const before = out.slice(0, start)
+    const inner = out.slice(start + 1, end)
+    const after = out.slice(end + 1)
+    const single = inner.match(/^\s*([^()]+?)\s*\(([^()]+)\)\s*$/)
+    out = single
+      ? `${before}(${single[2].trim()})${after}` // keep only the English label
+      : `${before.trimEnd()}: ${inner.trim()}${after}` // a list: introduce it with a colon
+  }
+  return out
+}
+
+/** The first outermost (…) that contains another (…), or null. */
+function firstNestedGroup(text: string) {
+  let depth = 0
+  let start = -1
+  let nested = false
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === "(") {
+      if (depth === 0) {
+        start = i
+        nested = false
+      } else nested = true
+      depth++
+    } else if (text[i] === ")" && depth > 0) {
+      depth--
+      if (depth === 0 && nested) return { start, end: i }
+    }
+  }
+  return null
+}
+
 // Multi-word Spanish terms on their own ("trabajador de alcance comunitario"). Single words
 // are left alone because some are also English words ("Panel").
 const OUTREACH_A = /\ba trabajador de alcance comunitario/gi

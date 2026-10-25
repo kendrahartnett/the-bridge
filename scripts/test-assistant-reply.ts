@@ -5,7 +5,12 @@
 // No network, no database, no API key. The English examples are real replies from the live
 // tests (docs/assistant-tests.md) that carried Spanish labels into English.
 
-import { isEnglish, stripSpanishLabels, trimToLastSentence } from "../src/lib/assistant-reply.ts"
+import {
+  collapseNestedParentheses,
+  isEnglish,
+  stripSpanishLabels,
+  trimToLastSentence,
+} from "../src/lib/assistant-reply.ts"
 
 let failed = 0
 function check(name: string, actual: unknown, expected: unknown) {
@@ -54,6 +59,25 @@ const spanish =
   "Para publicar una necesidad (Post a Need) en The Bridge, inicia sesión y elige Publicar una necesidad (Post a Need). La solicitud aparecerá como Abierta (Open) en tu panel."
 check("Spanish reply is detected as Spanish", isEnglish(spanish), false)
 check("Spanish reply keeps its English labels in parentheses", stripSpanishLabels(spanish), spanish)
+
+// Nested parentheses in Spanish replies. The first three inputs are real replies from the
+// live tests.
+check("Spanish: label repeated inside its own parentheses",
+  collapseNestedParentheses("Completa el formulario con el tipo de apoyo, cuántas personas, el barrio (Barrio (Neighborhood)), notas opcionales y el período de tiempo."),
+  "Completa el formulario con el tipo de apoyo, cuántas personas, el barrio (Neighborhood), notas opcionales y el período de tiempo.")
+check("Spanish: a list of labels inside parentheses becomes a list after a colon",
+  collapseNestedParentheses("Por ahora, se enfoca en recursos esenciales como comida, ropa y artículos de higiene (Comida (Food), Ropa (Clothing), Artículos de higiene (Hygiene supplies) u Otro (Other))."),
+  "Por ahora, se enfoca en recursos esenciales como comida, ropa y artículos de higiene: Comida (Food), Ropa (Clothing), Artículos de higiene (Hygiene supplies) u Otro (Other).")
+check("Spanish: nested list in the middle of a sentence",
+  collapseNestedParentheses("3. Llena el formulario: el tipo de apoyo (Comida (Food), Ropa (Clothing), Artículos de higiene (Hygiene supplies) u Otro (Other)), qué se necesita, cuántas personas, el barrio y el período de tiempo."),
+  "3. Llena el formulario: el tipo de apoyo: Comida (Food), Ropa (Clothing), Artículos de higiene (Hygiene supplies) u Otro (Other), qué se necesita, cuántas personas, el barrio y el período de tiempo.")
+check("Spanish: two nested groups in one reply are both fixed",
+  collapseNestedParentheses("Elige el barrio (Barrio (Neighborhood)) y el tipo de apoyo (Comida (Food) u Otro (Other)) en el formulario."),
+  "Elige el barrio (Neighborhood) y el tipo de apoyo: Comida (Food) u Otro (Other) en el formulario.")
+const flat = "Elige Publicar una necesidad (Post a Need). Aparecerá como Abierta (Open) en tu panel (Dashboard)."
+check("Spanish: parentheses that aren't nested are unchanged", collapseNestedParentheses(flat), flat)
+const english = "Choose the type of support (Food (or Other)) on the form, and the neighborhood."
+check("English replies are never changed by the Spanish fix", collapseNestedParentheses(english), english)
 
 console.log(`\n${failed === 0 ? "All checks passed" : `${failed} failed`}`)
 process.exit(failed === 0 ? 0 : 1)
