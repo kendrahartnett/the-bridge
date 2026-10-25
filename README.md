@@ -27,7 +27,7 @@ The Bridge uses two separate Neon projects:
 | | Neon project | Used by | Data |
 |---|---|---|---|
 | Development | `the-bridge-dev` | `.env.local` (local app, seed, tests) | Fictional test accounts and requests only |
-| Production | `the-bridge` (branch `production`) | Vercel, and `.env.production.local` for migrations | Real accounts and requests |
+| Production | `the-bridge` (branch `production`) | Vercel, and `.env.prod.local` for migrations | Real accounts and requests |
 
 Each project has its own Neon Auth, so logins and sessions never cross between them.
 
@@ -35,9 +35,11 @@ Each project has its own Neon Auth, so logins and sessions never cross between t
 - `npm run db:seed`: reset development's test accounts and requests, including `test.admin@example.com` (admin). Runs only against `the-bridge-dev`.
 - `npm run test:claims`: request and verification rules. Runs only against `the-bridge-dev`.
 - `npm run admin:grant -- <email>`: make an existing account an admin, on whichever database `.env.local` points to.
-- `npm run db:migrate:prod -- --confirm`: apply migrations to production, after testing them on development. Reads `.env.production.local`, which is never committed.
+- `npm run db:migrate:prod -- --confirm`: apply migrations to production, after testing them on development. Reads `.env.prod.local`, which is never committed.
 
 The seed and test scripts check the database before doing anything and exit if it isn't `the-bridge-dev` (see `src/db/dev-guard.ts`).
+
+Keep production's values in `.env.prod.local`, never `.env.production.local`: Next.js loads `.env.production.local` automatically whenever the app runs in production mode (`next build`, `next start`), and it overrides `.env.local`, so a local production build would quietly connect to the real database.
 
 ## Learn More
 

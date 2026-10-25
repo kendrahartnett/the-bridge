@@ -3,7 +3,7 @@
 //   npm run db:migrate:prod -- --confirm
 //
 // Everyday work (npm run db:migrate, db:seed, test:claims) uses .env.local, which points at
-// the-bridge-dev. Production's connection string lives only in .env.production.local (never
+// the-bridge-dev. Production's connection string lives only in .env.prod.local (never
 // committed) and in Vercel; this script is the one place that reads it, and only with
 // --confirm. Run it after the same migration has been applied and tested on dev.
 
@@ -16,7 +16,7 @@ if (!process.argv.includes("--confirm")) {
   process.exit(1)
 }
 
-const file = ".env.production.local"
+const file = ".env.prod.local"
 if (!fs.existsSync(file)) {
   console.error(`${file} not found. It holds production's DATABASE_URL and is never committed.`)
   process.exit(1)
