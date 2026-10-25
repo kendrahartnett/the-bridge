@@ -22,6 +22,7 @@ import {
   createRequest,
   listMyPosts,
   listMySupported,
+  listOpen,
   reviewOrganization,
   type Actor,
 } from "../src/lib/request-rules.ts"
@@ -248,6 +249,20 @@ async function main() {
     `claim still listed: ${!!after}; email ${after?.contact?.email === null ? "hidden (null from the query)" : "STILL SHOWN"}`)
   const posterView = (await listMyPosts(db, out1.id)).find((r) => r.id === r8)
   record("Poster still sees who supports the need after a revocation", posterView?.contact?.name === "Test — Organization C (pending)", `"${posterView?.contact?.name}"`)
+  // 8f. A revoked organization's open posts leave the Needs Board and can't be claimed; it
+  // still sees them under its own posts. Approving it again brings them back.
+  if (approvedPost.ok) {
+    const onBoard = async () => (await listOpen(db)).some((r) => r.id === approvedPost.id)
+    const hidden = !(await onBoard())
+    const claimHidden = await claimRequest(db, orgA, approvedPost.id)
+    const sHidden = await status(approvedPost.id)
+    const ownList = (await listMyPosts(db, orgC.id)).some((r) => r.id === approvedPost.id)
+    record("Revoked organization's open post is hidden from the Needs Board", hidden)
+    record("Nobody can claim a revoked organization's open post", !claimHidden.ok && sHidden.status === "open" && sHidden.claimedBy === null, `"${err(claimHidden)}"; status stays ${sHidden.status}`)
+    record("Revoked organization still sees that post under Your posts", ownList)
+    await reviewOrganization(db, out2, { organizationId: orgC.id, decision: "approved" })
+    record("Approving it again puts the post back on the Needs Board", await onBoard())
+  }
   await setAdmin(out2.id, false)
   await resetPendingOrg(orgC.id)
 

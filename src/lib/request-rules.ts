@@ -71,6 +71,11 @@ function orgBlockedError(s: Standing | null) {
 
 // SQL check, evaluated inside the same statement as the change, that the actor is an
 // approved organization. Closes the gap between reading their status and acting on it.
+// The need's poster can still post: an outreach account, or an organization that is
+// approved right now. Open needs from a revoked or rejected organization are hidden from the
+// Needs Board and can't be claimed; they come back if the organization is approved again.
+const posterCanStillPost = sql`exists (select 1 from ${users} as poster_check where poster_check.id = ${foodRequests.createdBy} and (poster_check.role = 'outreach' or poster_check.verification_status = 'approved'))`
+
 const actorIsApprovedOrg = (actorId: string) =>
   sql`exists (select 1 from ${users} where ${users.id} = ${actorId} and ${users.role} = 'donor' and ${users.verificationStatus} = 'approved')`
 
@@ -94,7 +99,8 @@ export async function claimRequest(db: Db, actor: Actor, id: unknown): Promise<R
         eq(foodRequests.id, parsed.data),
         eq(foodRequests.status, "open"),
         ne(foodRequests.createdBy, actor.id),
-        actorIsApprovedOrg(actor.id)
+        actorIsApprovedOrg(actor.id),
+        posterCanStillPost
       )
     )
     .returning({ id: foodRequests.id })
@@ -117,7 +123,9 @@ export async function claimRequest(db: Db, actor: Actor, id: unknown): Promise<R
           ? "Someone else just offered support for this request."
           : status === "cancelled"
             ? "This request was cancelled."
-            : "We couldn't find that request.",
+            : status === "open"
+              ? "This request isn't available right now."
+              : "We couldn't find that request.",
     }
   }
   return { ok: true, message: "You offered support for this request. Thank you!" }
@@ -289,12 +297,15 @@ export async function listMySupported(db: Db, viewerId: string): Promise<Request
   }))
 }
 
-/** Open needs (the Needs Board). Request columns only: the poster is never joined. */
+/**
+ * Open needs (the Needs Board). Request columns only: the poster is never joined, only
+ * checked, so needs from a revoked or rejected organization are left out.
+ */
 export async function listOpen(db: Db): Promise<FoodRequest[]> {
   return db
     .select()
     .from(foodRequests)
-    .where(eq(foodRequests.status, "open"))
+    .where(and(eq(foodRequests.status, "open"), posterCanStillPost))
     .orderBy(asc(foodRequests.windowStart))
 }
 
