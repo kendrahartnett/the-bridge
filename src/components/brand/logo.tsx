@@ -15,13 +15,14 @@ const WIDTH = "w-[116px] min-[360px]:w-[128px] sm:w-[152px]"
  * The Bridge logo. Decorative: the link around it carries the accessible name, so the
  * images have empty alt text. 116px wide below 360px, 128px on other phones, 152px from
  * 640px up: the smallest sizes at which all the stripes stay separate on 2x and 3x screens.
+ * A larger logo (the sign-in page) passes its widths in className and matching `sizes`.
  */
-export function Logo({ className }: { className?: string }) {
+export function Logo({ className, sizes = "(min-width: 640px) 152px, 128px" }: { className?: string; sizes?: string }) {
   const image = cn("block h-auto", WIDTH, className)
   return (
     <>
-      <Image src={logoLight} alt="" sizes="(min-width: 640px) 152px, 128px" loading="eager" className={cn(image, "dark:hidden")} />
-      <Image src={logoDark} alt="" sizes="(min-width: 640px) 152px, 128px" loading="eager" className={cn(image, "hidden dark:block")} />
+      <Image src={logoLight} alt="" sizes={sizes} loading="eager" className={cn(image, "dark:hidden")} />
+      <Image src={logoDark} alt="" sizes={sizes} loading="eager" className={cn(image, "hidden dark:block")} />
     </>
   )
 }

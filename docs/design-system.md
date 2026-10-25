@@ -271,7 +271,7 @@ All sizes are fluid between 320 px and 1280 px.
 | `shadow-sm` | existing soft navy shadow (cards at rest) |
 | `shadow-md` | existing (menus, raised cards) |
 | `shadow-lg` **new** | `0 24px 48px -16px` navy 22% (dialogs, chat panel) |
-| `glass` **new utility** | `bg-background/85 backdrop-blur-xl border border-border/60 shadow-lg`. **Only** for header, chat panel, dialogs, menus |
+| `glass` **new utility** | `bg-background/85 backdrop-blur-xl border border-border/60 shadow-lg`. **Only** for header, chat panel, dialogs, menus. A menu inside the glass header (the phone menu) uses solid `--surface-raised`: a nested blur can't reach the page behind the header, so a translucent panel shows page text through it |
 | `glow-primary` **new utility** | the existing CTA glow, defined once; primary CTA hover only |
 | Card | solid `--surface`, 1 px `--border`, `shadow-sm`; interactive cards lift to `--surface-raised` + `shadow-md` |
 
@@ -475,7 +475,7 @@ Database schema and migrations, API routes, server actions, auth behavior, roles
 
 Each phase is pushed to `main` only after its checks pass.
 
-**Status:** Phase 1 done; Phase 2 built and awaiting review (logo, hero image and headline font changed during review: see 3.1, 7.2 and 7.4).
+**Status:** Phases 1–3 done (Phase 2's logo, hero image and headline font changed during review: see 3.1, 7.2 and 7.4). Phase 3: header 64 px from 640 px with a blue bar under the current link; solid phone menu; sign-in on the deeper background with the logo above one card, firmer tabs, and selectable account-type cards.
 
 Phase 1: Measured in Phase 1: the proposed `--subtle-foreground` was dropped (light `#566b7a` is only 4.34:1 on the muted fill), so metadata uses `--muted-foreground`; `--border-strong` was darkened from `#c9c0ab` / `#34506a` to `#8a8170` / `#557290` to reach 3:1 on the surfaces.
 

@@ -31,6 +31,7 @@ npm run e2e:responsive
 | `e2e:panel` | Chat panel layout, focus, keyboard, contrast, limits |
 | `e2e:notices` | Real-pixel text contrast of the account-status banners and every Notice tone, on the page and in a card |
 | `e2e:homepage` | Hero reading order on phones, layout shift, photo format, caption and alt text, logo sizes, reduced motion |
+| `e2e:signin` | Sign-in page structure and text contrast, tabs and account-type cards, form error, header active bar and phone menu |
 
 Options (after `--`, e.g. `npm run e2e:responsive -- --themes=dark`):
 

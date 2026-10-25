@@ -1,6 +1,6 @@
 # Test results: request and response rules
 
-Run: 10/25/2026, 11:51:45 AM (Chicago time) · tag `[claim-test 20261025165138]`
+Run: 10/25/2026, 5:29:51 PM (Chicago time) · tag `[claim-test 20261025222942]`
 
 Command: `npm run test:claims` (scripts/test-claim-rules.ts), against the dev database.
 The script calls the same rule functions the server actions call (src/lib/request-rules.ts)
@@ -60,12 +60,12 @@ Two organizations offer support on the same open request at the same moment (`Pr
 | Run | Winner | Other organization got | Result |
 |---|---|---|---|
 | 1 | Test — Organization A | Someone else just offered support for this request. | PASS |
-| 2 | Test — Organization A | Someone else just offered support for this request. | PASS |
+| 2 | Test — Organization B | Someone else just offered support for this request. | PASS |
 | 3 | Test — Organization A | Someone else just offered support for this request. | PASS |
 | 4 | Test — Organization A | Someone else just offered support for this request. | PASS |
 | 5 | Test — Organization A | Someone else just offered support for this request. | PASS |
-| 6 | Test — Organization B | Someone else just offered support for this request. | PASS |
-| 7 | Test — Organization B | Someone else just offered support for this request. | PASS |
+| 6 | Test — Organization A | Someone else just offered support for this request. | PASS |
+| 7 | Test — Organization A | Someone else just offered support for this request. | PASS |
 | 8 | Test — Organization A | Someone else just offered support for this request. | PASS |
-| 9 | Test — Organization B | Someone else just offered support for this request. | PASS |
+| 9 | Test — Organization A | Someone else just offered support for this request. | PASS |
 | 10 | Test — Organization A | Someone else just offered support for this request. | PASS |

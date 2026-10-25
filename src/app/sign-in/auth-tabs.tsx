@@ -42,8 +42,8 @@ export function AuthTabs({
   }
 
   return (
-    <div className="mt-8 flex flex-col gap-6">
-      <div role="tablist" aria-label={AUTH_COPY.intro} className="grid grid-cols-2 border-b border-border">
+    <div className="mt-6 flex flex-col gap-6">
+      <div role="tablist" aria-label={AUTH_COPY.intro} className="grid grid-cols-2 border-b border-border-strong">
         {TABS.map(({ value, label }, i) => {
           const selected = value === tab
           return (
@@ -61,10 +61,10 @@ export function AuthTabs({
               onClick={() => setTab(value)}
               onKeyDown={(e) => onKeyDown(e, i)}
               className={cn(
-                "-mb-px min-h-tap border-b-2 px-3 text-base font-semibold outline-none focus-visible:ring-[3px] focus-visible:ring-ring",
+                "-mb-px min-h-tap rounded-t-md border-b-[3px] px-3 text-base font-semibold transition-colors duration-(--duration-base) outline-none focus-visible:ring-[3px] focus-visible:ring-ring motion-reduce:transition-none",
                 selected
                   ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
+                  : "border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground"
               )}
             >
               {label}

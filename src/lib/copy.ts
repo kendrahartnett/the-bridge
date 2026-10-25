@@ -95,6 +95,7 @@ export const AUTH_ERRORS = {
 
 // Sign-in and create-account forms.
 export const AUTH_COPY = {
+  backHome: "← Back to home",
   heading: "Welcome to The Bridge",
   intro: "Sign in or create an account. It takes about a minute.",
   tabs: { signIn: "Sign in", create: "Create account" },

@@ -57,7 +57,7 @@ function AccountTypeSwitch({ value, onChange }: { value: AccountType; onChange: 
       <div
         role="radiogroup"
         aria-labelledby="account-type-label"
-        className="grid grid-cols-1 gap-1 rounded-xl border border-border bg-muted/50 p-1 min-[400px]:grid-cols-2"
+        className="grid grid-cols-1 gap-2 min-[400px]:grid-cols-2"
       >
         {TYPES.map(({ value: v, label, help, Icon }, i) => {
           const checked = v === value
@@ -74,16 +74,18 @@ function AccountTypeSwitch({ value, onChange }: { value: AccountType; onChange: 
               onClick={() => onChange(v)}
               onKeyDown={(e) => onKeyDown(e, i)}
               className={cn(
-                "flex min-h-tap items-start gap-2 rounded-lg px-3 py-2 text-left transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring motion-reduce:transition-none",
+                // Selectable cards: the chosen one gets a blue outline and tint, the other a
+                // visible border (3:1) that firms up on hover.
+                "flex min-h-tap items-start gap-2 rounded-xl border px-3 py-3 text-left text-foreground transition-colors duration-(--duration-base) outline-none focus-visible:ring-[3px] focus-visible:ring-ring motion-reduce:transition-none",
                 checked
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-foreground hover:bg-background/70"
+                  ? "border-primary bg-primary/10 ring-1 ring-primary"
+                  : "border-border-strong bg-card hover:border-primary/60 hover:bg-muted/40"
               )}
             >
-              <Icon aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
+              <Icon aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-primary-text" />
               <span>
                 <span className="block font-semibold">{label}</span>
-                <span className={cn("block text-sm", checked ? "text-primary-foreground" : "text-muted-foreground")}>
+                <span className="block text-sm text-muted-foreground">
                   {help}
                 </span>
               </span>

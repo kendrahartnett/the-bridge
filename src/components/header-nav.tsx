@@ -11,7 +11,9 @@ import { NAV_COPY } from "@/lib/copy"
 /**
  * Signed-in navigation: Dashboard for everyone, plus Admin for admins. From 640px up the
  * links sit in the header; on phones they're behind a menu button, so the header still fits
- * on one row at 320px. The current page's link is marked with aria-current="page".
+ * on one row at 320px. The current page's link is marked with aria-current="page" and shown
+ * with a blue bar (the same indicator as the sign-in and admin tabs); the others are muted
+ * until hovered.
  * Whether Admin shows is decided on the server; /admin checks again on every request.
  */
 export function HeaderNav({ isAdmin }: { isAdmin: boolean }) {
@@ -31,7 +33,7 @@ export function HeaderNav({ isAdmin }: { isAdmin: boolean }) {
               <Link
                 href={href}
                 aria-current={isCurrent(href) ? "page" : undefined}
-                className="aria-[current=page]:bg-muted aria-[current=page]:text-foreground aria-[current=page]:underline aria-[current=page]:decoration-primary aria-[current=page]:decoration-2 aria-[current=page]:underline-offset-8"
+                className="relative text-muted-foreground hover:text-foreground after:absolute after:inset-x-3 after:bottom-1 after:h-0.5 after:rounded-full after:bg-primary after:opacity-0 after:transition-opacity after:duration-(--duration-base) aria-[current=page]:text-foreground aria-[current=page]:after:opacity-100 motion-reduce:after:transition-none"
               >
                 {label}
               </Link>
@@ -79,7 +81,9 @@ function PhoneMenu({
 
   return (
     // The panel is positioned against the header row (not this button), so it lines up with
-    // the page's right gutter and never runs off the left edge on narrow phones.
+    // the page's right gutter and never runs off the left edge on narrow phones. It's a solid
+    // raised surface, not glass: inside the glass header a second blur can't reach the page
+    // behind it, so a translucent panel would let page text show through.
     <div className="sm:hidden">
       <Button
         ref={buttonRef}
@@ -97,7 +101,7 @@ function PhoneMenu({
         ref={panelRef}
         id={panelId}
         hidden={!open}
-        className="absolute right-4 top-full z-50 mt-2 w-48 max-w-[calc(100vw-2rem)] rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-md"
+        className="absolute right-4 top-full z-50 mt-2 w-52 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-surface-raised p-1.5 text-foreground shadow-lg animate-in fade-in slide-in-from-top-1 duration-(--duration-base) motion-reduce:animate-none"
       >
         {links.map(({ href, label }) => (
           <li key={href}>
@@ -105,7 +109,7 @@ function PhoneMenu({
               href={href}
               aria-current={isCurrent(href) ? "page" : undefined}
               onClick={() => setOpen(false)}
-              className="flex min-h-tap items-center rounded-md px-3 font-medium outline-none hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring aria-[current=page]:bg-muted aria-[current=page]:underline aria-[current=page]:decoration-primary aria-[current=page]:decoration-2 aria-[current=page]:underline-offset-4"
+              className="relative flex min-h-tap items-center rounded-lg px-3 font-medium text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring before:absolute before:inset-y-2.5 before:left-0 before:w-0.5 before:rounded-full before:bg-primary before:opacity-0 aria-[current=page]:bg-muted aria-[current=page]:text-foreground aria-[current=page]:before:opacity-100"
             >
               {label}
             </Link>

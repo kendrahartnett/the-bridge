@@ -16,8 +16,11 @@ import { getCurrentUser } from "@/lib/current-user"
 export function SiteHeader({ signedIn = false }: { signedIn?: boolean }) {
   return (
     <>
-      <header className="glass border-b border-border">
-        <div className="relative mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-2 px-4 sm:gap-4 sm:px-6">
+      {/* z-30: the glass blur makes the header its own stacking layer, so without a z-index
+          later page content (animated sections) would paint over the phone menu. Below the
+          chat button (z-40) and panel (z-50). */}
+      <header className="glass relative z-30 border-b border-border">
+        <div className="relative mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-2 px-4 sm:h-16 sm:gap-4 sm:px-6">
           <Link
             href={signedIn ? "/dashboard" : "/"}
             aria-label={signedIn ? "The Bridge, dashboard" : "The Bridge, home"}
