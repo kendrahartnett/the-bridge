@@ -48,14 +48,15 @@ export default function Home() {
               </p>
               <h1 id="hero-title" className="mt-5">
                 {/* Phones: may wrap, never under 2.5rem (the stripes need the size). From
-                    768px: one line, sized to fill the text column (cqi), capped at 4.5rem.
-                    From 1024px it fills 85% of the column, leaving room for the gold arch that
+                    768px: one line, sized to fit the text column (cqi) but no larger than the
+                    desktop size (3.5rem), so it never shrinks as the screen widens. From 1024px
+                    it fills 85% of the column (about 56px), leaving room for the gold arch that
                     runs on to the image's edge. */}
                 <span
                   className="hero-rise font-display block text-display text-foreground [--rise:12px] [animation-delay:80ms] md:flex md:items-center md:whitespace-nowrap md:text-(length:--headline-md) lg:text-(length:--headline-lg)"
                   style={
                     {
-                      "--headline-md": `min(calc(100cqi / ${HEADLINE_EM}), 4.5rem)`,
+                      "--headline-md": `min(calc(100cqi / ${HEADLINE_EM}), 3.5rem)`,
                       "--headline-lg": `calc(85cqi / ${HEADLINE_EM})`,
                     } as React.CSSProperties
                   }
@@ -85,16 +86,17 @@ export default function Home() {
             </div>
 
             {/* Below 1024px the illustration at its own 4:3 shape (nothing cropped). From
-                1024px a 7:6 crop, close to the text column's height: the widest crop that
+                1024px a 7:6 crop at 95% of its column (left edge fixed, so the gold arch still
+                meets it), close to the text column's height: the widest crop that
                 still shows the whole bridge (about 2% to 86% across) and both figures, so it
                 sits just left of center. The fixed-aspect frame keeps the layout still while
                 the image loads. */}
-            <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-border bg-muted lg:col-span-6 lg:aspect-[7/6]">
+            <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-border bg-muted lg:col-span-6 lg:aspect-[7/6] lg:w-[95%]">
               <Image
                 src={heroArt}
                 alt={HERO_IMAGE.alt}
                 fill
-                sizes="(min-width: 1024px) 480px, (min-width: 640px) 90vw, 100vw"
+                sizes="(min-width: 1024px) 456px, (min-width: 640px) 90vw, 100vw"
                 loading="eager"
                 fetchPriority="high"
                 placeholder="blur"

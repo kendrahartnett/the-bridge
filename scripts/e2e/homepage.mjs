@@ -53,6 +53,7 @@ try {
   const t = await browser.newTab({ log: true })
   for (const theme of ["light", "dark"]) {
     await t.goto("/"); await t.theme(theme)
+    const headSizes = []
     for (const w of [320, 390, 768, 1024, 1280, 1440]) {
       const tag = `${theme} ${w}px`
       await t.size(w)
@@ -62,6 +63,7 @@ try {
       check(`${tag}: layout shift under 0.02`, cls < 0.02, `CLS ${cls}`)
 
       const L = await t.evaluate(LAYOUT)
+      headSizes.push([w, L.headSize])
       check(`${tag}: no horizontal overflow`, !L.overflow)
       check(`${tag}: header on one row`, L.headerRow)
       if (w < 1024) check(`${tag}: image shown whole (frame matches the image's 4:3 shape, nothing cropped)`, Math.abs(L.frameRatio - L.imgNatural) < 0.02, `${L.frameRatio.toFixed(3)} vs ${L.imgNatural.toFixed(3)}`)
@@ -93,12 +95,20 @@ try {
         await sleep(600) // let the entrance animation finish before measuring pixels
         const head = await lowestPixelContrast(t, "main h1 > span:first-child")
         check(`${tag}: headline stripes readable against the background (${head.need}:1 needed)`, head.worst >= head.need, `${head.worst}:1 (${head.name})`)
+        for (const id of ["cta-post-help", "cta-respond-help"]) {
+          const size = await t.evaluate(`parseFloat(getComputedStyle(document.getElementById("${id}")).fontSize)`)
+          const help = await lowestPixelContrast(t, `#${id}`)
+          check(`${tag}: CTA help text ${id.split("-")[1]} is 14px and at least 4.5:1`, size === 14 && help.worst >= 4.5, `${size}px, ${help.worst}:1`)
+        }
         const sub = await lowestPixelContrast(t, "main h1 > span:last-child")
         check(`${tag}: secondary line readable (${sub.need}:1 needed at its size)`, sub.worst >= sub.need, `${sub.worst}:1`)
         await t.evaluate("scrollTo(0, 0), true"); await sleep(200)
         await t.shot(`home-${theme}-${w}.png`)
       }
     }
+    // From 768px the headline never gets smaller as the screen gets wider.
+    const fromTablet = headSizes.filter(([w]) => w >= 768)
+    check(`${theme}: headline size never shrinks from 768px up`, fromTablet.every(([, px], i) => i === 0 || px >= fromTablet[i - 1][1] - 0.01), fromTablet.map(([w, px]) => `${w}: ${px.toFixed(1)}px`).join(", "))
   }
 
   // Reduced motion: nothing animates and the arch is already complete.
