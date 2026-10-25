@@ -20,6 +20,25 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Databases: development and production
+
+The Bridge uses two separate Neon projects:
+
+| | Neon project | Used by | Data |
+|---|---|---|---|
+| Development | `the-bridge-dev` | `.env.local` (local app, seed, tests) | Fictional test accounts and requests only |
+| Production | `the-bridge` (branch `production`) | Vercel, and `.env.production.local` for migrations | Real accounts and requests |
+
+Each project has its own Neon Auth, so logins and sessions never cross between them.
+
+- `npm run db:migrate`: apply migrations to development.
+- `npm run db:seed`: reset development's test accounts and requests, including `test.admin@example.com` (admin). Runs only against `the-bridge-dev`.
+- `npm run test:claims`: request and verification rules. Runs only against `the-bridge-dev`.
+- `npm run admin:grant -- <email>`: make an existing account an admin, on whichever database `.env.local` points to.
+- `npm run db:migrate:prod -- --confirm`: apply migrations to production, after testing them on development. Reads `.env.production.local`, which is never committed.
+
+The seed and test scripts check the database before doing anything and exit if it isn't `the-bridge-dev` (see `src/db/dev-guard.ts`).
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

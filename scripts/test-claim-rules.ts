@@ -13,6 +13,7 @@ import { drizzle } from "drizzle-orm/neon-http"
 import fs from "node:fs"
 
 import * as schema from "../src/db/schema.ts"
+import { requireDevDatabase } from "../src/db/dev-guard.ts"
 import { foodRequests, users } from "../src/db/schema.ts"
 import {
   cancelRequest,
@@ -31,6 +32,8 @@ try {
   // Use variables already in the environment.
 }
 if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is not set.")
+// Creates and deletes rows: the-bridge-dev only.
+await requireDevDatabase(process.env.DATABASE_URL)
 const db = drizzle(neon(process.env.DATABASE_URL), { schema })
 
 const RUN = new Date().toISOString().replace(/\D/g, "").slice(0, 14)

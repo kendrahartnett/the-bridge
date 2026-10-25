@@ -3,6 +3,8 @@
 //
 //   npm run db:seed
 //
+// Only runs against the-bridge-dev (see ./dev-guard.ts), never production.
+//
 // Runs with Node's built-in TypeScript support, outside Next.js, so it builds
 // its own db client instead of importing the server-only one in ./index.ts.
 
@@ -11,6 +13,7 @@ import { sql } from "drizzle-orm"
 import { drizzle } from "drizzle-orm/neon-http"
 
 import { chicagoLocalToDate } from "../lib/chicago-time.ts"
+import { requireDevDatabase } from "./dev-guard.ts"
 import { foodRequests, users, type NewFoodRequest } from "./schema.ts"
 
 try {
@@ -24,6 +27,7 @@ if (!DATABASE_URL || !NEON_AUTH_BASE_URL || !SEED_TEST_PASSWORD) {
   throw new Error("DATABASE_URL, NEON_AUTH_BASE_URL and SEED_TEST_PASSWORD must be set.")
 }
 
+await requireDevDatabase(DATABASE_URL)
 const db = drizzle(neon(DATABASE_URL))
 
 const TEST_USERS = [
@@ -71,6 +75,17 @@ const TEST_USERS = [
     organizationWebsite: "https://example.org/organization-c",
     organizationEin: "00-1234567",
     contactName: "Test — Contact C",
+  },
+  // Reviews organizations at /admin. Dev only: this seed never runs against production, and
+  // the app itself has no way to grant admin.
+  {
+    key: "admin",
+    email: "test.admin@example.com",
+    displayName: "Test — Admin",
+    role: "outreach",
+    organizationName: "Test — The Bridge reviewers",
+    verificationStatus: "not_required",
+    isAdmin: true,
   },
 ] as const
 
@@ -120,6 +135,7 @@ async function main() {
       reviewedAt: null,
       reviewedBy: null,
       reviewNote: null,
+      isAdmin: "isAdmin" in u ? u.isAdmin : false,
     }
     const [row] = await db
       .insert(users)
