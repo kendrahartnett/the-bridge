@@ -70,7 +70,7 @@ export const AUTH_ERRORS = {
   noAppAccount:
     "We found your login but not your account details. Please create your account again, or contact us if this keeps happening.",
   weakPassword: "Choose a stronger password with at least 8 characters.",
-  tooManyAttempts: "Too many attempts. Please wait a few minutes and try again.",
+  tooManyAttempts: "Too many sign-in attempts. Please wait a minute and try again.",
   signUpUnavailable: "We couldn't create your account right now. Please try again in a moment.",
 } as const
 

@@ -10,7 +10,8 @@ import { SiteHeader } from "@/components/site-header"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { db } from "@/db"
 import { ADMIN_COPY } from "@/lib/copy"
-import { getCurrentUser } from "@/lib/current-user"
+import { logAdminLookupFailure } from "@/lib/auth/failure-code"
+import { lookUpUser } from "@/lib/current-user"
 import { listOrganizationsForReview, type OrganizationForReview } from "@/lib/request-rules"
 import { cn } from "@/lib/utils"
 
@@ -45,7 +46,8 @@ export default function AdminPage({ searchParams }: PageProps<"/admin">) {
 }
 
 async function AdminContent({ searchParams }: { searchParams: PageProps<"/admin">["searchParams"] }) {
-  const user = await getCurrentUser()
+  const { user, sessionError } = await lookUpUser()
+  if (sessionError) logAdminLookupFailure("session", sessionError)
   if (!user) notFound()
   const organizations = await listOrganizationsForReview(db, user.id)
   if (!organizations) notFound()

@@ -6,6 +6,7 @@ import { z } from "zod"
 
 import { db } from "@/db"
 import { users } from "@/db/schema"
+import { failureCode, type AuthFailure } from "@/lib/auth/failure-code"
 import { auth } from "@/lib/auth/server"
 import { AUTH_ERRORS } from "@/lib/copy"
 import { organizationSignUpSchema, posterSignUpSchema, signInSchema } from "@/lib/validation"
@@ -113,28 +114,11 @@ export async function signUpAction(_prev: AuthFormState, formData: FormData): Pr
   redirect("/dashboard")
 }
 
-type AuthFailure = { message?: string; status?: number; code?: string }
-
-/**
- * A short, log-safe name for an auth failure. The auth SDK replaces many of Neon Auth's own
- * codes with generic ones (INVALID_ORIGIN arrives as "feature_not_supported"), but keeps
- * Neon Auth's fixed message, so the message's first sentence becomes the code: "Invalid
- * origin" → INVALID_ORIGIN, "User already exists. Use another email." → USER_ALREADY_EXISTS.
- * Only messages made of letters, spaces, and . , ' qualify (no @ or digits), so an email
- * address can never reach the log.
- */
-function failureCode({ message, code }: AuthFailure) {
-  if (message && /^[A-Za-z .,']{1,120}$/.test(message)) {
-    const first = message.split(".")[0].replace(/[,']/g, "").trim()
-    if (first) return first.toUpperCase().replaceAll(" ", "_")
-  }
-  return code?.toUpperCase() ?? "UNKNOWN"
-}
-
 // Picks the message people see from the SDK's normalized code, the HTTP status, and the
 // log-safe code above.
 function friendlyError(mode: "sign-in" | "sign-up", { code, status }: AuthFailure, logCode: string) {
-  if (status === 429 || code?.startsWith("over_")) return AUTH_ERRORS.tooManyAttempts
+  // Neon Auth rate-limits sign-in and sign-up (HTTP 429, logged as TOO_MANY_REQUESTS).
+  if (status === 429 || code?.startsWith("over_") || logCode === "TOO_MANY_REQUESTS") return AUTH_ERRORS.tooManyAttempts
   if (mode === "sign-in") {
     return status === 401 || code === "invalid_credentials"
       ? AUTH_ERRORS.wrongPassword
