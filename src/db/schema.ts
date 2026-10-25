@@ -60,7 +60,8 @@ export const users = pgTable(
     organizationEin: text("organization_ein"),
     contactName: text("contact_name"),
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
-    reviewedBy: uuid("reviewed_by").references((): AnyPgColumn => users.id),
+    // If the reviewing admin's account is deleted, keep the review but clear who did it.
+    reviewedBy: uuid("reviewed_by").references((): AnyPgColumn => users.id, { onDelete: "set null" }),
     // Internal note from the reviewing admin. Never shown to the organization.
     reviewNote: text("review_note"),
     // Granted only with `npm run admin:grant`, never through the app.
