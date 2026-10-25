@@ -5,12 +5,13 @@ import { redirect } from "next/navigation"
 import { Suspense } from "react"
 
 import { SiteHeader } from "@/components/site-header"
+import { ROLE_CTAS } from "@/lib/copy"
 import { requireUser } from "@/lib/current-user"
 import { canPostNeeds } from "@/lib/request-rules"
 
 import { NewRequestForm } from "./new-request-form"
 
-export const metadata: Metadata = { title: "New request · The Bridge" }
+export const metadata: Metadata = { title: `${ROLE_CTAS.outreach.label} · The Bridge` }
 
 export default function NewRequestPage() {
   return (

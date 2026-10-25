@@ -10,7 +10,7 @@ import { BlurFade } from "@/components/ui/blur-fade"
 import { Button } from "@/components/ui/button"
 import { db } from "@/db"
 import type { FoodRequest, User } from "@/db/schema"
-import { CONTACT_COPY, VERIFICATION_COPY } from "@/lib/copy"
+import { CONTACT_COPY, ROLE_CTAS, VERIFICATION_COPY } from "@/lib/copy"
 import { requireUser } from "@/lib/current-user"
 import { ROLE_LABELS } from "@/lib/labels"
 import {
@@ -88,7 +88,7 @@ async function OutreachDashboard({ userId }: { userId: string }) {
       <div className="mt-12 flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-heading text-xl font-bold">Your requests</h2>
         <Button asChild size="lg">
-          <Link href="/requests/new">New request</Link>
+          <Link href="/requests/new">{ROLE_CTAS.outreach.label}</Link>
         </Button>
       </div>
 
@@ -142,7 +142,7 @@ async function DonorDashboard({ user }: { user: User }) {
         <h2 className="font-heading text-xl font-bold">Open requests</h2>
         {canPostNeeds(user) && (
           <Button asChild size="lg">
-            <Link href="/requests/new">Post a Need</Link>
+            <Link href="/requests/new">{ROLE_CTAS.outreach.label}</Link>
           </Button>
         )}
       </div>
