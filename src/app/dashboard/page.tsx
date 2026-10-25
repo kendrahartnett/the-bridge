@@ -1,16 +1,20 @@
-import { CircleAlert, CircleCheck, Clock } from "lucide-react"
+import { CircleCheck, Clock } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { Suspense } from "react"
 
+import { EmptyState } from "@/components/empty-state"
 import { ImpactStat } from "@/components/impact-stat"
+import { Notice } from "@/components/notice"
+import { PageHeader } from "@/components/page-header"
 import { RequestCard, type RequestContact } from "@/components/request-card"
+import { SectionHeader } from "@/components/section-header"
 import { SiteHeader } from "@/components/site-header"
 import { BlurFade } from "@/components/ui/blur-fade"
 import { Button } from "@/components/ui/button"
 import { db } from "@/db"
 import type { FoodRequest, User } from "@/db/schema"
-import { CONTACT_COPY, ROLE_CTAS, VERIFICATION_COPY } from "@/lib/copy"
+import { CONTACT_COPY, DASHBOARD_COPY, ROLE_CTAS, VERIFICATION_COPY } from "@/lib/copy"
 import { requireUser } from "@/lib/current-user"
 import { ROLE_LABELS } from "@/lib/labels"
 import {
@@ -33,7 +37,7 @@ export default function DashboardPage() {
     <>
       <SiteHeader signedIn />
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6 sm:py-14">
-        <Suspense fallback={<p className="text-muted-foreground">Loading your dashboard…</p>}>
+        <Suspense fallback={<p className="text-muted-foreground">{DASHBOARD_COPY.loading}</p>}>
           <DashboardContent />
         </Suspense>
       </main>
@@ -48,11 +52,10 @@ async function DashboardContent() {
   return (
     <>
       <BlurFade>
-        <p className="text-sm break-words text-muted-foreground">
-          {user.organizationName ? `${user.organizationName} · ` : ""}
-          {ROLE_LABELS[user.role]}
-        </p>
-        <h1 className="font-heading mt-1 text-3xl font-bold tracking-tight [overflow-wrap:anywhere]">Hi, {greeting}</h1>
+        <PageHeader
+          eyebrow={`${user.organizationName ? `${user.organizationName} · ` : ""}${ROLE_LABELS[user.role]}`}
+          title={DASHBOARD_COPY.greeting.replace("{name}", greeting)}
+        />
       </BlurFade>
       {user.role === "outreach" ? (
         <OutreachDashboard userId={user.id} />
@@ -76,26 +79,20 @@ async function OutreachDashboard({ userId }: { userId: string }) {
   const delivered = requests.filter((r) => r.status === "delivered")
   const peopleFed = delivered.reduce((n, r) => n + r.peopleCount, 0)
   const open = requests.filter((r) => r.status === "open").length
+  const t = DASHBOARD_COPY.outreach
 
   return (
     <>
-      <section aria-label="Your impact" className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <ImpactStat value={peopleFed} label="People helped through your requests" />
-        <ImpactStat value={delivered.length} label="Requests fulfilled" />
-        <ImpactStat value={open} label="Requests waiting for support" />
+      <section aria-label={t.statsLabel} className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <ImpactStat value={peopleFed} label={t.peopleHelped} />
+        <ImpactStat value={delivered.length} label={t.fulfilled} />
+        <ImpactStat value={open} label={t.waiting} />
       </section>
 
-      <div className="mt-12 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-heading text-xl font-bold">Your requests</h2>
-        <Button asChild size="lg">
-          <Link href="/requests/new">{ROLE_CTAS.outreach.label}</Link>
-        </Button>
-      </div>
+      <SectionHeader className="mt-12" title={t.heading} actions={<PostNeedButton />} />
 
       {requests.length === 0 ? (
-        <EmptyState>
-          You haven&apos;t posted a need yet. Start a request and organizations nearby will see it.
-        </EmptyState>
+        <EmptyState className="mt-6">{t.empty}</EmptyState>
       ) : (
         <RequestGrid requests={requests} footer={outreachFooter} />
       )}
@@ -117,6 +114,7 @@ async function DonorDashboard({ user }: { user: User }) {
     listMyPosts(db, user.id).then((rows) => rows.map((r) => withLabel(r, CONTACT_COPY.supportedBy))),
   ])
   const waiting = open.reduce((n, r) => n + r.peopleCount, 0)
+  const t = DASHBOARD_COPY.organization
 
   // On the Needs Board: your own post can't be claimed by you; otherwise only an approved
   // organization gets the button (the claim rule checks this again on the server).
@@ -133,33 +131,27 @@ async function DonorDashboard({ user }: { user: User }) {
     <>
       {!approved && <VerificationBanner status={user.verificationStatus} />}
 
-      <section aria-label="Right now" className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <ImpactStat value={open.length} label="Open requests" />
-        <ImpactStat value={waiting} label="People who need support" />
+      <section aria-label={t.statsLabel} className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <ImpactStat value={open.length} label={t.openCount} />
+        <ImpactStat value={waiting} label={t.peopleWaiting} />
       </section>
 
-      <div className="mt-12 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-heading text-xl font-bold">Open requests</h2>
-        {canPostNeeds(user) && (
-          <Button asChild size="lg">
-            <Link href="/requests/new">{ROLE_CTAS.outreach.label}</Link>
-          </Button>
-        )}
-      </div>
-      <p className="mt-1 text-muted-foreground">
-        Each request shows the neighborhood and time window. After you offer support, you&apos;ll
-        see the poster&apos;s contact email so you can arrange the handoff.
-      </p>
+      <SectionHeader
+        className="mt-12"
+        title={t.boardHeading}
+        description={t.boardIntro}
+        actions={canPostNeeds(user) && <PostNeedButton />}
+      />
 
       {open.length === 0 ? (
-        <EmptyState>No open requests right now. Check back soon.</EmptyState>
+        <EmptyState className="mt-6">{t.boardEmpty}</EmptyState>
       ) : (
         <RequestGrid requests={open} footer={boardFooter} />
       )}
 
       {supporting.length > 0 && (
         <>
-          <h2 className="font-heading mt-12 text-xl font-bold">Needs you&apos;re supporting</h2>
+          <SectionHeader className="mt-12" title={t.supportingHeading} />
           <RequestGrid requests={supporting} footer={() => <ClaimedByYou />} />
         </>
       )}
@@ -168,12 +160,9 @@ async function DonorDashboard({ user }: { user: User }) {
           organization whose approval was revoked still sees what it posted (read-only). */}
       {(approved || posts.length > 0) && (
         <>
-          <h2 className="font-heading mt-12 text-xl font-bold">Your posts</h2>
+          <SectionHeader className="mt-12" title={t.postsHeading} />
           {posts.length === 0 ? (
-            <EmptyState>
-              You haven&apos;t posted a need yet. Use Post a Need to ask for support from other
-              organizations.
-            </EmptyState>
+            <EmptyState className="mt-6">{t.postsEmpty}</EmptyState>
           ) : (
             <RequestGrid requests={posts} footer={approved ? outreachFooter : undefined} />
           )}
@@ -187,7 +176,6 @@ async function DonorDashboard({ user }: { user: User }) {
 function VerificationBanner({ status }: { status: User["verificationStatus"] }) {
   const rejected = status === "rejected"
   const adminEmail = process.env.ADMIN_CONTACT_EMAIL
-  const Icon = rejected ? CircleAlert : Clock
   let message: React.ReactNode = VERIFICATION_COPY.pendingBanner
   if (rejected) {
     const [before, after] = VERIFICATION_COPY.rejectedBanner.split("{email}")
@@ -207,13 +195,14 @@ function VerificationBanner({ status }: { status: User["verificationStatus"] }) 
     )
   }
   return (
-    <section
-      aria-label="Account status"
-      className="mt-6 flex items-start gap-3 rounded-xl border border-foreground/30 bg-muted p-4 text-base text-foreground"
+    <Notice
+      tone={rejected ? "error" : "info"}
+      icon={rejected ? undefined : Clock}
+      label={DASHBOARD_COPY.organization.accountStatusLabel}
+      className="mt-6"
     >
-      <Icon aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
       <p>{message}</p>
-    </section>
+    </Notice>
   )
 }
 
@@ -225,7 +214,7 @@ function ClaimedByYou() {
   return (
     <p className="flex min-h-tap items-center gap-2 font-medium text-primary-text">
       <CircleCheck aria-hidden="true" className="size-5" />
-      You&apos;re supporting this
+      {DASHBOARD_COPY.organization.supportingThis}
     </p>
   )
 }
@@ -251,10 +240,10 @@ function RequestGrid({
   )
 }
 
-function EmptyState({ children }: { children: React.ReactNode }) {
+function PostNeedButton() {
   return (
-    <div className="mt-6 rounded-xl border border-border bg-card p-10 text-center text-muted-foreground shadow-sm">
-      {children}
-    </div>
+    <Button asChild size="lg">
+      <Link href="/requests/new">{ROLE_CTAS.outreach.label}</Link>
+    </Button>
   )
 }

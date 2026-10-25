@@ -127,6 +127,47 @@ export const VERIFICATION_COPY = {
   yourPost: "Your post",
 } as const
 
+// Dashboard. {name} is replaced with the person's name.
+export const DASHBOARD_COPY = {
+  loading: "Loading your dashboard…",
+  greeting: "Hi, {name}",
+  outreach: {
+    statsLabel: "Your impact",
+    peopleHelped: "People helped through your requests",
+    fulfilled: "Requests fulfilled",
+    waiting: "Requests waiting for support",
+    heading: "Your requests",
+    empty: "You haven't posted a need yet. Start a request and organizations nearby will see it.",
+  },
+  organization: {
+    statsLabel: "Right now",
+    openCount: "Open requests",
+    peopleWaiting: "People who need support",
+    boardHeading: "Open requests",
+    boardIntro:
+      "Each request shows the neighborhood and time window. After you offer support, you'll see the poster's contact email so you can arrange the handoff.",
+    boardEmpty: "No open requests right now. Check back soon.",
+    supportingHeading: "Needs you're supporting",
+    supportingThis: "You're supporting this",
+    postsHeading: "Your posts",
+    postsEmpty: "You haven't posted a need yet. Use Post a Need to ask for support from other organizations.",
+    accountStatusLabel: "Account status",
+  },
+} as const
+
+// The Post a Need page around the form. The privacy notice is exact wording; do not edit
+// without sign-off. No database fields back it.
+export const NEW_REQUEST_COPY = {
+  back: "← Back to dashboard",
+  title: "Post a need",
+  intro:
+    "Tell organizations what's needed, for how many people, and when. Only the neighborhood is shared. Please don't include names, addresses, or camp locations.",
+  privacyLabel: "Privacy",
+  privacy:
+    "The Bridge stores only the neighborhood, the number of people, the type of support, the items needed, notes, and the time window. We never store names, addresses, or locations of the people being served.",
+  loading: "Loading…",
+} as const
+
 // Header navigation for signed-in people.
 export const NAV_COPY = {
   label: "Main",

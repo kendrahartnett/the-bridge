@@ -34,7 +34,7 @@ const CTAS = [
     ...ROLE_CTAS.outreach,
     Icon: ClipboardPlus,
     className:
-      "bg-primary text-primary-foreground shadow-[0_10px_30px_-8px_color-mix(in_srgb,var(--primary)_60%,transparent)] hover:bg-primary/90",
+      "bg-primary text-primary-foreground glow-primary hover:bg-primary/90",
   },
   {
     id: "respond",

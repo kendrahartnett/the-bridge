@@ -4,6 +4,8 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
 
+import { EmptyState } from "@/components/empty-state"
+import { PageHeader } from "@/components/page-header"
 import { SiteHeader } from "@/components/site-header"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { db } from "@/db"
@@ -55,14 +57,11 @@ async function AdminContent({ searchParams }: { searchParams: PageProps<"/admin"
 
   return (
     <>
-      <Link
-        href="/dashboard"
-        className="inline-flex min-h-tap items-center text-sm font-medium text-primary-text underline-offset-4 hover:underline"
-      >
-        {ADMIN_COPY.backToDashboard}
-      </Link>
-      <h1 className="font-heading mt-2 text-3xl font-bold tracking-tight">{ADMIN_COPY.title}</h1>
-      <p className="mt-2 max-w-2xl text-muted-foreground">{ADMIN_COPY.intro}</p>
+      <PageHeader
+        back={{ href: "/dashboard", label: ADMIN_COPY.backToDashboard }}
+        title={ADMIN_COPY.title}
+        intro={ADMIN_COPY.intro}
+      />
 
       {/* Each tab sizes to its label and count, so "Approved 12" never runs into its
           neighbor on a 320px screen. */}
@@ -89,9 +88,7 @@ async function AdminContent({ searchParams }: { searchParams: PageProps<"/admin"
       </nav>
 
       {shown.length === 0 ? (
-        <p className="mt-6 rounded-xl border border-border bg-card p-10 text-center text-muted-foreground shadow-sm">
-          {ADMIN_COPY.empty[tab]}
-        </p>
+        <EmptyState className="mt-6">{ADMIN_COPY.empty[tab]}</EmptyState>
       ) : (
         <ul className="mt-6 grid gap-5 lg:grid-cols-2">
           {shown.map((o) => (

@@ -1,8 +1,9 @@
 "use client"
 
-import { ClipboardPlus, HandHeart, Info } from "lucide-react"
+import { ClipboardPlus, HandHeart } from "lucide-react"
 import { useActionState, useRef, useState, type KeyboardEvent } from "react"
 
+import { Notice } from "@/components/notice"
 import { Button } from "@/components/ui/button"
 import { AUTH_COPY } from "@/lib/copy"
 import { cn } from "@/lib/utils"
@@ -128,10 +129,9 @@ function OrganizationForm() {
   return (
     <form action={formAction} onSubmit={onSubmit} noValidate className="flex flex-col gap-6">
       <input type="hidden" name="accountType" value="organization" />
-      <p className="flex items-start gap-3 rounded-lg border border-border bg-card p-3 text-sm text-card-foreground">
-        <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-primary-text" />
-        <span>{AUTH_COPY.organizationReview}</span>
-      </p>
+      <Notice className="p-3 text-sm">
+        <p>{AUTH_COPY.organizationReview}</p>
+      </Notice>
       <TextField prefix={p} name="organizationName" label={AUTH_COPY.fields.organizationName} autoComplete="organization" defaultValue={v?.organizationName} errors={errors.organizationName} />
       <TextField prefix={p} name="website" label={AUTH_COPY.fields.website} type="url" inputMode="url" autoComplete="url" placeholder={AUTH_COPY.fields.websitePlaceholder} defaultValue={v?.website} errors={errors.website} />
       <TextField prefix={p} name="ein" label={AUTH_COPY.fields.ein} inputMode="numeric" placeholder={AUTH_COPY.fields.einPlaceholder} help={AUTH_COPY.fields.einHelp} defaultValue={v?.ein} errors={errors.ein} />

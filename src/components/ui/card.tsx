@@ -1,12 +1,31 @@
 import * as React from "react"
 import { cn } from "cn"
 
-function Card({ className, ...props }: React.ComponentProps<"div">) {
+// Content cards are solid. Glass is reserved for the header, chat panel, dialogs, and menus.
+const CARD_VARIANTS = {
+  /** Solid surface, thin border, soft shadow. */
+  default: "",
+  /** A card that is itself clickable or holds the main action: lifts on hover. */
+  interactive:
+    "transition-[background-color,box-shadow,translate] duration-(--duration-base) ease-(--ease-brand) hover:-translate-y-0.5 hover:bg-surface-raised hover:shadow-md motion-reduce:hover:translate-y-0",
+  /** A number with a label. */
+  stat: "gap-1 px-5 py-5",
+  /** Only for dialogs and menus. */
+  glass: "glass border-border shadow-lg",
+} as const
+
+function Card({
+  className,
+  variant = "default",
+  ...props
+}: React.ComponentProps<"div"> & { variant?: keyof typeof CARD_VARIANTS }) {
   return (
     <div
       data-slot="card"
+      data-variant={variant}
       className={cn(
         "flex max-w-full min-w-0 flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm",
+        CARD_VARIANTS[variant],
         className
       )}
       {...props}

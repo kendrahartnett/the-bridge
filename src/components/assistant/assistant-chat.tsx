@@ -12,12 +12,9 @@ const COPY = ASSISTANT_COPY.panel
 
 type Message = { role: "user" | "assistant"; content: string }
 
-// Same glass treatment as the landing page cards, more opaque so even the small counter
-// text keeps 4.5:1 contrast over any page content behind the panel.
-const GLASS =
-  "border border-black/10 bg-background/90 backdrop-blur-xl dark:border-white/10 " +
-  "shadow-[0_0_24px_color-mix(in_srgb,var(--primary-text)_10%,transparent),var(--soft-shadow-md)] " +
-  "dark:shadow-[0_0_24px_color-mix(in_srgb,var(--primary-text)_20%,transparent),var(--soft-shadow-md)]"
+// The shared glass surface (globals.css): 90% opaque, so even the small counter text keeps
+// 4.5:1 contrast over any page content behind the panel.
+const GLASS = "glass border border-border shadow-lg"
 
 // What the chat button must never sit on top of.
 const INTERACTIVE = "a, button, input, select, textarea, label, [role=button], [role=combobox]"
@@ -191,7 +188,7 @@ export function AssistantChat() {
         aria-label={COPY.openLabel}
         aria-haspopup="dialog"
         onClick={() => setOpen(true)}
-        className="fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 inline-flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_10px_30px_-8px_color-mix(in_srgb,var(--primary)_60%,transparent)] transition-[opacity,background-color] duration-150 outline-none hover:bg-primary/90 data-covering:pointer-events-none data-covering:opacity-0 data-covering:focus-visible:pointer-events-auto data-covering:focus-visible:opacity-100 focus-visible:ring-[3px] focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className="fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 inline-flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground glow-primary transition-[opacity,background-color] duration-150 outline-none hover:bg-primary/90 data-covering:pointer-events-none data-covering:opacity-0 data-covering:focus-visible:pointer-events-auto data-covering:focus-visible:opacity-100 focus-visible:ring-[3px] focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         <MessageCircle aria-hidden="true" className="size-6" />
       </button>

@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react"
 import type { z } from "zod"
 
+import { Notice } from "@/components/notice"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
@@ -128,11 +129,8 @@ export function PledgeField({
 export function FormError({ message }: { message?: string }) {
   if (!message) return null
   return (
-    <p
-      role="alert"
-      className="rounded-md border border-foreground bg-muted px-3 py-2 text-sm font-medium text-foreground"
-    >
-      {message}
-    </p>
+    <Notice tone="error" alert className="p-3 text-sm">
+      <p>{message}</p>
+    </Notice>
   )
 }
