@@ -33,6 +33,7 @@ const TEST_USERS = [
     displayName: "Test — Outreach Worker A",
     role: "outreach",
     organizationName: "Test — Northwest Side Outreach",
+    verificationStatus: "not_required",
   },
   {
     key: "outreach2",
@@ -40,6 +41,7 @@ const TEST_USERS = [
     displayName: "Test — Outreach Worker B",
     role: "outreach",
     organizationName: "Test — West Side Street Team",
+    verificationStatus: "not_required",
   },
   {
     key: "donor1",
@@ -47,6 +49,7 @@ const TEST_USERS = [
     displayName: "Test — Organization A",
     role: "donor",
     organizationName: "Test — Corner Bakery Co-op",
+    verificationStatus: "approved",
   },
   {
     key: "donor2",
@@ -54,6 +57,20 @@ const TEST_USERS = [
     displayName: "Test — Organization B",
     role: "donor",
     organizationName: "Test — Pilsen Community Kitchen",
+    verificationStatus: "approved",
+  },
+  // Waiting for review. Fictional details: example.org is reserved for examples, and no
+  // real EIN starts with 00.
+  {
+    key: "donor3",
+    email: "test.donor3@example.com",
+    displayName: "Test — Organization C (pending)",
+    role: "donor",
+    organizationName: "Test — Organization C (pending)",
+    verificationStatus: "pending",
+    organizationWebsite: "https://example.org/organization-c",
+    organizationEin: "00-1234567",
+    contactName: "Test — Contact C",
   },
 ] as const
 
@@ -61,6 +78,10 @@ type UserKey = (typeof TEST_USERS)[number]["key"]
 
 /** Create the login in Neon Auth if it isn't there yet. */
 async function ensureAuthAccount(email: string, name: string) {
+  // Check Neon Auth's own user table first, so re-runs don't call the sign-up endpoint
+  // (which rate-limits repeated calls).
+  const existing = await db.execute(sql`select 1 from neon_auth."user" where email = ${email}`)
+  if (existing.rows.length > 0) return "exists"
   const res = await fetch(`${NEON_AUTH_BASE_URL}/sign-up/email`, {
     method: "POST",
     headers: { "content-type": "application/json", origin: "http://localhost:3000" },
@@ -87,22 +108,23 @@ async function main() {
 
   for (const u of TEST_USERS) {
     const auth = await ensureAuthAccount(u.email, u.displayName)
+    // Re-running resets each test account, including any review, to these values.
+    const fields = {
+      displayName: u.displayName,
+      role: u.role,
+      organizationName: u.organizationName,
+      verificationStatus: u.verificationStatus,
+      organizationWebsite: "organizationWebsite" in u ? u.organizationWebsite : null,
+      organizationEin: "organizationEin" in u ? u.organizationEin : null,
+      contactName: "contactName" in u ? u.contactName : null,
+      reviewedAt: null,
+      reviewedBy: null,
+      reviewNote: null,
+    }
     const [row] = await db
       .insert(users)
-      .values({
-        email: u.email,
-        displayName: u.displayName,
-        role: u.role,
-        organizationName: u.organizationName,
-      })
-      .onConflictDoUpdate({
-        target: users.email,
-        set: {
-          displayName: u.displayName,
-          role: u.role,
-          organizationName: u.organizationName,
-        },
-      })
+      .values({ email: u.email, ...fields })
+      .onConflictDoUpdate({ target: users.email, set: fields })
       .returning({ id: users.id })
     ids[u.key] = row.id
     console.log(`user    ${u.email.padEnd(28)} auth:${auth.padEnd(8)} id:${row.id}`)

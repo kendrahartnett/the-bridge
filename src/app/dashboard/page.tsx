@@ -1,5 +1,3 @@
-import { and, asc, desc, eq, inArray, sql, type AnyColumn } from "drizzle-orm"
-import { alias } from "drizzle-orm/pg-core"
 import { CircleCheck } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
@@ -11,10 +9,11 @@ import { SiteHeader } from "@/components/site-header"
 import { BlurFade } from "@/components/ui/blur-fade"
 import { Button } from "@/components/ui/button"
 import { db } from "@/db"
-import { foodRequests, users, type FoodRequest } from "@/db/schema"
+import type { FoodRequest } from "@/db/schema"
 import { CONTACT_COPY } from "@/lib/copy"
 import { requireUser } from "@/lib/current-user"
 import { ROLE_LABELS } from "@/lib/labels"
+import { listMyPosts, listMySupported, listOpen, type RequestWithContact } from "@/lib/request-rules"
 
 import { RequestActionButton } from "./request-action-button"
 
@@ -57,35 +56,15 @@ async function DashboardContent() {
   )
 }
 
-// The two sides of an offer. Each dashboard reads the other side's account email only for
-// requests the viewer posted or supports, and only once the request is In Progress or
-// Fulfilled: the database returns null otherwise, so the email never reaches the page.
-const claimer = alias(users, "claimer")
-const poster = alias(users, "poster")
-const afterOffer = sql`${foodRequests.status} in ('claimed', 'delivered')`
-const emailAfterOffer = (email: AnyColumn) =>
-  sql<string | null>`case when ${afterOffer} then ${email} end`
+// Who can see which contact email is decided in the queries (src/lib/request-rules.ts):
+// a hidden email is never sent to the page. These only add the label for each side.
+const withLabel = (r: RequestWithContact, label: RequestContact["label"]) => ({
+  ...r,
+  contact: r.contact ? { label, ...r.contact } : undefined,
+})
 
 async function OutreachDashboard({ userId }: { userId: string }) {
-  const rows = await db
-    .select({
-      request: foodRequests,
-      claimerOrg: claimer.organizationName,
-      claimerName: claimer.displayName,
-      claimerEmail: emailAfterOffer(claimer.email),
-    })
-    .from(foodRequests)
-    .leftJoin(claimer, eq(claimer.id, foodRequests.claimedBy))
-    .where(eq(foodRequests.createdBy, userId))
-    .orderBy(desc(foodRequests.windowStart))
-  const requests = rows.map((r) => ({
-    ...r.request,
-    contact: {
-      label: CONTACT_COPY.supportedBy,
-      name: r.claimerOrg ?? r.claimerName ?? "an organization",
-      email: r.claimerEmail,
-    },
-  }))
+  const requests = (await listMyPosts(db, userId)).map((r) => withLabel(r, CONTACT_COPY.supportedBy))
 
   const delivered = requests.filter((r) => r.status === "delivered")
   const peopleFed = delivered.reduce((n, r) => n + r.peopleCount, 0)
@@ -125,40 +104,8 @@ function outreachFooter(r: FoodRequest) {
 
 async function DonorDashboard({ userId }: { userId: string }) {
   const [open, mine] = await Promise.all([
-    // Open requests: request columns only. The poster is never joined, so no poster
-    // details can reach organizations before they offer support.
-    db
-      .select()
-      .from(foodRequests)
-      .where(eq(foodRequests.status, "open"))
-      .orderBy(asc(foodRequests.windowStart)),
-    // Requests this organization supports, with the poster's name and email.
-    db
-      .select({
-        request: foodRequests,
-        posterOrg: poster.organizationName,
-        posterName: poster.displayName,
-        posterEmail: emailAfterOffer(poster.email),
-      })
-      .from(foodRequests)
-      .innerJoin(poster, eq(poster.id, foodRequests.createdBy))
-      .where(
-        and(
-          eq(foodRequests.claimedBy, userId),
-          inArray(foodRequests.status, ["claimed", "delivered"])
-        )
-      )
-      .orderBy(desc(foodRequests.windowStart))
-      .then((rows) =>
-        rows.map((r) => ({
-          ...r.request,
-          contact: {
-            label: CONTACT_COPY.postedBy,
-            name: r.posterOrg ?? r.posterName ?? "an outreach worker",
-            email: r.posterEmail,
-          },
-        }))
-      ),
+    listOpen(db),
+    listMySupported(db, userId).then((rows) => rows.map((r) => withLabel(r, CONTACT_COPY.postedBy))),
   ])
 
   const waiting = open.reduce((n, r) => n + r.peopleCount, 0)

@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm"
 import {
+  boolean,
   check,
   index,
   integer,
@@ -8,6 +9,7 @@ import {
   text,
   timestamp,
   uuid,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core"
 
 import { COMMUNITY_AREAS } from "../lib/neighborhoods.ts"
@@ -33,16 +35,50 @@ export const requestCategory = pgEnum("request_category", [
   "other",
 ])
 
-export const users = pgTable("users", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  email: text("email").notNull().unique(),
-  displayName: text("display_name"),
-  role: userRole("role"),
-  organizationName: text("organization_name"),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-})
+// Organizations are reviewed by a person before they can claim needs or see contact
+// details. Outreach accounts don't need review.
+export const verificationStatus = pgEnum("verification_status", [
+  "not_required",
+  "pending",
+  "approved",
+  "rejected",
+])
+
+export const users = pgTable(
+  "users",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    email: text("email").notNull().unique(),
+    displayName: text("display_name"),
+    role: userRole("role"),
+    organizationName: text("organization_name"),
+    verificationStatus: verificationStatus("verification_status")
+      .notNull()
+      .default("not_required"),
+    organizationWebsite: text("organization_website"),
+    // US Employer Identification Number, NN-NNNNNNN. Optional; helps verification.
+    organizationEin: text("organization_ein"),
+    contactName: text("contact_name"),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    reviewedBy: uuid("reviewed_by").references((): AnyPgColumn => users.id),
+    // Internal note from the reviewing admin. Never shown to the organization.
+    reviewNote: text("review_note"),
+    // Granted only with `npm run admin:grant`, never through the app.
+    isAdmin: boolean("is_admin").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    check(
+      "verification_matches_role",
+      sql`(${t.role} = 'outreach' AND ${t.verificationStatus} = 'not_required')
+        OR (${t.role} = 'donor' AND ${t.verificationStatus} IN ('pending', 'approved', 'rejected'))`
+    ),
+    check("organization_ein_format", sql`${t.organizationEin} IS NULL OR ${t.organizationEin} ~ '^[0-9]{2}-[0-9]{7}$'`),
+    check("review_note_length", sql`${t.reviewNote} IS NULL OR char_length(${t.reviewNote}) <= 300`),
+  ]
+)
 
 // DDL can't take bound parameters, so the list is inlined with quotes escaped.
 const areaList = sql.raw(

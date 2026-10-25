@@ -3,11 +3,12 @@
 // scripts/test-claim-rules.ts calls them with real users from the database.
 // Relative .ts imports keep this loadable by Node outside Next.js.
 
-import { and, eq } from "drizzle-orm"
+import { and, asc, desc, eq, inArray, ne, sql, type AnyColumn } from "drizzle-orm"
+import { alias } from "drizzle-orm/pg-core"
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http"
 import { z } from "zod"
 
-import { foodRequests, type FoodRequest } from "../db/schema.ts"
+import { foodRequests, users, type FoodRequest, type User } from "../db/schema.ts"
 import type * as schema from "../db/schema.ts"
 import { chicagoLocalToDate } from "./chicago-time.ts"
 import { STATUS_LABELS } from "./labels.ts"
@@ -28,19 +29,52 @@ const requestId = z.uuid()
 
 const ROLE_ERRORS = {
   donor: "Only organization accounts can offer support.",
-  outreach: "Only the outreach worker who made this request can change it.",
+  outreach: "Only the person who posted this request can change it.",
+  notApproved: "Your organization is still under review, so you can't do this yet.",
+  rejected: "Your organization wasn't approved, so you can't do this.",
+  poster: "Only outreach accounts and approved organizations can post needs.",
+  admin: "Only admins can review organizations.",
 } as const
 
-async function currentStatus(db: Db, id: string): Promise<FoodRequest["status"] | null> {
+/** The acting account as the database has it right now (never what the browser says). */
+type Standing = Pick<User, "id" | "role" | "verificationStatus" | "isAdmin">
+
+async function standing(db: Db, actorId: string): Promise<Standing | null> {
   const [row] = await db
-    .select({ status: foodRequests.status })
-    .from(foodRequests)
-    .where(eq(foodRequests.id, id))
-  return row?.status ?? null
+    .select({
+      id: users.id,
+      role: users.role,
+      verificationStatus: users.verificationStatus,
+      isAdmin: users.isAdmin,
+    })
+    .from(users)
+    .where(eq(users.id, actorId))
+  return row ?? null
 }
 
+const isApprovedOrg = (s: Standing | null) =>
+  s?.role === "donor" && s.verificationStatus === "approved"
+
+/** Posting needs: outreach accounts, and organizations that are currently approved. */
+const canPost = (s: Standing | null) => s?.role === "outreach" || isApprovedOrg(s)
+
+function orgBlockedError(s: Standing | null) {
+  return s?.verificationStatus === "rejected" ? ROLE_ERRORS.rejected : ROLE_ERRORS.notApproved
+}
+
+// SQL check, evaluated inside the same statement as the change, that the actor is an
+// approved organization. Closes the gap between reading their status and acting on it.
+const actorIsApprovedOrg = (actorId: string) =>
+  sql`exists (select 1 from ${users} where ${users.id} = ${actorId} and ${users.role} = 'donor' and ${users.verificationStatus} = 'approved')`
+
+/**
+ * Claim a need: approved organizations only, never their own post. The checks are repeated
+ * inside the UPDATE, so a revoked approval or a second organization can't slip through.
+ */
 export async function claimRequest(db: Db, actor: Actor, id: unknown): Promise<RequestActionResult> {
-  if (actor.role !== "donor") return { ok: false, error: ROLE_ERRORS.donor }
+  const me = await standing(db, actor.id)
+  if (me?.role !== "donor") return { ok: false, error: ROLE_ERRORS.donor }
+  if (!isApprovedOrg(me)) return { ok: false, error: orgBlockedError(me) }
   const parsed = requestId.safeParse(id)
   if (!parsed.success) return { ok: false, error: "We couldn't find that request." }
 
@@ -48,11 +82,27 @@ export async function claimRequest(db: Db, actor: Actor, id: unknown): Promise<R
   const updated = await db
     .update(foodRequests)
     .set({ status: "claimed", claimedBy: actor.id })
-    .where(and(eq(foodRequests.id, parsed.data), eq(foodRequests.status, "open")))
+    .where(
+      and(
+        eq(foodRequests.id, parsed.data),
+        eq(foodRequests.status, "open"),
+        ne(foodRequests.createdBy, actor.id),
+        actorIsApprovedOrg(actor.id)
+      )
+    )
     .returning({ id: foodRequests.id })
 
   if (updated.length === 0) {
-    const status = await currentStatus(db, parsed.data)
+    const [row] = await db
+      .select({ status: foodRequests.status, createdBy: foodRequests.createdBy })
+      .from(foodRequests)
+      .where(eq(foodRequests.id, parsed.data))
+    if (row?.createdBy === actor.id) {
+      return { ok: false, error: "This is your own post, so you can't offer support on it." }
+    }
+    const now = await standing(db, actor.id)
+    if (!isApprovedOrg(now)) return { ok: false, error: orgBlockedError(now) }
+    const status = row?.status ?? null
     return {
       ok: false,
       error:
@@ -66,8 +116,10 @@ export async function claimRequest(db: Db, actor: Actor, id: unknown): Promise<R
   return { ok: true, message: "You offered support for this request. Thank you!" }
 }
 
+// Marking fulfilled and cancelling are for the person who posted the need, as long as they
+// can still post (outreach, or an organization that is currently approved).
 export async function confirmDelivery(db: Db, actor: Actor, id: unknown): Promise<RequestActionResult> {
-  if (actor.role !== "outreach") return { ok: false, error: ROLE_ERRORS.outreach }
+  if (!canPost(await standing(db, actor.id))) return { ok: false, error: ROLE_ERRORS.outreach }
   const parsed = requestId.safeParse(id)
   if (!parsed.success) return { ok: false, error: "We couldn't find that request." }
 
@@ -90,7 +142,7 @@ export async function confirmDelivery(db: Db, actor: Actor, id: unknown): Promis
 }
 
 export async function cancelRequest(db: Db, actor: Actor, id: unknown): Promise<RequestActionResult> {
-  if (actor.role !== "outreach") return { ok: false, error: ROLE_ERRORS.outreach }
+  if (!canPost(await standing(db, actor.id))) return { ok: false, error: ROLE_ERRORS.outreach }
   const parsed = requestId.safeParse(id)
   if (!parsed.success) return { ok: false, error: "We couldn't find that request." }
 
@@ -123,9 +175,7 @@ async function explainNoChange(
     .select({ status: foodRequests.status, createdBy: foodRequests.createdBy })
     .from(foodRequests)
     .where(eq(foodRequests.id, id))
-  if (!row || row.createdBy !== userId) {
-    return "Only the outreach worker who made this request can change it."
-  }
+  if (!row || row.createdBy !== userId) return ROLE_ERRORS.outreach
   if (needed === "claimed") {
     return row.status === "open"
       ? "No organization has offered support for this request yet."
@@ -136,9 +186,11 @@ async function explainNoChange(
     : `This request is already ${STATUS_LABELS[row.status].toLowerCase()}.`
 }
 
+/** Post a need: outreach accounts, and organizations that are currently approved. */
 export async function createRequest(db: Db, actor: Actor, input: unknown): Promise<CreateRequestResult> {
-  if (actor.role !== "outreach") {
-    return { ok: false, error: "Only outreach worker or community member accounts can post needs." }
+  const me = await standing(db, actor.id)
+  if (!canPost(me)) {
+    return { ok: false, error: me?.role === "donor" ? orgBlockedError(me) : ROLE_ERRORS.poster }
   }
 
   // Never trust the browser's check; validate again here.
@@ -166,5 +218,124 @@ export async function createRequest(db: Db, actor: Actor, input: unknown): Promi
   } catch (err) {
     console.error("createRequest insert failed", err)
     return { ok: false, error: "We couldn't save your request. Please try again." }
+  }
+}
+
+// ---------------------------------------------------------------------------------------
+// Contact details
+
+// The other side's email on a request: only for the poster or the supporting organization
+// (the queries below already limit rows to those two), only once the request is In Progress
+// or Fulfilled, and only while the viewer can see contacts: an outreach account, or an
+// organization that is approved right now. Decided in SQL, so a hidden email is never
+// sent to the page at all.
+const viewerCanSeeContacts = (viewerId: string) =>
+  sql`exists (select 1 from ${users} where ${users.id} = ${viewerId} and (${users.role} = 'outreach' or ${users.verificationStatus} = 'approved'))`
+const contactEmail = (viewerId: string, email: AnyColumn) =>
+  sql<string | null>`case when ${foodRequests.status} in ('claimed', 'delivered') and ${viewerCanSeeContacts(viewerId)} then ${email} end`
+
+const claimer = alias(users, "claimer")
+const poster = alias(users, "poster")
+
+export type RequestWithContact = FoodRequest & {
+  contact: { name: string; email: string | null } | null
+}
+
+/** Needs this account posted, with the supporting organization once someone offers support. */
+export async function listMyPosts(db: Db, viewerId: string): Promise<RequestWithContact[]> {
+  const rows = await db
+    .select({
+      request: foodRequests,
+      name: sql<string | null>`coalesce(${claimer.organizationName}, ${claimer.displayName})`,
+      email: contactEmail(viewerId, claimer.email),
+    })
+    .from(foodRequests)
+    .leftJoin(claimer, eq(claimer.id, foodRequests.claimedBy))
+    .where(eq(foodRequests.createdBy, viewerId))
+    .orderBy(desc(foodRequests.windowStart))
+  return rows.map((r) => ({
+    ...r.request,
+    contact: r.request.claimedBy ? { name: r.name ?? "an organization", email: r.email } : null,
+  }))
+}
+
+/** Needs this organization supports (In Progress or Fulfilled), with the poster. */
+export async function listMySupported(db: Db, viewerId: string): Promise<RequestWithContact[]> {
+  const rows = await db
+    .select({
+      request: foodRequests,
+      name: sql<string | null>`coalesce(${poster.organizationName}, ${poster.displayName})`,
+      email: contactEmail(viewerId, poster.email),
+    })
+    .from(foodRequests)
+    .innerJoin(poster, eq(poster.id, foodRequests.createdBy))
+    .where(
+      and(
+        eq(foodRequests.claimedBy, viewerId),
+        inArray(foodRequests.status, ["claimed", "delivered"])
+      )
+    )
+    .orderBy(desc(foodRequests.windowStart))
+  return rows.map((r) => ({
+    ...r.request,
+    contact: { name: r.name ?? "an outreach worker", email: r.email },
+  }))
+}
+
+/** Open needs (the Needs Board). Request columns only: the poster is never joined. */
+export async function listOpen(db: Db): Promise<FoodRequest[]> {
+  return db
+    .select()
+    .from(foodRequests)
+    .where(eq(foodRequests.status, "open"))
+    .orderBy(asc(foodRequests.windowStart))
+}
+
+// ---------------------------------------------------------------------------------------
+// Organization review (admins only)
+
+const reviewInput = z.object({
+  organizationId: z.uuid(),
+  decision: z.enum(["approved", "rejected"]),
+  note: z.string().trim().max(300, "Keep the note under 300 characters.").optional(),
+})
+
+/**
+ * Approve or reject an organization (rejecting an approved one revokes it). Admins only,
+ * checked again inside the UPDATE. Records who reviewed it and when; the note is internal.
+ */
+export async function reviewOrganization(
+  db: Db,
+  actor: Actor,
+  input: unknown
+): Promise<RequestActionResult> {
+  const me = await standing(db, actor.id)
+  if (!me?.isAdmin) return { ok: false, error: ROLE_ERRORS.admin }
+  const parsed = reviewInput.safeParse(input)
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Something's wrong with that review." }
+  }
+  const { organizationId, decision, note } = parsed.data
+
+  const updated = await db
+    .update(users)
+    .set({
+      verificationStatus: decision,
+      reviewedAt: new Date(),
+      reviewedBy: actor.id,
+      reviewNote: note || null,
+    })
+    .where(
+      and(
+        eq(users.id, organizationId),
+        eq(users.role, "donor"),
+        sql`exists (select 1 from ${users} as reviewer where reviewer.id = ${actor.id} and reviewer.is_admin)`
+      )
+    )
+    .returning({ id: users.id })
+  if (updated.length === 0) return { ok: false, error: "We couldn't find that organization." }
+  return {
+    ok: true,
+    message: decision === "approved" ? "Organization approved." : "Organization rejected.",
   }
 }

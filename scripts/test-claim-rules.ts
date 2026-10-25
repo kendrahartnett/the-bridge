@@ -19,6 +19,9 @@ import {
   claimRequest,
   confirmDelivery,
   createRequest,
+  listMyPosts,
+  listMySupported,
+  reviewOrganization,
   type Actor,
 } from "../src/lib/request-rules.ts"
 
@@ -72,6 +75,22 @@ async function newRequest(owner: Actor, what: string): Promise<string> {
   return r.id
 }
 
+// Test scaffolding only: the app itself never grants admin. The run grants it to one test
+// account and removes it again at the end (also after an error).
+async function setAdmin(id: string, isAdmin: boolean) {
+  await db.update(users).set({ isAdmin }).where(eq(users.id, id))
+}
+
+// Put test.donor3 back to its seeded state: pending, never reviewed.
+async function resetPendingOrg(id: string) {
+  await db
+    .update(users)
+    .set({ verificationStatus: "pending", reviewedAt: null, reviewedBy: null, reviewNote: null })
+    .where(eq(users.id, id))
+}
+
+const scaffolding: { adminId?: string; pendingOrgId?: string } = {}
+
 const SEEDED_PREFIX = "5eed0000-"
 const OTHER_ORG_MESSAGE = "Someone else just offered support for this request."
 
@@ -80,6 +99,7 @@ async function main() {
   const out2 = await actor("test.outreach2@example.com")
   const orgA = await actor("test.donor1@example.com")
   const orgB = await actor("test.donor2@example.com")
+  const orgC = await actor("test.donor3@example.com") // seeded as pending
 
   const seededBefore = await db
     .select()
@@ -159,7 +179,76 @@ async function main() {
   record(`Invalid category "weapons" is rejected and no row is created`, !bad.ok && !!bad.fieldErrors?.category && countAfter === countBefore && badRows.length === 0,
     `category error "${bad.ok ? "" : bad.fieldErrors?.category?.[0]}"; rows ${countBefore} → ${countAfter}`)
 
-  // 8. Race: two organizations offer at the same moment, 10 times. Exactly one wins.
+  // 8. Organization verification.
+  scaffolding.pendingOrgId = orgC.id
+  scaffolding.adminId = out2.id
+  await resetPendingOrg(orgC.id)
+  const err = (r: { ok: boolean }) => (r as { error?: string }).error ?? ""
+  const postAs = async (who: Actor, what: string) => {
+    const r = await createRequest(db, who, {
+      peopleCount: "5", category: "clothing", items: `${TAG} ${what}`, dietaryNotes: "",
+      neighborhood: "Logan Square", windowStart: `${day}T10:00`, windowEnd: `${day}T12:00`,
+    })
+    if (r.ok) created.push(r.id)
+    return r
+  }
+
+  // 8a. Pending: cannot claim or post.
+  const r8 = await newRequest(out1, "verification target")
+  const pendingClaim = await claimRequest(db, orgC, r8)
+  const pendingPost = await postAs(orgC, "pending org posts")
+  record("Pending organization cannot claim a need", !pendingClaim.ok && (await status(r8)).status === "open", `"${err(pendingClaim)}"`)
+  record("Pending organization cannot post a need", !pendingPost.ok, `"${err(pendingPost)}"`)
+
+  // 8b. Reviews: a non-admin can't approve or reject; an admin can.
+  const reviewByOrg = await reviewOrganization(db, orgA, { organizationId: orgC.id, decision: "approved" })
+  const reviewByOutreach = await reviewOrganization(db, out1, { organizationId: orgC.id, decision: "rejected" })
+  const [stillPending] = await db.select({ v: users.verificationStatus }).from(users).where(eq(users.id, orgC.id))
+  record("Non-admin (organization) cannot approve", !reviewByOrg.ok && stillPending.v === "pending", `"${err(reviewByOrg)}"`)
+  record("Non-admin (outreach) cannot reject", !reviewByOutreach.ok && stillPending.v === "pending", `"${err(reviewByOutreach)}"; status stays ${stillPending.v}`)
+  await setAdmin(out2.id, true)
+  const longNote = await reviewOrganization(db, out2, { organizationId: orgC.id, decision: "rejected", note: "x".repeat(301) })
+  record("Review note over 300 characters is refused", !longNote.ok, `"${err(longNote)}"`)
+  const reject = await reviewOrganization(db, out2, { organizationId: orgC.id, decision: "rejected", note: `${TAG} website didn't match` })
+  const [rej] = await db.select().from(users).where(eq(users.id, orgC.id))
+  record("Admin can reject; reviewer, time, and note are recorded", reject.ok && rej.verificationStatus === "rejected" && rej.reviewedBy === out2.id && !!rej.reviewedAt && rej.reviewNote === `${TAG} website didn't match`,
+    `status ${rej.verificationStatus}; reviewed by ${rej.reviewedBy === out2.id ? "the admin" : rej.reviewedBy}; note saved`)
+
+  // 8c. Rejected: cannot claim or post.
+  const rejectedClaim = await claimRequest(db, orgC, r8)
+  const rejectedPost = await postAs(orgC, "rejected org posts")
+  record("Rejected organization cannot claim a need", !rejectedClaim.ok && (await status(r8)).status === "open", `"${err(rejectedClaim)}"`)
+  record("Rejected organization cannot post a need", !rejectedPost.ok, `"${err(rejectedPost)}"`)
+
+  // 8d. Approved: can claim and can post; can't claim its own post.
+  const approve = await reviewOrganization(db, out2, { organizationId: orgC.id, decision: "approved" })
+  const [appr] = await db.select().from(users).where(eq(users.id, orgC.id))
+  record("Admin can approve", approve.ok && appr.verificationStatus === "approved" && appr.reviewNote === null, `status ${appr.verificationStatus}`)
+  const approvedClaim = await claimRequest(db, orgC, r8)
+  const s8 = await status(r8)
+  record("Approved organization can claim a need", approvedClaim.ok && s8.status === "claimed" && s8.claimedBy === orgC.id, `status ${s8.status}`)
+  const approvedPost = await postAs(orgC, "approved org posts")
+  record("Approved organization can post a need", approvedPost.ok, approvedPost.ok ? "created" : `"${err(approvedPost)}"`)
+  if (approvedPost.ok) {
+    const own = await claimRequest(db, orgC, approvedPost.id)
+    const sOwn = await status(approvedPost.id)
+    record("Organization cannot claim its own post", !own.ok && sOwn.status === "open", `"${err(own)}"; status stays ${sOwn.status}`)
+  }
+
+  // 8e. Contact visibility follows approval: revoking it hides the poster's email on the
+  // organization's existing claims.
+  const before = (await listMySupported(db, orgC.id)).find((r) => r.id === r8)
+  const revoke = await reviewOrganization(db, out2, { organizationId: orgC.id, decision: "rejected" })
+  const after = (await listMySupported(db, orgC.id)).find((r) => r.id === r8)
+  record("Approved organization sees the poster's email on its claim", before?.contact?.email === "test.outreach1@example.com", `email ${before?.contact?.email ? "shown" : "hidden"}`)
+  record("After approval is revoked, the poster's email is hidden on its existing claims", revoke.ok && !!after && after.contact?.email === null,
+    `claim still listed: ${!!after}; email ${after?.contact?.email === null ? "hidden (null from the query)" : "STILL SHOWN"}`)
+  const posterView = (await listMyPosts(db, out1.id)).find((r) => r.id === r8)
+  record("Poster still sees who supports the need after a revocation", posterView?.contact?.name === "Test — Organization C (pending)", `"${posterView?.contact?.name}"`)
+  await setAdmin(out2.id, false)
+  await resetPendingOrg(orgC.id)
+
+  // 9. Race: two organizations offer at the same moment, 10 times. Exactly one wins.
   for (let run = 1; run <= 10; run++) {
     const rid = await newRequest(out1, `race ${run}`)
     const [a, b] = await Promise.all([claimRequest(db, orgA, rid), claimRequest(db, orgB, rid)])
@@ -174,7 +263,7 @@ async function main() {
   record("Race: exactly one of two simultaneous offers succeeds (10 runs)", racePass, `${raceRows.filter((r) => r.pass).length}/10 runs correct`)
   for (const r of raceRows) console.log(`      run ${String(r.run).padStart(2)}: winner ${r.winner}; other got "${r.loserMessage}" ${r.pass ? "✓" : "✗"}`)
 
-  // 9. The database itself rejects invalid status / claimed_by combinations.
+  // 10. The database itself rejects invalid status / claimed_by combinations.
   const r9 = await newRequest(out1, "db constraint")
   const dbChecks: [string, () => Promise<unknown>][] = [
     ["status 'claimed' with no claimed_by", () => db.update(foodRequests).set({ status: "claimed" }).where(eq(foodRequests.id, r9))],
@@ -204,7 +293,7 @@ async function main() {
     deleted.length === created.length && unchanged && totalAfter === totalBefore,
     `deleted ${deleted.length}/${created.length}; seeded rows identical: ${unchanged}; total rows ${totalBefore} → ${totalAfter}`)
 
-  writeReport({ out1, out2, orgA, orgB })
+  writeReport({ out1, out2, orgA, orgB, orgC })
 }
 
 function writeReport(who: Record<string, { label: string }>) {
@@ -218,7 +307,9 @@ function writeReport(who: Record<string, { label: string }>) {
     "The script calls the same rule functions the server actions call (src/lib/request-rules.ts)",
     "with real test users, creates its own fictional requests, and deletes only those afterwards.",
     "",
-    `Users: outreach ${who.out1.label}, ${who.out2.label}; organizations ${who.orgA.label}, ${who.orgB.label}.`,
+    `Users: outreach ${who.out1.label}, ${who.out2.label}; organizations ${who.orgA.label}, ${who.orgB.label}, ${who.orgC.label}.`,
+    "For the verification checks, the run gives test.outreach2 admin rights directly in the database",
+    "and removes them afterwards (the app has no way to grant admin), and resets test.donor3 to pending.",
     "",
     `**${passed}/${results.length} checks passed.**`,
     "",
@@ -243,6 +334,8 @@ function writeReport(who: Record<string, { label: string }>) {
 
 main().catch(async (err) => {
   console.error(err)
+  if (scaffolding.adminId) await setAdmin(scaffolding.adminId, false)
+  if (scaffolding.pendingOrgId) await resetPendingOrg(scaffolding.pendingOrgId)
   // Best-effort cleanup of this run's rows if something threw part-way.
   if (created.length) {
     await db.delete(foodRequests).where(and(inArray(foodRequests.id, created), like(foodRequests.items, `${TAG}%`)))

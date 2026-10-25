@@ -51,7 +51,14 @@ export async function signInAction(
   // time; after that the saved role stays, so one sign-in can't flip someone's access.
   await db
     .insert(users)
-    .values({ email, role, displayName, organizationName })
+    // New organizations wait for review; outreach accounts don't need it.
+    .values({
+      email,
+      role,
+      displayName,
+      organizationName,
+      verificationStatus: role === "donor" ? "pending" : "not_required",
+    })
     .onConflictDoUpdate({
       target: users.email,
       set: {

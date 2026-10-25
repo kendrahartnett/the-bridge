@@ -1,14 +1,16 @@
 # Test results: request and response rules
 
-Run: 10/24/2026, 12:31:53 PM (Chicago time) · tag `[claim-test 20261024173150]`
+Run: 10/24/2026, 8:06:52 PM (Chicago time) · tag `[claim-test 20261025010644]`
 
 Command: `npm run test:claims` (scripts/test-claim-rules.ts), against the dev database.
 The script calls the same rule functions the server actions call (src/lib/request-rules.ts)
 with real test users, creates its own fictional requests, and deletes only those afterwards.
 
-Users: outreach Test — Outreach Worker A, Test — Outreach Worker B; organizations Test — Organization A, Test — Organization B.
+Users: outreach Test — Outreach Worker A, Test — Outreach Worker B; organizations Test — Organization A, Test — Organization B, Test — Organization C (pending).
+For the verification checks, the run gives test.outreach2 admin rights directly in the database
+and removes them afterwards (the app has no way to grant admin), and resets test.donor3 to pending.
 
-**19/19 checks passed.**
+**34/34 checks passed.**
 
 | # | Check | Result | Detail |
 |---|---|---|---|
@@ -16,21 +18,36 @@ Users: outreach Test — Outreach Worker A, Test — Outreach Worker B; organiza
 | 2 | Second organization cannot offer support on the same request | PASS | "Someone else just offered support for this request."; still supported by Test — Organization A |
 | 3 | Outreach user cannot offer support | PASS | "Only organization accounts can offer support."; status stays open |
 | 4 | Fulfil: creator cannot fulfil while Open | PASS | "No organization has offered support for this request yet." |
-| 5 | Fulfil: an organization cannot fulfil | PASS | "Only the outreach worker who made this request can change it." |
-| 6 | Fulfil: a different outreach user cannot fulfil | PASS | "Only the outreach worker who made this request can change it." |
+| 5 | Fulfil: an organization cannot fulfil | PASS | "Only the person who posted this request can change it." |
+| 6 | Fulfil: a different outreach user cannot fulfil | PASS | "Only the person who posted this request can change it." |
 | 7 | Fulfil: creator fulfils when In Progress → Fulfilled | PASS | status claimed → delivered (shown as "Fulfilled") |
 | 8 | Fulfil: cannot fulfil twice | PASS | "This request is already fulfilled." |
-| 9 | Cancel: an organization cannot cancel | PASS | "Only the outreach worker who made this request can change it." |
+| 9 | Cancel: an organization cannot cancel | PASS | "Only the person who posted this request can change it." |
 | 10 | Cancel: creator cancels while Open → Cancelled | PASS | status cancelled |
 | 11 | Cancel: creator cannot cancel once In Progress | PASS | "An organization is already supporting this request, so it can't be cancelled here."; status stays claimed |
-| 12 | Different outreach user cannot cancel someone else's request | PASS | "Only the outreach worker who made this request can change it." |
-| 13 | Different outreach user cannot fulfil someone else's request | PASS | "Only the outreach worker who made this request can change it." |
+| 12 | Different outreach user cannot cancel someone else's request | PASS | "Only the person who posted this request can change it." |
+| 13 | Different outreach user cannot fulfil someone else's request | PASS | "Only the person who posted this request can change it." |
 | 14 | Invalid category "weapons" is rejected and no row is created | PASS | category error "Choose the type of support."; rows 13 → 13 |
-| 15 | Race: exactly one of two simultaneous offers succeeds (10 runs) | PASS | 10/10 runs correct |
-| 16 | Database rejects status 'claimed' with no claimed_by | PASS | "new row for relation "food_requests" violates check constraint "claim_status_consistency"" |
-| 17 | Database rejects status 'open' with a claimed_by | PASS | "new row for relation "food_requests" violates check constraint "claim_status_consistency"" |
-| 18 | Database rejects status 'delivered' with no claimed_by | PASS | "new row for relation "food_requests" violates check constraint "claim_status_consistency"" |
-| 19 | Cleanup: deleted only this run's 18 test requests; seeded requests unchanged | PASS | deleted 18/18; seeded rows identical: true; total rows 6 → 6 |
+| 15 | Pending organization cannot claim a need | PASS | "Your organization is still under review, so you can't do this yet." |
+| 16 | Pending organization cannot post a need | PASS | "Your organization is still under review, so you can't do this yet." |
+| 17 | Non-admin (organization) cannot approve | PASS | "Only admins can review organizations." |
+| 18 | Non-admin (outreach) cannot reject | PASS | "Only admins can review organizations."; status stays pending |
+| 19 | Review note over 300 characters is refused | PASS | "Keep the note under 300 characters." |
+| 20 | Admin can reject; reviewer, time, and note are recorded | PASS | status rejected; reviewed by the admin; note saved |
+| 21 | Rejected organization cannot claim a need | PASS | "Your organization wasn't approved, so you can't do this." |
+| 22 | Rejected organization cannot post a need | PASS | "Your organization wasn't approved, so you can't do this." |
+| 23 | Admin can approve | PASS | status approved |
+| 24 | Approved organization can claim a need | PASS | status claimed |
+| 25 | Approved organization can post a need | PASS | created |
+| 26 | Organization cannot claim its own post | PASS | "This is your own post, so you can't offer support on it."; status stays open |
+| 27 | Approved organization sees the poster's email on its claim | PASS | email shown |
+| 28 | After approval is revoked, the poster's email is hidden on its existing claims | PASS | claim still listed: true; email hidden (null from the query) |
+| 29 | Poster still sees who supports the need after a revocation | PASS | "Test — Organization C (pending)" |
+| 30 | Race: exactly one of two simultaneous offers succeeds (10 runs) | PASS | 10/10 runs correct |
+| 31 | Database rejects status 'claimed' with no claimed_by | PASS | "new row for relation "food_requests" violates check constraint "claim_status_consistency"" |
+| 32 | Database rejects status 'open' with a claimed_by | PASS | "new row for relation "food_requests" violates check constraint "claim_status_consistency"" |
+| 33 | Database rejects status 'delivered' with no claimed_by | PASS | "new row for relation "food_requests" violates check constraint "claim_status_consistency"" |
+| 34 | Cleanup: deleted only this run's 20 test requests; seeded requests unchanged | PASS | deleted 20/20; seeded rows identical: true; total rows 6 → 6 |
 
 ## Race test (10 runs)
 
@@ -41,7 +58,7 @@ Two organizations offer support on the same open request at the same moment (`Pr
 | 1 | Test — Organization A | Someone else just offered support for this request. | PASS |
 | 2 | Test — Organization A | Someone else just offered support for this request. | PASS |
 | 3 | Test — Organization A | Someone else just offered support for this request. | PASS |
-| 4 | Test — Organization A | Someone else just offered support for this request. | PASS |
+| 4 | Test — Organization B | Someone else just offered support for this request. | PASS |
 | 5 | Test — Organization A | Someone else just offered support for this request. | PASS |
 | 6 | Test — Organization A | Someone else just offered support for this request. | PASS |
 | 7 | Test — Organization B | Someone else just offered support for this request. | PASS |
