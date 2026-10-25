@@ -40,6 +40,8 @@ Each project has its own Neon Auth, so logins and sessions never cross between t
 
 The seed and test scripts check the database before doing anything and exit if it isn't `the-bridge-dev` (see `src/db/dev-guard.ts`).
 
+Scripts never print connection strings, passwords, API keys, or database URLs, even in errors: the seed, test, migrate, and admin scripts filter all of their output through `src/lib/redact.ts`. `npm run test:redact` checks this.
+
 Keep production's values in `.env.prod.local`, never `.env.production.local`: Next.js loads `.env.production.local` automatically whenever the app runs in production mode (`next build`, `next start`), and it overrides `.env.local`, so a local production build would quietly connect to the real database.
 
 ## Learn More

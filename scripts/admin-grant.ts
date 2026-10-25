@@ -12,6 +12,11 @@ import { neon } from "@neondatabase/serverless"
 import fs from "node:fs"
 import { createInterface } from "node:readline/promises"
 
+import { addSecret, installRedaction } from "../src/lib/redact.ts"
+
+// Nothing this script prints (including errors) may show a connection string or password.
+installRedaction()
+
 const PROJECTS: Record<string, string> = {
   "sparkling-bird-06840224": "the-bridge (production)",
   "purple-hill-95844872": "the-bridge-dev",
@@ -43,6 +48,7 @@ function readDatabaseUrl(file: string) {
     console.error(`DATABASE_URL is missing from ${file}.`)
     process.exit(1)
   }
+  addSecret(url)
   return url
 }
 

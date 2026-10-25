@@ -12,6 +12,7 @@
     "db:seed": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/db/seed.ts",
     "test:claims": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-claim-rules.ts",
     "test:assistant-reply": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-assistant-reply.ts",
+    "test:redact": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-redact.ts",
     "admin:grant": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/admin-grant.ts",
     "admin:grant:prod": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/admin-grant.ts --production",
     "db:migrate:prod": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/migrate-production.ts"

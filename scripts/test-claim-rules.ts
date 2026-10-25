@@ -15,6 +15,7 @@ import fs from "node:fs"
 import * as schema from "../src/db/schema.ts"
 import { requireDevDatabase } from "../src/db/dev-guard.ts"
 import { foodRequests, users } from "../src/db/schema.ts"
+import { installRedaction } from "../src/lib/redact.ts"
 import {
   cancelRequest,
   claimRequest,
@@ -26,6 +27,9 @@ import {
   reviewOrganization,
   type Actor,
 } from "../src/lib/request-rules.ts"
+
+// Nothing this script prints (including errors) may show a connection string or password.
+installRedaction()
 
 try {
   process.loadEnvFile(".env.local")

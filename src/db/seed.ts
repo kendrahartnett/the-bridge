@@ -13,8 +13,12 @@ import { sql } from "drizzle-orm"
 import { drizzle } from "drizzle-orm/neon-http"
 
 import { chicagoLocalToDate } from "../lib/chicago-time.ts"
+import { installRedaction } from "../lib/redact.ts"
 import { requireDevDatabase } from "./dev-guard.ts"
 import { foodRequests, users, type NewFoodRequest } from "./schema.ts"
+
+// Nothing this script prints (including errors) may show a connection string or password.
+installRedaction()
 
 try {
   process.loadEnvFile(".env.local")

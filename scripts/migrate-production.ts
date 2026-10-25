@@ -10,6 +10,12 @@
 import { spawnSync } from "node:child_process"
 import fs from "node:fs"
 
+import { addSecret, installRedaction } from "../src/lib/redact.ts"
+
+// Nothing this script prints (including drizzle-kit's output and errors) may show a
+// connection string or password.
+installRedaction()
+
 if (!process.argv.includes("--confirm")) {
   console.error("This applies migrations to PRODUCTION. Run it again with --confirm:")
   console.error("  npm run db:migrate:prod -- --confirm")
@@ -31,12 +37,17 @@ if (!url) {
   process.exit(1)
 }
 
-console.log(`Applying migrations to production (${new URL(url).hostname})…`)
+addSecret(url)
+console.log("Applying migrations to production (the-bridge)…")
 // drizzle.config.ts loads .env.local, but a variable that's already set wins, so drizzle-kit
 // uses production's URL here.
 const result = spawnSync("npx", ["drizzle-kit", "migrate"], {
   env: { ...process.env, DATABASE_URL: url },
-  stdio: "inherit",
+  // drizzle-kit's output is captured and printed through the redaction filter.
+  stdio: ["inherit", "pipe", "pipe"],
+  encoding: "utf8",
   shell: process.platform === "win32",
 })
+if (result.stdout) process.stdout.write(result.stdout)
+if (result.stderr) process.stderr.write(result.stderr)
 process.exit(result.status ?? 1)
