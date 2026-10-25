@@ -15,7 +15,7 @@ const HEADER = `(() => {
   const inline = [...h.querySelectorAll('nav > ul:not([id]) a')].filter(vis).map(a => ({ label: a.textContent.trim(), current: a.getAttribute("aria-current"), h: Math.round(a.getBoundingClientRect().height) }))
   const menu = h.querySelector('button[aria-label="Menu"]')
   const controls = [...h.querySelectorAll("a, button")].filter(vis).map(e => e.getBoundingClientRect())
-  const wm = h.querySelector("svg")
+  const wm = [...h.querySelectorAll("a[aria-label] img")].find(vis)
   return {
     inline,
     menu: vis(menu) ? { h: Math.round(menu.getBoundingClientRect().height), w: Math.round(menu.getBoundingClientRect().width), expanded: menu.getAttribute("aria-expanded") } : null,
@@ -60,7 +60,7 @@ try {
             await t.key("Escape", "Escape", 27); await sleep(200)
             check(`${tag}: Escape closes the menu and returns focus to the button`, await t.evaluate(`document.querySelector('header nav ul[id]').hidden && document.activeElement?.getAttribute("aria-label") === "Menu"`))
           }
-          check(`${tag}: header on one row, nothing under 44px, no overflow${w === 320 ? ", wordmark 104px" : ""}`, hd.oneRow && hd.small === 0 && !hd.overflow && hd.rightEdge <= hd.vw - 16 && (w !== 320 || hd.wordmark === 104), `right edge ${hd.rightEdge}/${hd.vw}, wordmark ${hd.wordmark}`)
+          check(`${tag}: header on one row, nothing under 44px, no overflow${w === 320 ? ", logo 116px" : ""}`, hd.oneRow && hd.small === 0 && !hd.overflow && hd.rightEdge <= hd.vw - 16 && (w !== 320 || hd.wordmark === 116), `right edge ${hd.rightEdge}/${hd.vw}, logo ${hd.wordmark}px`)
           if (path === "/admin") {
             const back = await t.evaluate(`(() => { const a = document.querySelector("main a"); const r = a.getBoundingClientRect(); return { text: a.textContent.trim(), href: a.getAttribute("href"), h: Math.round(r.height), first: a === document.querySelector("main").querySelector("a, h1, p") } })()`)
             check(`${tag}: "Back to dashboard" link at the top of /admin`, back.text === "← Back to dashboard" && back.href === "/dashboard" && back.h >= 44 && back.first, JSON.stringify(back))

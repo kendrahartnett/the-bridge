@@ -30,6 +30,7 @@ npm run e2e:responsive
 | `e2e:dropdown` | Post a Need dropdown highlight color and contrast |
 | `e2e:panel` | Chat panel layout, focus, keyboard, contrast, limits |
 | `e2e:notices` | Real-pixel text contrast of the account-status banners and every Notice tone, on the page and in a card |
+| `e2e:homepage` | Hero reading order on phones, layout shift, photo format, caption and alt text, logo sizes, reduced motion |
 
 Options (after `--`, e.g. `npm run e2e:responsive -- --themes=dark`):
 

@@ -1,135 +1,126 @@
-import { ClipboardPlus, HandHeart } from "lucide-react"
-import Link from "next/link"
+import Image from "next/image"
 
-import { HeroGlows } from "@/components/hero-glows"
+import { ARCH_CENTERLINE, ARCH_CENTERLINE_VIEWBOX, ARCH_STOPS } from "@/components/brand/arch"
+import { CtaLink } from "@/components/cta-link"
+import { HeroAtmosphere } from "@/components/hero-atmosphere"
+import { SectionHeader } from "@/components/section-header"
 import { SiteHeader } from "@/components/site-header"
 import { BlurFade } from "@/components/ui/blur-fade"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
+  FOOTER_TEXT,
   HERO_BADGE,
+  HERO_DESCRIPTION,
   HERO_HEADLINE,
-  HERO_LINE,
+  HERO_IMAGE,
+  HERO_LEAD,
+  HOW_IT_WORKS_HEADING,
+  JOURNEY,
   MISSION,
+  MISSION_HEADING,
   ROLE_CTAS,
   WHAT_IS_HEADING,
   WHAT_IS_PARAGRAPHS,
 } from "@/lib/copy"
+import heroArt from "../../public/images/hero-bridge.png"
 
-// Exact wording; do not edit without sign-off.
-const JOURNEY = [
-  { label: "Request", description: "An outreach worker describes a need." },
-  { label: "Connect", description: "An organization offers support." },
-  { label: "Deliver", description: "Resources reach the people who need them." },
-  { label: "Support", description: "The outreach worker and the person connect to care." },
-  { label: "Rebuild", description: "Work toward lasting stability." },
-] as const
-
-// Homepage calls to action. Routes are unchanged: each still opens sign-in with the
-// matching role preselected.
-const CTAS = [
-  {
-    id: "post",
-    href: "/sign-in?role=outreach",
-    ...ROLE_CTAS.outreach,
-    Icon: ClipboardPlus,
-    className:
-      "bg-primary text-primary-foreground glow-primary hover:bg-primary/90",
-  },
-  {
-    id: "respond",
-    href: "/sign-in?role=donor",
-    ...ROLE_CTAS.donor,
-    Icon: HandHeart,
-    className:
-      "border border-primary bg-background/50 text-primary-text backdrop-blur-md hover:bg-primary/10 hover:text-primary-text",
-  },
-] as const
-
-// Glass card: translucent page background, blur, hairline border, 12px radius, the soft card
-// shadow, plus a light-blue outer glow (--primary-text at 10% light / 20% dark).
-const GLASS =
-  "border-black/10 bg-background/50 backdrop-blur-md dark:border-white/10 " +
-  "shadow-[0_0_24px_color-mix(in_srgb,var(--primary-text)_10%,transparent),var(--soft-shadow-sm)] " +
-  "dark:shadow-[0_0_24px_color-mix(in_srgb,var(--primary-text)_20%,transparent),var(--soft-shadow-sm)]"
+// Widths of the hero lines at 1em (measured in their fonts, plus 2% to spare), so each can be
+// sized to fill its column on one line: "Bridging the Gap." in Zen Tokyo Zoo is 6.98em,
+// "Every Connection is a Step Forward." in Raleway 600 is 16.89em.
+const HEADLINE_EM = 7.12
+const SUBLINE_EM = 17.2
 
 export default function Home() {
   return (
     <>
       <SiteHeader />
       <main className="flex-1">
-        <section className="relative isolate overflow-hidden px-4 pt-6 pb-12 sm:px-6 sm:pt-8 sm:pb-16">
-          <HeroGlows />
-          <BlurFade className="mx-auto w-full max-w-5xl">
-            <div className="flex flex-col items-center text-center">
-              {/* Metallic gold badge: gradient over a solid gold fallback; navy text (5.24:1 on the darkest stop). */}
-              <p className="inline-flex max-w-full items-center justify-center rounded-full bg-gold bg-(image:--gold-gradient) px-3 py-1 text-center text-xs font-semibold tracking-wide text-gold-foreground uppercase shadow-sm sm:tracking-widest">
+        <section aria-labelledby="hero-title" className="relative isolate overflow-hidden">
+          <HeroAtmosphere />
+          {/* Phones and tablets: text first (headline and both calls to action), then the
+              image. Desktop: text and image share the width, the image's top aligned with
+              the eyebrow line. */}
+          <div className="mx-auto grid w-full max-w-5xl gap-10 px-4 pt-10 pb-14 sm:px-6 sm:pt-14 lg:grid-cols-12 lg:items-start lg:gap-8 lg:pt-16 lg:pb-20">
+            <div className="@container lg:col-span-6">
+              <p className="hero-rise eyebrow flex items-center gap-3 text-foreground">
+                <span aria-hidden="true" className="h-px w-6 shrink-0 bg-gold" />
                 {HERO_BADGE}
               </p>
-              {/* Fluid sizes: line 1 runs 28px to 60px, line 2 stays one step smaller (24px to
-                  48px), so the headline scales smoothly instead of jumping at breakpoints. */}
-              <h1 className="font-heading mt-5 max-w-5xl leading-tight font-bold tracking-tight text-balance">
-                <span className="block text-[clamp(1.75rem,8vw,3.75rem)] font-extrabold text-foreground">
-                  {HERO_HEADLINE[0]}
+              <h1 id="hero-title" className="mt-5">
+                {/* Phones: may wrap, never under 2.5rem (the stripes need the size). From
+                    768px: one line, sized to fill the text column (cqi), capped at 4.5rem.
+                    From 1024px it fills 85% of the column, leaving room for the gold arch that
+                    runs on to the image's edge. */}
+                <span
+                  className="hero-rise font-display block text-display text-foreground [--rise:12px] [animation-delay:80ms] md:flex md:items-center md:whitespace-nowrap md:text-(length:--headline-md) lg:text-(length:--headline-lg)"
+                  style={
+                    {
+                      "--headline-md": `min(calc(100cqi / ${HEADLINE_EM}), 4.5rem)`,
+                      "--headline-lg": `calc(85cqi / ${HEADLINE_EM})`,
+                    } as React.CSSProperties
+                  }
+                >
+                  <span>{HERO_HEADLINE[0]}</span>
+                  <HeroArch />
                 </span>
-                <span className="block text-[clamp(1.5rem,6.5vw,3rem)] text-primary-text">
+                {/* One line from 1024px (fitted to the column, at most 1.625rem), clearly
+                    smaller than the headline; may wrap below that. */}
+                <span
+                  className="hero-rise font-heading mt-4 block text-display-sub font-semibold text-primary-text [animation-delay:200ms] lg:whitespace-nowrap lg:text-(length:--subline-lg)"
+                  style={{ "--subline-lg": `min(calc(100cqi / ${SUBLINE_EM}), 1.625rem)` } as React.CSSProperties}
+                >
                   {HERO_HEADLINE[1]}
                 </span>
               </h1>
-              <p className="mt-5 max-w-xl text-base leading-relaxed text-pretty text-foreground sm:text-lg dark:text-muted-foreground">
-                {HERO_LINE}
+              <p className="hero-rise mt-6 font-semibold tracking-wide text-foreground [animation-delay:280ms]">
+                {HERO_LEAD}
               </p>
-              <div className="mt-8 flex w-full flex-col items-stretch justify-center gap-5 sm:flex-row sm:items-start">
-                {CTAS.map(({ id, href, label, help, Icon, className }) => (
-                  <div key={id} className="flex flex-col items-center gap-2 sm:w-64">
-                    <Button
-                      asChild
-                      className={`h-12 w-full rounded-lg px-6 text-base font-semibold transition-colors focus-visible:ring-[3px] focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${className}`}
-                    >
-                      <Link href={href} aria-describedby={`cta-${id}-help`}>
-                        <Icon aria-hidden="true" className="size-5" />
-                        {label}
-                      </Link>
-                    </Button>
-                    <p id={`cta-${id}-help`} className="text-center text-sm text-foreground dark:text-muted-foreground">
-                      {help}
-                    </p>
-                  </div>
-                ))}
+              <p className="hero-fade mt-2 max-w-[34rem] text-lead text-pretty text-muted-foreground [animation-delay:280ms]">
+                {HERO_DESCRIPTION}
+              </p>
+              <div className="hero-rise mt-8 flex flex-col gap-5 sm:flex-row sm:items-start [animation-delay:360ms]">
+                <CtaLink id="cta-post" href="/sign-in?role=outreach" variant="primary" className="sm:w-64 lg:w-auto lg:min-w-0 lg:flex-1" {...ROLE_CTAS.outreach} />
+                <CtaLink id="cta-respond" href="/sign-in?role=donor" variant="secondary" className="sm:w-64 lg:w-auto lg:min-w-0 lg:flex-1" {...ROLE_CTAS.donor} />
               </div>
             </div>
-          </BlurFade>
+
+            {/* Below 1024px the illustration at its own 4:3 shape (nothing cropped). From
+                1024px a 7:6 crop, close to the text column's height: the widest crop that
+                still shows the whole bridge (about 2% to 86% across) and both figures, so it
+                sits just left of center. The fixed-aspect frame keeps the layout still while
+                the image loads. */}
+            <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-border bg-muted lg:col-span-6 lg:aspect-[7/6]">
+              <Image
+                src={heroArt}
+                alt={HERO_IMAGE.alt}
+                fill
+                sizes="(min-width: 1024px) 480px, (min-width: 640px) 90vw, 100vw"
+                loading="eager"
+                fetchPriority="high"
+                placeholder="blur"
+                className="hero-photo object-cover object-center lg:object-[5%_50%]"
+              />
+            </div>
+          </div>
         </section>
 
         <section aria-labelledby="journey">
-          <BlurFade inView className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
-            <h2 id="journey" className="font-heading text-xl font-bold tracking-tight sm:text-2xl">
-              How it works
-            </h2>
-            <ol className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <BlurFade inView className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
+            <SectionHeader id="journey" title={HOW_IT_WORKS_HEADING} />
+            <ol className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
               {JOURNEY.map((step, i) => (
                 <li key={step.label}>
-                  {/* Grows on hover (mouse/trackpad only; Tailwind's hover: skips touch screens):
-                      1.02x in the single-column layout, where a full-width card has only the
-                      page padding to grow into, and 1.1x from sm up. Either way it stays inside
-                      the padding, so the section needs no clipping. The hovered card sits on
-                      top and turns nearly opaque so overlapped neighbors don't show through.
-                      Reduced motion: no animation. */}
-                  <Card
-                    className={`relative h-full gap-3 p-4 ${GLASS} transition-transform duration-200 ease-out hover:z-10 hover:scale-[1.02] hover:bg-background/95 motion-reduce:transition-none sm:hover:scale-110`}
-                  >
-                    <CardHeader className="gap-2 px-0">
+                  <Card variant="interactive" className="h-full gap-3 p-5">
+                    <CardHeader className="gap-3 px-0">
                       <span
                         aria-hidden="true"
                         className="inline-flex size-9 items-center justify-center rounded-full bg-secondary text-sm font-semibold text-primary-text"
                       >
                         {i + 1}
                       </span>
-                      <CardTitle className="text-base">{step.label}</CardTitle>
+                      <CardTitle className="text-h3">{step.label}</CardTitle>
                     </CardHeader>
-                    <CardContent className="px-0 text-sm text-muted-foreground">
-                      {step.description}
-                    </CardContent>
+                    <CardContent className="px-0 text-muted-foreground">{step.description}</CardContent>
                   </Card>
                 </li>
               ))}
@@ -138,12 +129,10 @@ export default function Home() {
         </section>
 
         <section aria-labelledby="what-is" className="border-t border-border">
-          <BlurFade inView className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
-            <h2 id="what-is" className="font-heading text-xl font-bold tracking-tight sm:text-2xl">
-              {WHAT_IS_HEADING}
-            </h2>
-            <Card className={`mt-4 py-4 sm:py-6 ${GLASS}`}>
-              <CardContent className="flex max-w-2xl flex-col gap-3 px-4 text-base leading-relaxed sm:gap-4 sm:px-6">
+          <BlurFade inView className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+            <SectionHeader id="what-is" title={WHAT_IS_HEADING} />
+            <Card className="mt-6 py-5 sm:py-7">
+              <CardContent className="flex flex-col gap-4 px-5 text-base leading-relaxed sm:px-7">
                 {WHAT_IS_PARAGRAPHS.map((text) => (
                   <p key={text.slice(0, 24)}>{text}</p>
                 ))}
@@ -153,21 +142,53 @@ export default function Home() {
         </section>
 
         <section aria-labelledby="mission" className="border-t border-border">
-          <BlurFade inView className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
-            <h2 id="mission" className="font-heading text-xl font-bold tracking-tight sm:text-2xl">
-              Mission Statement
-            </h2>
-            <Card className={`mt-4 py-4 sm:py-6 ${GLASS}`}>
-              <CardContent className="px-4 text-base leading-relaxed sm:px-6">{MISSION}</CardContent>
+          <BlurFade inView className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+            <SectionHeader id="mission" title={MISSION_HEADING} />
+            <Card className="mt-6 border-l-4 border-l-gold py-5 sm:py-7">
+              <CardContent className="px-5 text-lead leading-relaxed sm:px-7">{MISSION}</CardContent>
             </Card>
           </BlurFade>
         </section>
       </main>
       <footer className="border-t border-border">
-        <p className="mx-auto max-w-5xl px-4 py-6 text-sm text-muted-foreground sm:px-6">
-          The Bridge · Chicago
-        </p>
+        <p className="mx-auto max-w-5xl px-4 py-6 text-sm text-muted-foreground sm:px-6">{FOOTER_TEXT}</p>
       </footer>
     </>
+  )
+}
+
+/**
+ * Desktop only: a thin gold arch, the logo's curve and gradient, that runs from the end of
+ * "the Gap." to the image's edge: the bridge between the words and the picture. It fills
+ * the rest of the line and reaches across the column gap (2rem, less a hair so it meets the
+ * image without overlapping it).
+ */
+function HeroArch() {
+  return (
+    <svg
+      aria-hidden="true"
+      focusable="false"
+      viewBox={ARCH_CENTERLINE_VIEWBOX}
+      preserveAspectRatio="none"
+      className="pointer-events-none ml-[0.25em] -mr-[1.875rem] hidden h-[0.4em] min-w-16 flex-1 overflow-visible lg:block"
+    >
+      <defs>
+        <linearGradient id="hero-arch-gold" gradientUnits="objectBoundingBox" x1="0" y1="0" x2="1" y2="0">
+          {ARCH_STOPS.map((s) => (
+            <stop key={s.offset} offset={s.offset} stopColor={s.color} />
+          ))}
+        </linearGradient>
+      </defs>
+      <path
+        d={ARCH_CENTERLINE}
+        pathLength={1}
+        fill="none"
+        stroke="url(#hero-arch-gold)"
+        strokeWidth={3}
+        strokeLinecap="round"
+        vectorEffect="non-scaling-stroke"
+        className="arch-draw"
+      />
+    </svg>
   )
 }

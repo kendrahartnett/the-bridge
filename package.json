@@ -26,7 +26,8 @@
     "e2e:form": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/e2e/form.mjs",
     "e2e:dropdown": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/e2e/dropdown.mjs",
     "e2e:panel": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/e2e/panel.mjs",
-    "e2e:notices": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/e2e/notices.mjs"
+    "e2e:notices": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/e2e/notices.mjs",
+    "e2e:homepage": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/e2e/homepage.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.3.0",

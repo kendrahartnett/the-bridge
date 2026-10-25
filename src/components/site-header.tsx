@@ -1,9 +1,10 @@
+import { LogOut } from "lucide-react"
 import Link from "next/link"
 import { Suspense } from "react"
 
 import { signOutAction } from "@/app/sign-in/actions"
 import { AssistantChat } from "@/components/assistant/assistant-chat"
-import { ArchedWordmark } from "@/components/brand/arched-wordmark"
+import { Logo } from "@/components/brand/logo"
 import { HeaderNav } from "@/components/header-nav"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
@@ -20,9 +21,9 @@ export function SiteHeader({ signedIn = false }: { signedIn?: boolean }) {
           <Link
             href={signedIn ? "/dashboard" : "/"}
             aria-label={signedIn ? "The Bridge, dashboard" : "The Bridge, home"}
-            className="inline-flex min-h-tap items-center rounded-md px-1 text-primary-text outline-none focus-visible:ring-[3px] focus-visible:ring-ring"
+            className="inline-flex min-h-tap items-center rounded-md px-1 outline-none focus-visible:ring-[3px] focus-visible:ring-ring"
           >
-            <ArchedWordmark />
+            <Logo />
           </Link>
           <div className="flex items-center sm:gap-1">
             {signedIn && (
@@ -35,10 +36,12 @@ export function SiteHeader({ signedIn = false }: { signedIn?: boolean }) {
             <ThemeToggle />
             {signedIn ? (
               <form action={signOutAction}>
-                {/* Narrower side padding on phones leaves room for the full-size wordmark
-                    beside the menu button. Still 44px tall. */}
-                <Button type="submit" variant="ghost" className="px-2 sm:px-5">
-                  Sign out
+                {/* Below 360px an icon (named "Sign out" for screen readers) leaves room for a
+                    readable logo beside the menu button; the label shows from 360px. Narrower
+                    side padding on phones. Always at least 44px. */}
+                <Button type="submit" variant="ghost" className="min-w-tap px-2 sm:px-5">
+                  <LogOut aria-hidden="true" className="min-[360px]:hidden" />
+                  <span className="sr-only min-[360px]:not-sr-only">Sign out</span>
                 </Button>
               </form>
             ) : (

@@ -10,8 +10,8 @@ Status: **proposal, awaiting approval.** No application code has changed. This d
 
 | Asset | Size | Findings |
 |---|---|---|
-| `public/brand/the-bridge-logo-dark.png` | 2172 × 724 | Ivory "The", sky-blue "Bridge", gold crescent arch. **Transparent background** (77% of pixels have alpha 0; no solid navy panel). Edges are ragged (AI-generated halos), and the "g" cut-out where it crosses the arch is blotchy. |
-| `public/brand/the-bridge-logo-light.png` | 2172 × 724 | Navy "The", brighter blue "Bridge", same arch. Also transparent, same edge artifacts. |
+| `public/brand/the-bridge-logo-dark.png` (since deleted) | 2172 × 724 | Ivory "The", sky-blue "Bridge", gold crescent arch. **Transparent background** (77% of pixels have alpha 0; no solid navy panel). Edges are ragged (AI-generated halos), and the "g" cut-out where it crosses the arch is blotchy. |
+| `public/brand/the-bridge-logo-light.png` (since deleted) | 2172 × 724 | Navy "The", brighter blue "Bridge", same arch. Also transparent, same edge artifacts. |
 | `public/images/hero-community.jpg` | 1536 × 1024 (3:2 landscape), 2.4 MB | Overhead view of many hands joined in a circle, boxes of canned food, bottled water and produce around them, warm natural light. AI-generated. The joined hands sit near the center (about 50% across, 45% down), so a portrait crop keeps the subject. |
 
 Neither PNG is placed on the page. They are the reference for a rebuilt SVG logo (section 3.1), and the dark PNG is the source for the favicon and social preview image.
@@ -135,38 +135,28 @@ The homepage is the most expressive page. Sign-in is calm and branded. Dashboard
 
 ## 3. Brand system
 
-### 3.1 Logo (rebuilt as one inline SVG)
+### 3.1 Logo (the artwork PNGs, cleaned)
 
-Component: `components/brand/logo.tsx`, replacing `ArchedWordmark` everywhere it's used (the site header).
+**Changed during Phase 2 review:** the outlined-Poppins SVG was dropped in favor of new
+artwork with striped lettering (originals in `design/source/new-dark-logo.png` and
+`new-light-logo.png`; the first logo PNGs were deleted).
 
-Structure (viewBox about 2172 × 724, matching the references):
-
-```
-<svg aria-hidden="true">
-  <defs>
-    <linearGradient id="arch-gold">  ← stops from the sampled table, per theme via CSS vars
-    <mask id="g-gap">                ← white everywhere, the "g" outline stroked in black
-  </defs>
-  <path class="logo-the"    d="…" />   ← fill: var(--logo-the)
-  <path class="logo-bridge" d="…" />   ← fill: var(--logo-bridge)
-  <path class="logo-arch"   d="…" fill="url(#arch-gold)" mask="url(#g-gap)" />
-</svg>
-```
-
-- **Theme switching:** the fills read CSS variables set by the theme, so one SVG works in both themes and switches instantly with no image swap.
-  - Dark: `--logo-the: #f8f3e4`, `--logo-bridge: #01a3fc`, arch stops `#e99b09 → #fcd25a → #fcb429`.
-  - Light: `--logo-the: #01182d`, `--logo-bridge: #199ef4`, arch stops `#e29a12 → #fbd558 → #f9b427`.
-- **The "g" crossing:** the arch is masked by a slightly thicker outline of the "g" (gap about 3% of the cap height), so the gap is truly transparent. That means no halo on navy, ivory, or the photograph, in either theme. No background-colored strokes are involved.
-- **Animatable arch:** the arch is its own path. The draw-on effect animates `stroke-dashoffset` on a centerline path inside a reveal mask (the arch is a filled crescent, so the mask is what "draws" it). The same geometry is exported as `ArchPath` for the motif (section 3.4).
-- **Accessibility:** the home link keeps `aria-label="The Bridge, home"` (or "The Bridge, dashboard" when signed in); the SVG is `aria-hidden`.
-- **Sizes:** header 120 px wide below 360px, 136 px on other phones, 168 px from 640px. Clear space on every side is at least the "T" crossbar height.
-- **Letterforms:** see decision D1. Outlined paths from a geometric bold sans that matches the references (Poppins Bold, SIL Open Font License) keep the logo crisp and independent of any loaded font.
-
-**Favicon and social preview** (source: the dark PNG, per your note):
-
-- `src/app/icon.png` (512) and `apple-icon.png` (180): a navy (`#020617`) square holding the arch and a cropped "B" from the dark logo, legible at 16–32 px. The full wordmark is unreadable at favicon sizes; see decision D3.
-- `src/app/opengraph-image.png` (1200 × 630): the dark logo centered on the navy background with generous margins.
-- Generated once with a local script (headless Chrome canvas, no new dependency) and committed as static files.
+- **Files used:** `public/brand/logo-dark.png` (dark mode: ivory "The") and `logo-light.png`
+  (light mode: navy "The"), both made from the new PNGs with a one-time cleanup: an alpha
+  "levels" step (below 25% opacity → transparent, 98% and up → opaque) removed the faint light
+  haze in the stripe gaps and about 77,000 stray specks, and each was cropped to the artwork.
+  The originals stay alongside as sources.
+- **Component:** `components/brand/logo.tsx` renders both through `next/image`; CSS shows the
+  one for the current theme. Decorative (`alt=""`); the home link keeps its accessible name.
+- **Sizes:** 116 px below 360 px, 128 px on other phones, 152 px from 640 px: the smallest
+  sizes at which all the stripes stay separate on 2x and 3x screens (measured on the T's stem).
+  On 1x screens they soften at any header size. Below 360 px, "Sign out" is an icon (named
+  "Sign out") so the logo fits on one row.
+- **Arch motif:** `components/brand/arch.tsx` is fitted to the new logo's arch (curve and
+  sampled gold: `--arch-1` → `--arch-2` → `--arch-3` per theme), used by the hero connector.
+- **Favicon and social preview:** `src/app/icon.png` (512), `apple-icon.png` (180) and
+  `opengraph-image.png` (1200 × 630), made from the cleaned dark logo: a striped "B" over the
+  arch on navy, and the full logo on navy.
 
 ### 3.2 Color
 
@@ -249,7 +239,7 @@ All sizes are fluid between 320 px and 1280 px.
 
 | Token | Size | Line height | Weight / font | Use |
 |---|---|---|---|---|
-| `display` | `clamp(2.75rem, 11vw, 6rem)` | 0.95 | Raleway 800, tracking −0.03em | "Bridging the Gap." |
+| `display` | phones `clamp(2.5rem, 5vw, 4.5rem)` (may wrap); from 768 px one line, `min(100cqi / 7.12, 4.5rem)`; from 1024 px `85cqi / 7.12` | 1.2 | Zen Tokyo Zoo 400 (striped display face), no tracking | "Bridging the Gap." only |
 | `display-sub` | `clamp(1.25rem, 4.2vw, 2rem)` | 1.2 | Raleway 600 | "Every Connection is a Step Forward." |
 | `h1` | `clamp(1.875rem, 5vw, 2.5rem)` | 1.1 | Raleway 700 | Page titles |
 | `h2` | `clamp(1.5rem, 3.5vw, 2rem)` | 1.15 | Raleway 700 | Section titles |
@@ -375,7 +365,7 @@ All sizes are fluid between 320 px and 1280 px.
 
 ### 7.2 Typography hierarchy
 
-1. **"Bridging the Gap."**: `display`, Raleway 800, ivory (navy in light mode). Breaks as "Bridging / the Gap." on desktop for rhythm. About 96 px at 1280, about 44 px at 320.
+1. **"Bridging the Gap."**: `display`, Zen Tokyo Zoo (loaded with next/font as `--font-display`; lowercase renders as small capitals; covers á é í ó ú ñ ü ¿ ¡ for the Spanish toggle). Breaks as "Bridging / the Gap." on desktop, where a gold arch runs from "Gap." to the image's edge.
 2. **"Every Connection is a Step Forward."**: `display-sub`, Raleway 600, `--primary-text` (soft blue), with a 32px gold rule before it on desktop.
 3. **Supporting description:** "Real needs. Real people. Real connections." as a short lead line in Geist 600 with slightly wider tracking, then the sentence in `lead` at muted ivory, max width 34 rem, left aligned.
 4. **CTAs.**
@@ -388,9 +378,16 @@ All sizes are fluid between 320 px and 1280 px.
 - **Offer Support (secondary):** 1px blue border, transparent fill, blue text, same arrow behavior; hover fills with 8% blue.
 - Help text under each, as today. Destinations unchanged: `/sign-in?role=outreach` and `/sign-in?role=donor`.
 
-### 7.4 Photo implementation
+### 7.4 Image implementation
 
-`next/image` with `priority`, `fill` inside a fixed-aspect wrapper (no layout shift), `sizes="(min-width: 1024px) 42vw, 100vw"`, `object-position` centered on the hands, alt text as specified. No shadow or glow; a 1px border in the border token and a subtle edge gradient into the page only.
+`public/images/hero-bridge.png` (an illustration, 1448 × 1086), replacing the hands photo.
+`next/image` with `loading="eager"` and `fetchPriority="high"` (Next.js 16 deprecated
+`priority`), `fill` inside a fixed-aspect frame so nothing shifts while it loads: the full 4:3
+image below 1024 px; from 1024 px text and image share the width 50/50 and the image is a 7:6
+crop (`object-position: 5% 50%`), the widest crop that keeps the whole bridge (about 2%–86%
+across) and both figures in view, close to the text column's height. No caption (it's clearly
+an illustration). On desktop its top aligns with the eyebrow line. Alt text in `copy.ts`
+(`HERO_IMAGE.alt`).
 
 ### 7.5 Motion (homepage)
 
@@ -411,7 +408,7 @@ Reduced motion: everything is shown immediately, the arch is complete, and there
 ### 7.6 Copy changes (to `src/lib/copy.ts`)
 
 - **Replace** `HERO_LINE` with `HERO_LEAD` = "Real needs. Real people. Real connections." and `HERO_DESCRIPTION` = "The Bridge brings individuals, outreach teams, and organizations together to turn community needs into meaningful action."
-- **Add** `HERO_IMAGE_ALT` = "Volunteers join hands above boxes of food and community supplies."
+- **Add** `HERO_IMAGE` = { alt: "Illustration of two people crossing a golden bridge over the Chicago River, with the city skyline behind them." }
 - **Unchanged:** `HERO_BADGE`, `HERO_HEADLINE`, `ROLE_CTAS`, "How it works", "What is The Bridge?", Mission Statement (strings moved into `copy.ts` where they aren't already, wording identical).
 
 ---
@@ -478,7 +475,9 @@ Database schema and migrations, API routes, server actions, auth behavior, roles
 
 Each phase is pushed to `main` only after its checks pass.
 
-**Status:** Phase 1 done. Measured in Phase 1: the proposed `--subtle-foreground` was dropped (light `#566b7a` is only 4.34:1 on the muted fill), so metadata uses `--muted-foreground`; `--border-strong` was darkened from `#c9c0ab` / `#34506a` to `#8a8170` / `#557290` to reach 3:1 on the surfaces.
+**Status:** Phase 1 done; Phase 2 built and awaiting review (logo, hero image and headline font changed during review: see 3.1, 7.2 and 7.4).
+
+Phase 1: Measured in Phase 1: the proposed `--subtle-foreground` was dropped (light `#566b7a` is only 4.34:1 on the muted fill), so metadata uses `--muted-foreground`; `--border-strong` was darkened from `#c9c0ab` / `#34506a` to `#8a8170` / `#557290` to reach 3:1 on the surfaces.
 
 ---
 

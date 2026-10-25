@@ -49,13 +49,10 @@
   --surface-raised: #ffffff; /* hovered interactive cards, menus */
   --border-strong: #8a8170; /* inputs and dividers that must be seen */
 
-  /* Logo (sampled from public/brand/the-bridge-logo-light.png). To try the deeper blue for
-     "Bridge" in light mode, change only --logo-bridge to #1f6fb5. */
-  --logo-the: #01182d;
-  --logo-bridge: #199ef4;
-  --arch-1: #e29a12; /* arch ends */
-  --arch-2: #fbd558; /* arch center */
-  --arch-3: #f9b427;
+  /* The logo's gold arch, for the arch motif (the logo itself is an image). */
+  --arch-1: #eca31f; /* arch left end (sampled from design/source/new-light-logo.png) */
+  --arch-2: #fcdd6e; /* arch crown */
+  --arch-3: #fdb732; /* arch right end */
 
   --scrim: color-mix(in srgb, #19354a 40%, transparent);
   --shadow-tint: var(--foreground); /* navy */
@@ -78,12 +75,10 @@
   --surface-raised: #111a2b;
   --border-strong: #557290;
 
-  /* Logo (sampled from public/brand/the-bridge-logo-dark.png) */
-  --logo-the: #f8f3e4;
-  --logo-bridge: #01a3fc;
-  --arch-1: #e99b09;
-  --arch-2: #fcd25a;
-  --arch-3: #fcb429;
+  /* The logo's gold arch, for the arch motif (the logo itself is an image). */
+  --arch-1: #f4a321; /* sampled from design/source/new-dark-logo.png */
+  --arch-2: #fcdd5d;
+  --arch-3: #f4a525;
 
   --scrim: color-mix(in srgb, #000000 50%, transparent);
 
@@ -191,8 +186,6 @@
   --color-background-deep: var(--background-deep);
   --color-surface-raised: var(--surface-raised);
   --color-border-strong: var(--border-strong);
-  --color-logo-the: var(--logo-the);
-  --color-logo-bridge: var(--logo-bridge);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
@@ -200,10 +193,16 @@
   --spacing-tap: var(--tap-min);
 
   /* Type scale. Fluid between 320px and 1280px; Raleway sizes pair with font-heading. */
-  --text-display: clamp(2.75rem, 11vw, 6rem);
-  --text-display--line-height: 0.95;
-  --text-display--letter-spacing: -0.03em;
-  --text-display-sub: clamp(1.25rem, 4.2vw, 2rem);
+  /* The homepage headline, set in the striped display face: never under 2.5rem (40px) so the
+     stripes stay readable on phones; no negative tracking, which would merge the stripes. */
+  --text-display: clamp(2.5rem, 5vw, 4.5rem);
+  /* Zen Tokyo Zoo's own line box (ascender + descender = 1.2em): anything tighter makes
+     the two desktop lines' boxes overlap. */
+  --text-display--line-height: 1.2;
+  --text-display--letter-spacing: 0;
+  /* The line under the headline: clearly smaller than it at every width, and one line at
+     1024px and up (26px). */
+  --text-display-sub: clamp(1.125rem, 2.6vw, 1.625rem);
   --text-display-sub--line-height: 1.2;
   --text-h1: clamp(1.875rem, 5vw, 2.5rem);
   --text-h1--line-height: 1.1;
@@ -244,6 +243,12 @@
   font-variant-numeric: lining-nums;
 }
 
+/* Zen Tokyo Zoo, the striped display face: the homepage headline only. A utility for the
+   same reason as font-heading (next/font names its variable --font-display). */
+@utility font-display {
+  font-family: var(--font-display), var(--font-heading), ui-sans-serif, system-ui, sans-serif;
+}
+
 /* Glass: translucent page color with a background blur. Only for the header, the chat
    panel, dialogs, and menus; content cards are solid. 90% opacity keeps small text at
    4.5:1 or better over any content behind it. */
@@ -265,6 +270,61 @@
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+}
+
+/* Homepage entrance, CSS only. Stagger with [animation-delay:…]; set the rise distance with
+   [--rise:12px]. Elements stay clickable throughout (motion is cosmetic). Reduced motion:
+   everything is shown at once, the arch complete, no transforms. */
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(var(--rise, 8px));
+  }
+}
+@keyframes hero-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes hero-photo {
+  from {
+    opacity: 0;
+    transform: scale(1.03);
+  }
+}
+@keyframes arch-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@utility hero-rise {
+  animation: hero-rise 320ms var(--ease-brand) both;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+@utility hero-fade {
+  animation: hero-fade 280ms var(--ease-brand) both;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+/* The photo fades in and settles inside its fixed frame (the frame never moves). */
+@utility hero-photo {
+  animation: hero-photo 500ms var(--ease-brand) 200ms both;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+/* Draws a path with pathLength="1" from start to end. */
+@utility arch-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: arch-draw var(--duration-draw) var(--ease-draw) 500ms forwards;
+  @media (prefers-reduced-motion: reduce) {
+    stroke-dashoffset: 0;
+    animation: none;
+  }
 }
 
 @layer base {

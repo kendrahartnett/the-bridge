@@ -3,8 +3,16 @@ export const HERO_BADGE = "Rooted in Chicago · Built for change" // shown upper
 
 export const HERO_HEADLINE = ["Bridging the Gap.", "Every Connection is a Step Forward."] as const
 
-export const HERO_LINE =
-  "The Bridge closes the gap between community needs and available resources by bringing together individuals, outreach teams, and organizations committed to helping others."
+// Supporting copy under the headline (approved with the Phase 2 homepage design).
+export const HERO_LEAD = "Real needs. Real people. Real connections."
+
+export const HERO_DESCRIPTION =
+  "The Bridge brings individuals, outreach teams, and organizations together to turn community needs into meaningful action."
+
+// The hero illustration (public/images/hero-bridge.png).
+export const HERO_IMAGE = {
+  alt: "Illustration of two people crossing a golden bridge over the Chicago River, with the city skyline behind them.",
+} as const
 
 // The two ways to use The Bridge. Shared by the landing page buttons and the sign-in
 // role options so the wording always matches.
@@ -12,6 +20,17 @@ export const ROLE_CTAS = {
   outreach: { label: "Post a Need", help: "Request support for someone you're working with." },
   donor: { label: "Offer Support", help: "Respond with food, clothing, hygiene supplies, and more." },
 } as const
+
+// "How it works" section. Verbatim; do not edit without sign-off.
+export const HOW_IT_WORKS_HEADING = "How it works"
+
+export const JOURNEY = [
+  { label: "Request", description: "An outreach worker describes a need." },
+  { label: "Connect", description: "An organization offers support." },
+  { label: "Deliver", description: "Resources reach the people who need them." },
+  { label: "Support", description: "The outreach worker and the person connect to care." },
+  { label: "Rebuild", description: "Work toward lasting stability." },
+] as const
 
 // "What is The Bridge?" section. Verbatim; do not edit without sign-off.
 export const WHAT_IS_HEADING = "What is The Bridge?"
@@ -246,6 +265,10 @@ export const SPANISH_GLOSSARY = [
   ["Neighborhood", "Barrio"],
   ["Dashboard", "Panel"],
 ] as const
+
+export const MISSION_HEADING = "Mission Statement"
+
+export const FOOTER_TEXT = "The Bridge · Chicago"
 
 // Full mission, shown in the landing page "Mission Statement" section. Verbatim; do not edit
 // without sign-off. (The Day 1 "mission appears verbatim" check now applies to this file.)
