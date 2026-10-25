@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Sign in · The Bridge" }
 
 export default function SignInPage({ searchParams }: PageProps<"/sign-in">) {
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-10">
+    <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-10 sm:px-6">
       {/* No site header on this page, so the theme toggle sits beside the back link. */}
       <div className="mb-6 flex items-center justify-between gap-4">
         <Link

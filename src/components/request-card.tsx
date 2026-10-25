@@ -30,14 +30,16 @@ export function RequestCard({
 
   return (
     <Card className="h-full">
-      <CardHeader className="flex flex-row items-start justify-between gap-3">
-        <CardTitle className="text-lg leading-snug">
+      {/* The status badge sits beside the title, and moves to its own line when the card is
+          too narrow for both. */}
+      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
+        <CardTitle className="min-w-0 flex-1 basis-32 text-lg leading-snug [overflow-wrap:anywhere]">
           {request.items} for {request.peopleCount}{" "}
           {request.peopleCount === 1 ? "person" : "people"}
         </CardTitle>
         <StatusBadge status={request.status} />
       </CardHeader>
-      <CardContent className="flex flex-col gap-2 text-base">
+      <CardContent className="flex flex-col gap-2 text-base [overflow-wrap:anywhere]">
         <CategoryBadge category={request.category} />
         <p>
           <span className="font-medium">Where: </span>

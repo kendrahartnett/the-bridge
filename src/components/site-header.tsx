@@ -13,7 +13,7 @@ export function SiteHeader({ signedIn = false }: { signedIn?: boolean }) {
   return (
     <>
       <header className="border-b border-border bg-background/90 backdrop-blur">
-        <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-4 px-4">
+        <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-2 px-4 sm:gap-4 sm:px-6">
           <Link
             href={signedIn ? "/dashboard" : "/"}
             aria-label={signedIn ? "The Bridge, dashboard" : "The Bridge, home"}
@@ -21,7 +21,7 @@ export function SiteHeader({ signedIn = false }: { signedIn?: boolean }) {
           >
             <ArchedWordmark />
           </Link>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5 sm:gap-1">
             <ThemeToggle />
             {signedIn ? (
               <form action={signOutAction}>

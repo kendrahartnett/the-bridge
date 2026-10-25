@@ -26,7 +26,7 @@ export default function DashboardPage() {
   return (
     <>
       <SiteHeader signedIn />
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:py-14">
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6 sm:py-14">
         <Suspense fallback={<p className="text-muted-foreground">Loading your dashboard…</p>}>
           <DashboardContent />
         </Suspense>
@@ -42,11 +42,11 @@ async function DashboardContent() {
   return (
     <>
       <BlurFade>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm break-words text-muted-foreground">
           {user.organizationName ? `${user.organizationName} · ` : ""}
           {ROLE_LABELS[user.role]}
         </p>
-        <h1 className="font-heading mt-1 text-3xl font-bold tracking-tight">Hi, {greeting}</h1>
+        <h1 className="font-heading mt-1 text-3xl font-bold tracking-tight [overflow-wrap:anywhere]">Hi, {greeting}</h1>
       </BlurFade>
       {user.role === "outreach" ? (
         <OutreachDashboard userId={user.id} />
@@ -216,7 +216,8 @@ function RequestGrid({
   return (
     <ul className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
       {requests.map((r) => (
-        <li key={r.id}>
+        // min-w-0: a grid item otherwise grows to fit long unbroken text.
+        <li key={r.id} className="min-w-0">
           <RequestCard request={r} contact={r.contact} footer={footer?.(r)} />
         </li>
       ))}

@@ -103,14 +103,21 @@ export function AssistantChat() {
       const button = launcherRef.current
       if (!button) return
       const r = button.getBoundingClientRect()
-      let hit = false
-      // Sample a 3x3 grid over the button and look at the topmost element under each point.
-      for (const x of [r.left + 2, r.left + r.width / 2, r.right - 2]) {
-        for (const y of [r.top + 2, r.top + r.height / 2, r.bottom - 2]) {
-          const under = document.elementsFromPoint(x, y).find((el) => !button.contains(el))
-          if (under?.closest(INTERACTIVE)) hit = true
-        }
-      }
+      // Compare the button's box with every control's box, so even a sliver of overlap
+      // counts. (Hidden form helpers are 1px and aria-hidden; they don't count.)
+      const hit = [...document.querySelectorAll(INTERACTIVE)].some((el) => {
+        if (button.contains(el) || el.closest("[aria-hidden=true]")) return false
+        const b = el.getBoundingClientRect()
+        return (
+          b.width > 1 &&
+          b.height > 1 &&
+          b.left < r.right &&
+          b.right > r.left &&
+          b.top < r.bottom &&
+          b.bottom > r.top &&
+          el.checkVisibility()
+        )
+      })
       setCovering(hit)
     }
     const schedule = () => {

@@ -58,18 +58,21 @@ export default function Home() {
     <>
       <SiteHeader />
       <main className="flex-1">
-        <section className="relative isolate overflow-hidden px-4 pt-6 pb-12 sm:pt-8 sm:pb-16">
+        <section className="relative isolate overflow-hidden px-4 pt-6 pb-12 sm:px-6 sm:pt-8 sm:pb-16">
           <HeroGlows />
           <BlurFade className="mx-auto w-full max-w-5xl">
             <div className="flex flex-col items-center text-center">
               {/* Metallic gold badge: gradient over a solid gold fallback; navy text (5.24:1 on the darkest stop). */}
-              <p className="inline-flex items-center rounded-full bg-gold bg-(image:--gold-gradient) px-3 py-1 text-xs font-semibold tracking-wide text-gold-foreground uppercase shadow-sm sm:tracking-widest">
+              <p className="inline-flex max-w-full items-center justify-center rounded-full bg-gold bg-(image:--gold-gradient) px-3 py-1 text-center text-xs font-semibold tracking-wide text-gold-foreground uppercase shadow-sm sm:tracking-widest">
                 {HERO_BADGE}
               </p>
-              <h1 className="font-heading mt-5 max-w-5xl text-4xl leading-tight font-bold tracking-tight sm:text-5xl lg:text-6xl">
-                <span className="block font-extrabold text-foreground">{HERO_HEADLINE[0]}</span>
-                {/* One size step below line 1 at every breakpoint. */}
-                <span className="block text-3xl text-primary-text sm:text-4xl lg:text-5xl">
+              {/* Fluid sizes: line 1 runs 28px to 60px, line 2 stays one step smaller (24px to
+                  48px), so the headline scales smoothly instead of jumping at breakpoints. */}
+              <h1 className="font-heading mt-5 max-w-5xl leading-tight font-bold tracking-tight text-balance">
+                <span className="block text-[clamp(1.75rem,8vw,3.75rem)] font-extrabold text-foreground">
+                  {HERO_HEADLINE[0]}
+                </span>
+                <span className="block text-[clamp(1.5rem,6.5vw,3rem)] text-primary-text">
                   {HERO_HEADLINE[1]}
                 </span>
               </h1>
@@ -98,19 +101,22 @@ export default function Home() {
           </BlurFade>
         </section>
 
-        <section aria-labelledby="journey" className="overflow-x-clip">
-          <BlurFade inView className="mx-auto max-w-5xl px-4 py-10">
+        <section aria-labelledby="journey">
+          <BlurFade inView className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
             <h2 id="journey" className="font-heading text-xl font-bold tracking-tight sm:text-2xl">
               How it works
             </h2>
             <ol className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
               {JOURNEY.map((step, i) => (
                 <li key={step.label}>
-                  {/* Grows 1.1x on hover (mouse/trackpad only; Tailwind's hover: skips touch screens).
-                      The hovered card sits on top and turns nearly opaque so overlapped
-                      neighbors don't show through. Reduced motion: no animation. */}
+                  {/* Grows on hover (mouse/trackpad only; Tailwind's hover: skips touch screens):
+                      1.02x in the single-column layout, where a full-width card has only the
+                      page padding to grow into, and 1.1x from sm up. Either way it stays inside
+                      the padding, so the section needs no clipping. The hovered card sits on
+                      top and turns nearly opaque so overlapped neighbors don't show through.
+                      Reduced motion: no animation. */}
                   <Card
-                    className={`relative h-full gap-3 p-4 ${GLASS} transition-transform duration-200 ease-out hover:z-10 hover:scale-110 hover:bg-background/95 motion-reduce:transition-none`}
+                    className={`relative h-full gap-3 p-4 ${GLASS} transition-transform duration-200 ease-out hover:z-10 hover:scale-[1.02] hover:bg-background/95 motion-reduce:transition-none sm:hover:scale-110`}
                   >
                     <CardHeader className="gap-2 px-0">
                       <span
@@ -132,12 +138,12 @@ export default function Home() {
         </section>
 
         <section aria-labelledby="what-is" className="border-t border-border">
-          <BlurFade inView className="mx-auto max-w-2xl px-4 py-10">
+          <BlurFade inView className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
             <h2 id="what-is" className="font-heading text-xl font-bold tracking-tight sm:text-2xl">
               {WHAT_IS_HEADING}
             </h2>
-            <Card className={`mt-4 ${GLASS}`}>
-              <CardContent className="flex max-w-2xl flex-col gap-4 text-base leading-relaxed">
+            <Card className={`mt-4 py-4 sm:py-6 ${GLASS}`}>
+              <CardContent className="flex max-w-2xl flex-col gap-3 px-4 text-base leading-relaxed sm:gap-4 sm:px-6">
                 {WHAT_IS_PARAGRAPHS.map((text) => (
                   <p key={text.slice(0, 24)}>{text}</p>
                 ))}
@@ -147,18 +153,18 @@ export default function Home() {
         </section>
 
         <section aria-labelledby="mission" className="border-t border-border">
-          <BlurFade inView className="mx-auto max-w-2xl px-4 py-10">
+          <BlurFade inView className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
             <h2 id="mission" className="font-heading text-xl font-bold tracking-tight sm:text-2xl">
               Mission Statement
             </h2>
-            <Card className={`mt-4 ${GLASS}`}>
-              <CardContent className="text-base leading-relaxed">{MISSION}</CardContent>
+            <Card className={`mt-4 py-4 sm:py-6 ${GLASS}`}>
+              <CardContent className="px-4 text-base leading-relaxed sm:px-6">{MISSION}</CardContent>
             </Card>
           </BlurFade>
         </section>
       </main>
       <footer className="border-t border-border">
-        <p className="mx-auto max-w-5xl px-4 py-6 text-sm text-muted-foreground">
+        <p className="mx-auto max-w-5xl px-4 py-6 text-sm text-muted-foreground sm:px-6">
           The Bridge · Chicago
         </p>
       </footer>
