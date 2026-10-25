@@ -62,6 +62,17 @@ export const ASSISTANT_COPY = {
     "Sorry, I can't answer right now. The \"How it works\" section on the home page explains how The Bridge works, step by step. If you need help today with something The Bridge doesn't cover yet, you can call or text 211.",
 } as const
 
+// Sign-in and sign-up errors, in plain language. The technical reason is logged on the server.
+export const AUTH_ERRORS = {
+  wrongPassword: "That email and password don't match. Please try again.",
+  signInUnavailable: "We couldn't sign you in right now. Please try again in a moment.",
+  accountExists:
+    "An account with that email already exists. Choose “I already have an account” to sign in.",
+  weakPassword: "Choose a stronger password with at least 8 characters.",
+  tooManyAttempts: "Too many attempts. Please wait a few minutes and try again.",
+  signUpUnavailable: "We couldn't create your account right now. Please try again in a moment.",
+} as const
+
 // Contact line on request cards, shown only to the poster and the supporting organization
 // once a request is In Progress or Fulfilled.
 export const CONTACT_COPY = {
