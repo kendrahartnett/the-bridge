@@ -5,7 +5,6 @@ import type { z } from "zod"
 
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { cn } from "@/lib/utils"
 
 export type FieldErrors = Partial<Record<string, string[]>>
 
@@ -76,8 +75,7 @@ export function TextField({
         name={name}
         aria-invalid={errors?.length ? true : undefined}
         aria-describedby={describedBy || undefined}
-        // 16px at every size, so phones never zoom in on focus.
-        className={cn("md:text-base", className)}
+        className={className}
         {...props}
       />
       {help && (

@@ -297,7 +297,7 @@ export function AssistantChat() {
               enterKeyHint="send"
               aria-invalid={charsLeft < 0 || undefined}
               aria-describedby={`${ids.count}${notice ? ` ${ids.error}` : ""}`}
-              className="bg-surface text-base md:text-base"
+              className="bg-surface"
             />
             <Button type="submit" size="icon" aria-label={COPY.send} disabled={pending || atLimit}>
               <Send aria-hidden="true" className="size-5" />
