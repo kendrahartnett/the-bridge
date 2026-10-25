@@ -357,3 +357,54 @@ export async function reviewOrganization(
     message: decision === "approved" ? "Organization approved." : "Organization rejected.",
   }
 }
+
+/** True only if this account is an admin right now (read from the database each time). */
+export async function isAdminAccount(db: Db, viewerId: string): Promise<boolean> {
+  return !!(await standing(db, viewerId))?.isAdmin
+}
+
+const reviewer = alias(users, "reviewer")
+
+export type OrganizationForReview = Pick<
+  User,
+  | "id"
+  | "email"
+  | "organizationName"
+  | "organizationWebsite"
+  | "organizationEin"
+  | "contactName"
+  | "verificationStatus"
+  | "reviewedAt"
+  | "reviewNote"
+  | "createdAt"
+> & { reviewerName: string | null }
+
+/**
+ * Every organization account, for the admin review page. Returns null unless the viewer is
+ * an admin, so organization details (including internal review notes) never reach anyone
+ * else, whatever page asks.
+ */
+export async function listOrganizationsForReview(
+  db: Db,
+  viewerId: string
+): Promise<OrganizationForReview[] | null> {
+  if (!(await isAdminAccount(db, viewerId))) return null
+  return db
+    .select({
+      id: users.id,
+      email: users.email,
+      organizationName: users.organizationName,
+      organizationWebsite: users.organizationWebsite,
+      organizationEin: users.organizationEin,
+      contactName: users.contactName,
+      verificationStatus: users.verificationStatus,
+      reviewedAt: users.reviewedAt,
+      reviewNote: users.reviewNote,
+      createdAt: users.createdAt,
+      reviewerName: sql<string | null>`coalesce(${reviewer.displayName}, ${reviewer.email})`,
+    })
+    .from(users)
+    .leftJoin(reviewer, eq(reviewer.id, users.reviewedBy))
+    .where(eq(users.role, "donor"))
+    .orderBy(asc(users.createdAt))
+}

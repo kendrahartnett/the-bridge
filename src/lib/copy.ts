@@ -127,6 +127,49 @@ export const VERIFICATION_COPY = {
   yourPost: "Your post",
 } as const
 
+// Admin review page. {org} is replaced with the organization's name.
+export const ADMIN_COPY = {
+  headerLink: "Admin",
+  title: "Organization review",
+  intro: "Organizations can claim needs and see contact information only after a person approves them here.",
+  tabs: { pending: "Pending", approved: "Approved", rejected: "Rejected" },
+  empty: {
+    pending: "No organizations are waiting for review.",
+    approved: "No approved organizations yet.",
+    rejected: "No rejected organizations.",
+  },
+  fields: {
+    website: "Website",
+    ein: "EIN",
+    contact: "Contact",
+    email: "Email",
+    applied: "Applied",
+    reviewedBy: "Reviewed by",
+    reviewed: "Reviewed",
+    note: "Internal note",
+  },
+  irsLink: "Look up in IRS Tax Exempt Organization Search",
+  checklistTitle: "Before you approve, check:",
+  checklist: [
+    "Website matches the organization name",
+    "EIN found in IRS search (if provided)",
+    "Contact email domain matches the website (if possible)",
+  ],
+  approve: "Approve",
+  reject: "Reject",
+  revoke: "Revoke approval",
+  notNow: "Not now",
+  confirmApprove: "Approve {org}? They'll be able to claim needs and see contact information.",
+  confirmReject: "Reject {org}? They'll see that they weren't approved and won't be able to claim needs.",
+  confirmRevoke:
+    "Revoke approval for {org}? They won't be able to claim needs or see contact information, and their open posts will be hidden.",
+  yesApprove: "Yes, approve",
+  yesReject: "Yes, reject",
+  yesRevoke: "Yes, revoke",
+  noteLabel: "Internal note (optional, only admins see it)",
+  noteCount: "{n}/300",
+} as const
+
 // Contact line on request cards, shown only to the poster and the supporting organization
 // once a request is In Progress or Fulfilled.
 export const CONTACT_COPY = {
