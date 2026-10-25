@@ -1,6 +1,6 @@
 # Test results: request and response rules
 
-Run: 10/24/2026, 8:06:52 PM (Chicago time) · tag `[claim-test 20261025010644]`
+Run: 10/24/2026, 8:35:05 PM (Chicago time) · tag `[claim-test 20261025013457]`
 
 Command: `npm run test:claims` (scripts/test-claim-rules.ts), against the dev database.
 The script calls the same rule functions the server actions call (src/lib/request-rules.ts)
@@ -27,7 +27,7 @@ and removes them afterwards (the app has no way to grant admin), and resets test
 | 11 | Cancel: creator cannot cancel once In Progress | PASS | "An organization is already supporting this request, so it can't be cancelled here."; status stays claimed |
 | 12 | Different outreach user cannot cancel someone else's request | PASS | "Only the person who posted this request can change it." |
 | 13 | Different outreach user cannot fulfil someone else's request | PASS | "Only the person who posted this request can change it." |
-| 14 | Invalid category "weapons" is rejected and no row is created | PASS | category error "Choose the type of support."; rows 13 → 13 |
+| 14 | Invalid category "weapons" is rejected and no row is created | PASS | category error "Choose the type of support."; rows 14 → 14 |
 | 15 | Pending organization cannot claim a need | PASS | "Your organization is still under review, so you can't do this yet." |
 | 16 | Pending organization cannot post a need | PASS | "Your organization is still under review, so you can't do this yet." |
 | 17 | Non-admin (organization) cannot approve | PASS | "Only admins can review organizations." |
@@ -47,7 +47,7 @@ and removes them afterwards (the app has no way to grant admin), and resets test
 | 31 | Database rejects status 'claimed' with no claimed_by | PASS | "new row for relation "food_requests" violates check constraint "claim_status_consistency"" |
 | 32 | Database rejects status 'open' with a claimed_by | PASS | "new row for relation "food_requests" violates check constraint "claim_status_consistency"" |
 | 33 | Database rejects status 'delivered' with no claimed_by | PASS | "new row for relation "food_requests" violates check constraint "claim_status_consistency"" |
-| 34 | Cleanup: deleted only this run's 20 test requests; seeded requests unchanged | PASS | deleted 20/20; seeded rows identical: true; total rows 6 → 6 |
+| 34 | Cleanup: deleted only this run's 20 test requests; seeded requests unchanged | PASS | deleted 20/20; seeded rows identical: true; total rows 7 → 7 |
 
 ## Race test (10 runs)
 
@@ -60,8 +60,8 @@ Two organizations offer support on the same open request at the same moment (`Pr
 | 3 | Test — Organization A | Someone else just offered support for this request. | PASS |
 | 4 | Test — Organization B | Someone else just offered support for this request. | PASS |
 | 5 | Test — Organization A | Someone else just offered support for this request. | PASS |
-| 6 | Test — Organization A | Someone else just offered support for this request. | PASS |
-| 7 | Test — Organization B | Someone else just offered support for this request. | PASS |
-| 8 | Test — Organization A | Someone else just offered support for this request. | PASS |
+| 6 | Test — Organization B | Someone else just offered support for this request. | PASS |
+| 7 | Test — Organization A | Someone else just offered support for this request. | PASS |
+| 8 | Test — Organization B | Someone else just offered support for this request. | PASS |
 | 9 | Test — Organization A | Someone else just offered support for this request. | PASS |
-| 10 | Test — Organization A | Someone else just offered support for this request. | PASS |
+| 10 | Test — Organization B | Someone else just offered support for this request. | PASS |

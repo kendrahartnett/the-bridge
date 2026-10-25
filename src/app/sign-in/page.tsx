@@ -3,8 +3,9 @@ import Link from "next/link"
 import { Suspense } from "react"
 
 import { ThemeToggle } from "@/components/theme-toggle"
+import { AUTH_COPY } from "@/lib/copy"
 
-import { SignInForm } from "./sign-in-form"
+import { AuthTabs } from "./auth-tabs"
 
 export const metadata: Metadata = { title: "Sign in · The Bridge" }
 
@@ -21,24 +22,26 @@ export default function SignInPage({ searchParams }: PageProps<"/sign-in">) {
         </Link>
         <ThemeToggle />
       </div>
-      <h1 className="font-heading text-3xl font-bold tracking-tight">Welcome to The Bridge</h1>
-      <p className="mt-2 text-muted-foreground">
-        Sign in or create an account. It takes about a minute.
-      </p>
+      <h1 className="font-heading text-3xl font-bold tracking-tight">{AUTH_COPY.heading}</h1>
+      <p className="mt-2 text-muted-foreground">{AUTH_COPY.intro}</p>
       {/* searchParams is request data, so it is read behind Suspense (cacheComponents). */}
-      <Suspense fallback={<SignInForm />}>
-        <SignInFormWithRole searchParams={searchParams} />
+      <Suspense fallback={<AuthTabs />}>
+        <AuthTabsFromLink searchParams={searchParams} />
       </Suspense>
     </main>
   )
 }
 
-async function SignInFormWithRole({
+// The landing page buttons link here with ?role=: "Post a Need" (outreach) opens Create
+// account with "I'm posting needs" selected, "Offer Support" (donor) with "I'm an
+// organization". ?tab=create opens Create account. Anything else opens Sign in.
+async function AuthTabsFromLink({
   searchParams,
 }: {
   searchParams: PageProps<"/sign-in">["searchParams"]
 }) {
-  const { role } = await searchParams
-  const initialRole = role === "outreach" || role === "donor" ? role : undefined
-  return <SignInForm initialRole={initialRole} />
+  const { role, tab } = await searchParams
+  if (role === "outreach") return <AuthTabs initialTab="create" initialType="poster" />
+  if (role === "donor") return <AuthTabs initialTab="create" initialType="organization" />
+  return <AuthTabs initialTab={tab === "create" ? "create" : "sign-in"} />
 }

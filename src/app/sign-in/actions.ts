@@ -1,6 +1,6 @@
 "use server"
 
-import { sql } from "drizzle-orm"
+import { eq } from "drizzle-orm"
 import { redirect } from "next/navigation"
 import { z } from "zod"
 
@@ -8,66 +8,108 @@ import { db } from "@/db"
 import { users } from "@/db/schema"
 import { auth } from "@/lib/auth/server"
 import { AUTH_ERRORS } from "@/lib/copy"
-import { signInSchema } from "@/lib/validation"
+import { organizationSignUpSchema, posterSignUpSchema, signInSchema } from "@/lib/validation"
 
-export type SignInState = {
+export type AuthFormState = {
   error?: string
   fieldErrors?: Partial<Record<string, string[]>>
-  // Echoed back so React's post-action form reset doesn't wipe what was typed. Never the password.
-  values?: Record<"role" | "email" | "displayName" | "organizationName", string>
+  // Echoed back so React's post-action form reset doesn't wipe what was typed. Never passwords.
+  values?: Record<string, string>
 } | null
 
-export async function signInAction(
-  _prev: SignInState,
-  formData: FormData
-): Promise<SignInState> {
+function echo(raw: Record<string, FormDataEntryValue>, keys: string[]) {
+  return Object.fromEntries(keys.map((k) => [k, typeof raw[k] === "string" ? raw[k] : ""]))
+}
+
+function logFailure(mode: "sign-in" | "sign-up", error: AuthFailure) {
+  const code = failureCode(error)
+  // The code only (for example INVALID_ORIGIN): never the email, password, or form values.
+  console.error(`[auth] ${mode} failed: ${code} (HTTP ${error.status ?? "?"})`)
+  return code
+}
+
+/** Sign in with email and password. The role and review status come from the database. */
+export async function signInAction(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
   const raw = Object.fromEntries(formData)
-  const values = {
-    role: String(raw.role ?? ""),
-    email: String(raw.email ?? ""),
-    displayName: String(raw.displayName ?? ""),
-    organizationName: String(raw.organizationName ?? ""),
-  }
-
+  const values = echo(raw, ["email"])
   const parsed = signInSchema.safeParse(raw)
-  if (!parsed.success) {
-    return { fieldErrors: z.flattenError(parsed.error).fieldErrors, values }
-  }
-  const { mode, role, email, password, displayName, organizationName } = parsed.data
+  if (!parsed.success) return { fieldErrors: z.flattenError(parsed.error).fieldErrors, values }
+  const { email, password } = parsed.data
 
-  const { error } =
-    mode === "sign-up"
-      ? await auth.signUp.email({ email, password, name: displayName ?? email })
-      : await auth.signIn.email({ email, password })
-
+  const { error } = await auth.signIn.email({ email, password })
   if (error) {
-    const code = failureCode(error)
-    // The code only (for example INVALID_ORIGIN): never the email, password, or form values.
-    console.error(`[auth] ${mode} failed: ${code} (HTTP ${error.status ?? "?"})`)
-    return { error: friendlyError(mode, error, code), values }
+    const code = logFailure("sign-in", error)
+    return { error: friendlyError("sign-in", error, code), values }
   }
 
-  // Link the login to our app record. The role chosen here is stored the first
-  // time; after that the saved role stays, so one sign-in can't flip someone's access.
-  await db
-    .insert(users)
-    // New organizations wait for review; outreach accounts don't need it.
-    .values({
-      email,
-      role,
-      displayName,
-      organizationName,
-      verificationStatus: role === "donor" ? "pending" : "not_required",
-    })
-    .onConflictDoUpdate({
-      target: users.email,
-      set: {
-        role: sql`coalesce(${users.role}, excluded.role)`,
-        displayName: sql`coalesce(${users.displayName}, excluded.display_name)`,
-        organizationName: sql`coalesce(${users.organizationName}, excluded.organization_name)`,
-      },
-    })
+  // A login without an account record can't be used: there's no role to act with.
+  const [user] = await db.select({ role: users.role }).from(users).where(eq(users.email, email))
+  if (!user?.role) {
+    console.error("[auth] sign-in failed: NO_ACCOUNT_RECORD")
+    await auth.signOut()
+    return { error: AUTH_ERRORS.noAppAccount, values }
+  }
+  redirect("/dashboard")
+}
 
+const POSTER_FIELDS = ["accountType", "displayName", "email", "organizationName", "pledge"]
+const ORGANIZATION_FIELDS = ["accountType", "organizationName", "website", "ein", "contactName", "email", "pledge"]
+
+/**
+ * Create an account. Someone posting needs gets an outreach account right away; an
+ * organization starts as pending until an admin reviews it.
+ */
+export async function signUpAction(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
+  const raw = Object.fromEntries(formData)
+  const isOrganization = raw.accountType === "organization"
+  const values = echo(raw, isOrganization ? ORGANIZATION_FIELDS : POSTER_FIELDS)
+
+  // Validate everything (including what the database checks) before creating the login, so
+  // a login is never created without its account record.
+  let record: typeof users.$inferInsert
+  let password: string
+  if (isOrganization) {
+    const parsed = organizationSignUpSchema.safeParse(raw)
+    if (!parsed.success) return { fieldErrors: z.flattenError(parsed.error).fieldErrors, values }
+    const v = parsed.data
+    password = v.password
+    record = {
+      email: v.email,
+      role: "donor",
+      verificationStatus: "pending",
+      displayName: v.contactName,
+      contactName: v.contactName,
+      organizationName: v.organizationName,
+      organizationWebsite: v.website,
+      organizationEin: v.ein ?? null,
+    }
+  } else {
+    const parsed = posterSignUpSchema.safeParse(raw)
+    if (!parsed.success) return { fieldErrors: z.flattenError(parsed.error).fieldErrors, values }
+    const v = parsed.data
+    password = v.password
+    record = {
+      email: v.email,
+      role: "outreach",
+      verificationStatus: "not_required",
+      displayName: v.displayName,
+      organizationName: v.organizationName || null,
+    }
+  }
+
+  const { error } = await auth.signUp.email({
+    email: record.email,
+    password,
+    name: record.displayName ?? record.email,
+  })
+  if (error) {
+    const code = logFailure("sign-up", error)
+    return { error: friendlyError("sign-up", error, code), values }
+  }
+
+  // An existing record is left exactly as it is: signing up again can't change a role or
+  // reset a review.
+  await db.insert(users).values(record).onConflictDoNothing({ target: users.email })
   redirect("/dashboard")
 }
 

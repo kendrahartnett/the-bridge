@@ -58,6 +58,13 @@ const isApprovedOrg = (s: Standing | null) =>
 /** Posting needs: outreach accounts, and organizations that are currently approved. */
 const canPost = (s: Standing | null) => s?.role === "outreach" || isApprovedOrg(s)
 
+// The same checks, for deciding what a page shows. The rules above enforce them again
+// whenever someone acts, so a page can never grant anything by showing a button.
+type Account = Pick<User, "role" | "verificationStatus">
+export const canPostNeeds = (a: Account) =>
+  a.role === "outreach" || (a.role === "donor" && a.verificationStatus === "approved")
+export const canClaimNeeds = (a: Account) => a.role === "donor" && a.verificationStatus === "approved"
+
 function orgBlockedError(s: Standing | null) {
   return s?.verificationStatus === "rejected" ? ROLE_ERRORS.rejected : ROLE_ERRORS.notApproved
 }

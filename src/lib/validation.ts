@@ -6,34 +6,76 @@ import { COMMUNITY_AREAS } from "./neighborhoods.ts"
 // Shared by the browser (instant feedback) and server actions (the real check).
 // No database imports here, so it is safe to bundle for the client.
 
-export const roleSchema = z.enum(["outreach", "donor"], {
-  error: "Choose how you'll use The Bridge.",
+// Trim and lowercase first: autofill often adds a trailing space.
+const email = z.string().trim().toLowerCase().pipe(z.email("Enter a valid email address."))
+const newPassword = z
+  .string()
+  .min(8, "Use at least 8 characters.")
+  .max(128, "Use 128 characters or fewer.")
+// Checkboxes submit "on" when checked and nothing when not.
+const pledge = (message: string) => z.literal("on", { error: message })
+
+/** Sign in: email and password only. The role comes from the database. */
+export const signInSchema = z.object({
+  email,
+  password: z.string().min(1, "Enter your password."),
 })
 
-export const signInSchema = z
-  .object({
-    mode: z.enum(["sign-in", "sign-up"]),
-    role: roleSchema,
-    email: z.email("Enter a valid email address.").trim().toLowerCase(),
-    password: z.string().min(8, "Use at least 8 characters."),
-    displayName: z.string().trim().max(80).optional(),
-    organizationName: z.string().trim().max(120).optional(),
-  })
-  .superRefine((v, ctx) => {
-    if (v.mode !== "sign-up") return
-    if (!v.displayName) {
-      ctx.addIssue({ code: "custom", path: ["displayName"], message: "Tell us your name." })
-    }
-    if (!v.organizationName) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["organizationName"],
-        message: "Tell us your organization.",
-      })
-    }
-  })
+const passwordsMatch = (v: { password: string; confirmPassword: string }) =>
+  v.password === v.confirmPassword
 
-export type SignInInput = z.input<typeof signInSchema>
+/** Create account: someone posting needs (an outreach account). */
+export const posterSignUpSchema = z
+  .object({
+    displayName: z.string().trim().min(1, "Tell us your name.").max(80, "Use 80 characters or fewer."),
+    email,
+    password: newPassword,
+    confirmPassword: z.string(),
+    organizationName: z.string().trim().max(120, "Use 120 characters or fewer.").optional(),
+    pledge: pledge("Please confirm you'll describe needs, not people."),
+  })
+  .refine(passwordsMatch, { path: ["confirmPassword"], message: "The passwords don't match." })
+
+/** Create account: an organization (reviewed before it can claim needs). */
+export const organizationSignUpSchema = z
+  .object({
+    organizationName: z
+      .string()
+      .trim()
+      .min(1, "Enter your organization's name.")
+      .max(120, "Use 120 characters or fewer."),
+    website: z
+      .string()
+      .trim()
+      .max(200, "Use 200 characters or fewer.")
+      .pipe(
+        z.url({
+          protocol: /^https$/,
+          hostname: z.regexes.domain,
+          error: "Enter your website's full address, starting with https://",
+        })
+      ),
+    // Optional; empty means not provided. Same format the database enforces.
+    ein: z
+      .string()
+      .trim()
+      .regex(/^(\d{2}-\d{7})?$/, "Use the format 12-3456789.")
+      .optional()
+      .transform((v) => v || undefined),
+    contactName: z
+      .string()
+      .trim()
+      .min(1, "Tell us who we can contact.")
+      .max(80, "Use 80 characters or fewer."),
+    email,
+    password: newPassword,
+    confirmPassword: z.string(),
+    pledge: pledge("Please confirm you can represent this organization."),
+  })
+  .refine(passwordsMatch, { path: ["confirmPassword"], message: "The passwords don't match." })
+
+export type PosterSignUpInput = z.input<typeof posterSignUpSchema>
+export type OrganizationSignUpInput = z.input<typeof organizationSignUpSchema>
 
 // datetime-local inputs produce "YYYY-MM-DDTHH:mm"; the server reads it as Chicago time.
 const localDateTime = z

@@ -6,6 +6,7 @@ import { Suspense } from "react"
 
 import { SiteHeader } from "@/components/site-header"
 import { requireUser } from "@/lib/current-user"
+import { canPostNeeds } from "@/lib/request-rules"
 
 import { NewRequestForm } from "./new-request-form"
 
@@ -29,7 +30,7 @@ export default function NewRequestPage() {
         </p>
         <PrivacyNotice />
         <Suspense fallback={<p className="mt-8 text-muted-foreground">Loading…</p>}>
-          <OutreachOnlyForm />
+          <PosterOnlyForm />
         </Suspense>
       </main>
     </>
@@ -53,8 +54,10 @@ function PrivacyNotice() {
   )
 }
 
-async function OutreachOnlyForm() {
+// Outreach accounts and approved organizations. Everyone else goes back to the dashboard;
+// the create-request rule checks this again when the form is sent.
+async function PosterOnlyForm() {
   const user = await requireUser()
-  if (user.role !== "outreach") redirect("/dashboard")
+  if (!canPostNeeds(user)) redirect("/dashboard")
   return <NewRequestForm />
 }

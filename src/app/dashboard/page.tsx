@@ -1,4 +1,4 @@
-import { CircleCheck } from "lucide-react"
+import { CircleAlert, CircleCheck, Clock } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { Suspense } from "react"
@@ -9,11 +9,18 @@ import { SiteHeader } from "@/components/site-header"
 import { BlurFade } from "@/components/ui/blur-fade"
 import { Button } from "@/components/ui/button"
 import { db } from "@/db"
-import type { FoodRequest } from "@/db/schema"
-import { CONTACT_COPY } from "@/lib/copy"
+import type { FoodRequest, User } from "@/db/schema"
+import { CONTACT_COPY, VERIFICATION_COPY } from "@/lib/copy"
 import { requireUser } from "@/lib/current-user"
 import { ROLE_LABELS } from "@/lib/labels"
-import { listMyPosts, listMySupported, listOpen, type RequestWithContact } from "@/lib/request-rules"
+import {
+  canClaimNeeds,
+  canPostNeeds,
+  listMyPosts,
+  listMySupported,
+  listOpen,
+  type RequestWithContact,
+} from "@/lib/request-rules"
 
 import { RequestActionButton } from "./request-action-button"
 
@@ -50,7 +57,7 @@ async function DashboardContent() {
       {user.role === "outreach" ? (
         <OutreachDashboard userId={user.id} />
       ) : (
-        <DonorDashboard userId={user.id} />
+        <DonorDashboard user={user} />
       )}
     </>
   )
@@ -102,22 +109,43 @@ function outreachFooter(r: FoodRequest) {
   return null
 }
 
-async function DonorDashboard({ userId }: { userId: string }) {
-  const [open, mine] = await Promise.all([
+async function DonorDashboard({ user }: { user: User }) {
+  const approved = canClaimNeeds(user)
+  const [open, supporting, posts] = await Promise.all([
     listOpen(db),
-    listMySupported(db, userId).then((rows) => rows.map((r) => withLabel(r, CONTACT_COPY.postedBy))),
+    listMySupported(db, user.id).then((rows) => rows.map((r) => withLabel(r, CONTACT_COPY.postedBy))),
+    listMyPosts(db, user.id).then((rows) => rows.map((r) => withLabel(r, CONTACT_COPY.supportedBy))),
   ])
-
   const waiting = open.reduce((n, r) => n + r.peopleCount, 0)
+
+  // On the Needs Board: your own post can't be claimed by you; otherwise only an approved
+  // organization gets the button (the claim rule checks this again on the server).
+  const boardFooter = (r: FoodRequest) =>
+    r.createdBy === user.id ? (
+      <CardNote>{VERIFICATION_COPY.yourPost}</CardNote>
+    ) : approved ? (
+      <RequestActionButton kind="claim" requestId={r.id} />
+    ) : (
+      <CardNote>{VERIFICATION_COPY.availableAfterApproval}</CardNote>
+    )
 
   return (
     <>
+      {!approved && <VerificationBanner status={user.verificationStatus} />}
+
       <section aria-label="Right now" className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
         <ImpactStat value={open.length} label="Open requests" />
         <ImpactStat value={waiting} label="People who need support" />
       </section>
 
-      <h2 className="font-heading mt-12 text-xl font-bold">Open requests</h2>
+      <div className="mt-12 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="font-heading text-xl font-bold">Open requests</h2>
+        {canPostNeeds(user) && (
+          <Button asChild size="lg">
+            <Link href="/requests/new">Post a Need</Link>
+          </Button>
+        )}
+      </div>
       <p className="mt-1 text-muted-foreground">
         Each request shows the neighborhood and time window. After you offer support, you&apos;ll
         see the poster&apos;s contact email so you can arrange the handoff.
@@ -126,20 +154,71 @@ async function DonorDashboard({ userId }: { userId: string }) {
       {open.length === 0 ? (
         <EmptyState>No open requests right now. Check back soon.</EmptyState>
       ) : (
-        <RequestGrid
-          requests={open}
-          footer={(r) => <RequestActionButton kind="claim" requestId={r.id} />}
-        />
+        <RequestGrid requests={open} footer={boardFooter} />
       )}
 
-      {mine.length > 0 && (
+      {supporting.length > 0 && (
         <>
-          <h2 className="font-heading mt-12 text-xl font-bold">Requests you&apos;re supporting</h2>
-          <RequestGrid requests={mine} footer={() => <ClaimedByYou />} />
+          <h2 className="font-heading mt-12 text-xl font-bold">Needs you&apos;re supporting</h2>
+          <RequestGrid requests={supporting} footer={() => <ClaimedByYou />} />
+        </>
+      )}
+
+      {/* Approved organizations can post needs too. Shown whenever there are posts, so an
+          organization whose approval was revoked still sees what it posted (read-only). */}
+      {(approved || posts.length > 0) && (
+        <>
+          <h2 className="font-heading mt-12 text-xl font-bold">Your posts</h2>
+          {posts.length === 0 ? (
+            <EmptyState>
+              You haven&apos;t posted a need yet. Use Post a Need to ask for support from other
+              organizations.
+            </EmptyState>
+          ) : (
+            <RequestGrid requests={posts} footer={approved ? outreachFooter : undefined} />
+          )}
         </>
       )}
     </>
   )
+}
+
+/** Shown to organizations that aren't approved (yet). */
+function VerificationBanner({ status }: { status: User["verificationStatus"] }) {
+  const rejected = status === "rejected"
+  const adminEmail = process.env.ADMIN_CONTACT_EMAIL
+  const Icon = rejected ? CircleAlert : Clock
+  let message: React.ReactNode = VERIFICATION_COPY.pendingBanner
+  if (rejected) {
+    const [before, after] = VERIFICATION_COPY.rejectedBanner.split("{email}")
+    message = adminEmail ? (
+      <>
+        {before}
+        <a
+          href={`mailto:${adminEmail}`}
+          className="font-semibold break-all underline underline-offset-4 hover:no-underline"
+        >
+          {adminEmail}
+        </a>
+        {after}
+      </>
+    ) : (
+      VERIFICATION_COPY.rejectedBannerNoEmail
+    )
+  }
+  return (
+    <section
+      aria-label="Account status"
+      className="mt-6 flex items-start gap-3 rounded-xl border border-foreground/30 bg-muted p-4 text-base text-foreground"
+    >
+      <Icon aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
+      <p>{message}</p>
+    </section>
+  )
+}
+
+function CardNote({ children }: { children: React.ReactNode }) {
+  return <p className="flex min-h-tap items-center font-medium text-muted-foreground">{children}</p>
 }
 
 function ClaimedByYou() {

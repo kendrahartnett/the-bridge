@@ -66,11 +66,65 @@ export const ASSISTANT_COPY = {
 export const AUTH_ERRORS = {
   wrongPassword: "That email and password don't match. Please try again.",
   signInUnavailable: "We couldn't sign you in right now. Please try again in a moment.",
-  accountExists:
-    "An account with that email already exists. Choose “I already have an account” to sign in.",
+  accountExists: "An account with that email already exists. Use the Sign in tab instead.",
+  noAppAccount:
+    "We found your login but not your account details. Please create your account again, or contact us if this keeps happening.",
   weakPassword: "Choose a stronger password with at least 8 characters.",
   tooManyAttempts: "Too many attempts. Please wait a few minutes and try again.",
   signUpUnavailable: "We couldn't create your account right now. Please try again in a moment.",
+} as const
+
+// Sign-in and create-account forms.
+export const AUTH_COPY = {
+  heading: "Welcome to The Bridge",
+  intro: "Sign in or create an account. It takes about a minute.",
+  tabs: { signIn: "Sign in", create: "Create account" },
+  accountTypeLabel: "What kind of account?",
+  accountTypes: {
+    poster: {
+      label: "I'm posting needs",
+      help: "Outreach workers and community members",
+    },
+    organization: {
+      label: "I'm an organization",
+      help: "Groups that offer food, clothing, and supplies",
+    },
+  },
+  fields: {
+    email: "Email",
+    password: "Password",
+    confirmPassword: "Confirm password",
+    yourName: "Your name",
+    team: "Organization or outreach team (optional)",
+    organizationName: "Organization name",
+    website: "Website",
+    websitePlaceholder: "https://",
+    ein: "EIN (optional)",
+    einPlaceholder: "12-3456789",
+    einHelp: "Nonprofits: your EIN helps us verify you faster.",
+    contactName: "Contact name",
+  },
+  passwordHelp: "At least 8 characters.",
+  posterPledge:
+    "I'll describe what's needed, not the people. I won't share names, health details, or exact locations.",
+  organizationPledge:
+    "I confirm I'm authorized to represent this organization, and we'll use contact information only to coordinate support.",
+  organizationReview:
+    "Organization accounts are reviewed by a person before they can claim needs or see contact information. This usually takes one business day.",
+  submitSignIn: "Sign in",
+  submitCreate: "Create my account",
+  pending: "One moment…",
+} as const
+
+// What organizations see while their account is reviewed, or after it's declined.
+// {email} is replaced with ADMIN_CONTACT_EMAIL.
+export const VERIFICATION_COPY = {
+  pendingBanner:
+    "Your organization is under review. You can browse the Needs Board, but you can't claim needs or see contact information until you're approved.",
+  rejectedBanner: "Your organization wasn't approved. If you think this is a mistake, contact {email}.",
+  rejectedBannerNoEmail: "Your organization wasn't approved.",
+  availableAfterApproval: "Available after approval.",
+  yourPost: "Your post",
 } as const
 
 // Contact line on request cards, shown only to the poster and the supporting organization
