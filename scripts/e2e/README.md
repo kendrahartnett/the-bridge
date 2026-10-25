@@ -33,13 +33,17 @@ npm run e2e:responsive
 
 Options (after `--`, e.g. `npm run e2e:responsive -- --themes=dark`):
 
-- Layout audits: `--widths=320,390` and `--themes=light,dark` (default: 320, 390, 768, 1280 and
-  1440 in both themes), `--shots` to save screenshots, `--long` to swap contact emails for a
+- Layout audits: `--widths=320,390` and `--themes=light,dark` (default: 320, 390, 768, 1024, 1280
+  and 1440 in both themes), `--shots` to save screenshots, `--long` to swap contact emails for a
   very long one.
 - `e2e:panel -- --live` also sends one real question to the assistant.
 - `e2e:verification -- --signups` also signs up a new poster and organization through the
   forms. It creates two accounts on the-bridge-dev that reseeding doesn't remove, so it only
   works once until they're deleted.
+
+On Windows, `npm run e2e` keeps the computer awake while it runs: when the screen turns off,
+Windows' Modern Standby pauses every process, which froze runs mid-suite. If a single suite is
+run on its own and the computer sleeps, the failure says so.
 
 Screenshots and `results.json` go to `test-results/e2e/<suite>/` (git-ignored). Chrome is found
 at `CHROME_PATH`, or its usual install location.

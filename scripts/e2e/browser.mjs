@@ -9,7 +9,7 @@ import { join } from "node:path"
 
 import { AUTH_ERRORS } from "../../src/lib/copy.ts"
 import { redact } from "../../src/lib/redact.ts"
-import { withTimeout } from "./harness.ts"
+import { timeoutMessage, withTimeout } from "./harness.ts"
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
@@ -82,9 +82,10 @@ export async function launchBrowser(suite) {
     new Promise((resolve, reject) => {
       const id = ++seq
       const ms = SLOW_CALLS.has(method) ? 60_000 : 30_000
+      const startedAt = Date.now()
       const timer = setTimeout(() => {
         pending.delete(id)
-        reject(new Error(redact(`DevTools call ${describeCall(method, params)} got no reply within ${ms / 1000}s`)))
+        reject(new Error(redact(timeoutMessage(`DevTools call ${describeCall(method, params)}`, ms, startedAt))))
       }, ms)
       pending.set(id, {
         resolve: (v) => { clearTimeout(timer); resolve(v) },
@@ -106,9 +107,12 @@ export async function launchBrowser(suite) {
     await send("DOM.enable"); await send("Accessibility.enable")
     if (log) await send("Log.enable")
     if (noScript) await send("Emulation.setScriptExecutionDisabled", { value: true })
-    const posts = []
+    // POST requests sent, and the type each image actually arrived as.
+    const posts = [], images = []
     listeners.push((m) => {
-      if (m.sessionId === sessionId && m.method === "Network.requestWillBeSent" && m.params.request.method === "POST") posts.push(m.params.request.url)
+      if (m.sessionId !== sessionId) return
+      if (m.method === "Network.requestWillBeSent" && m.params.request.method === "POST") posts.push(m.params.request.url)
+      if (m.method === "Network.responseReceived" && m.params.type === "Image") images.push({ url: m.params.response.url, mimeType: m.params.response.mimeType })
     })
 
     const evaluate = async (expr) => {
@@ -124,16 +128,20 @@ export async function launchBrowser(suite) {
       }
       throw new Error(`Timed out: ${label}`)
     }
-    const goto = async (path, settle = 1300) => {
-      await send("Page.navigate", { url: suite.base + path })
-      await waitFor(`document.readyState === "complete"`, path)
+    // Waits for the new page, not the old one: the old document is marked first, so a
+    // "complete" readyState only counts once the marker is gone. A page that takes over 8s
+    // is reported, so a slow server shows up by name instead of as a later stall.
+    const loadPage = async (start, label, settle) => {
+      await evaluate("window.__e2eOldPage = true").catch(() => {})
+      const t0 = Date.now()
+      await start()
+      await waitFor(`!window.__e2eOldPage && document.readyState === "complete"`, `loading ${label}`)
+      const ms = Date.now() - t0
+      if (ms > 8000) console.log(`(slow page: ${label} took ${(ms / 1000).toFixed(1)}s)`)
       await sleep(settle)
     }
-    const reload = async (settle = 1300) => {
-      await send("Page.reload", {}); await sleep(300)
-      await waitFor(`document.readyState === "complete"`, "reload")
-      await sleep(settle)
-    }
+    const goto = (path, settle = 1300) => loadPage(() => send("Page.navigate", { url: suite.base + path }), path, settle)
+    const reload = (settle = 1300) => loadPage(() => send("Page.reload", {}), "reload", settle)
     /** Viewport: phones (under 640px) are emulated as mobile. */
     const size = (w, h = w < 640 ? 640 : 900, s = scale) =>
       send("Emulation.setDeviceMetricsOverride", { width: w, height: h, deviceScaleFactor: s, mobile: w < 640 })
@@ -196,7 +204,7 @@ export async function launchBrowser(suite) {
     }
 
     await size(width, height)
-    return { send, evaluate, waitFor, goto, reload, size, media, theme, key, shot, setValue, fill, signIn, posts }
+    return { send, evaluate, waitFor, goto, reload, size, media, theme, key, shot, setValue, fill, signIn, posts, images }
   }
 
   const close = () => { ws.close(); chrome.kill() }

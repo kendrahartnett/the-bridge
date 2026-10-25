@@ -168,11 +168,11 @@ const LONG_EMAIL = "outreach.coordinator.northwest.side.mutual.aid@community-org
 
 /**
  * Widths and themes come from --widths=320,390 and --themes=light,dark (defaults: 320, 390,
- * 768, 1280, 1440 in both themes). --long swaps every contact email for a very long one.
+ * 768, 1024, 1280, 1440 in both themes). --long swaps every contact email for a very long one.
  * --shots saves a full-page screenshot of each audited page.
  */
 export function auditOptions(suite) {
-  const { widths = "320,390,768,1280,1440", themes = "light,dark" } = suite.flags
+  const { widths = "320,390,768,1024,1280,1440", themes = "light,dark" } = suite.flags
   return { widths: String(widths).split(",").map(Number), themes: String(themes).split(","), long: !!suite.flags.long, shots: !!suite.flags.shots }
 }
 

@@ -18,11 +18,25 @@ import { requireDevDatabase } from "../../src/db/dev-guard.ts"
 import { installRedaction, redact } from "../../src/lib/redact.ts"
 import { acquireLock } from "./lock.ts"
 
+/**
+ * The message for a step that ran out of time. If far more time passed than the limit, the
+ * computer was asleep (Windows Modern Standby pauses every process when the screen turns
+ * off), so say that instead of blaming the page.
+ */
+export function timeoutMessage(step: string, ms: number, startedAt: number) {
+  const elapsed = Date.now() - startedAt
+  const asleep = elapsed > ms + 30_000
+    ? ` (but ${Math.round(elapsed / 60_000)} min passed: the computer was asleep or suspended, which pauses the test; run it again while the computer stays awake)`
+    : ""
+  return `${step} got no reply within ${ms / 1000}s${asleep}`
+}
+
 /** Rejects with "<step> got no reply within <n>s" if the promise takes longer than ms. */
 export function withTimeout<T>(promise: Promise<T>, ms: number, step: string): Promise<T> {
   let timer: NodeJS.Timeout | undefined
+  const startedAt = Date.now()
   const timeout = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => reject(new Error(`${step} got no reply within ${ms / 1000}s`)), ms)
+    timer = setTimeout(() => reject(new Error(timeoutMessage(step, ms, startedAt))), ms)
   })
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timer))
 }

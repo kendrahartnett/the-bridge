@@ -2,7 +2,7 @@
 // database, then prints which passed. Flags (such as --themes=dark) are passed to each suite.
 //   npm run e2e
 
-import { spawnSync } from "node:child_process"
+import { spawn, spawnSync } from "node:child_process"
 
 import { acquireLock } from "./lock.ts"
 
@@ -10,6 +10,18 @@ const SUITES = ["responsive", "dashboards", "admin", "contact", "nav", "verifica
 
 // One lock for the whole run; the suites started here run under it (E2E_LOCK_OWNER).
 acquireLock("npm run e2e")
+
+// Windows pauses every process when the screen turns off (Modern Standby), which freezes a
+// run mid-suite. While this run is alive, a helper asks Windows to keep the system and
+// display awake (SetThreadExecutionState; no settings change), and exits once the run ends.
+if (process.platform === "win32") {
+  const keepAwake = `
+    $t = Add-Type -Name P -Namespace KeepAwake -PassThru -MemberDefinition '[DllImport("kernel32.dll")] public static extern uint SetThreadExecutionState(uint f);'
+    [void]$t::SetThreadExecutionState([uint32]"0x80000003")
+    while (Get-Process -Id ${process.pid} -ErrorAction SilentlyContinue) { Start-Sleep -Seconds 15 }`
+  spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", keepAwake], { stdio: "ignore", detached: true }).unref()
+  console.log("Keeping the computer awake until the run ends.")
+}
 
 const time = () => new Date().toLocaleTimeString()
 const started = Date.now()
