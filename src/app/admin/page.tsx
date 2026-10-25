@@ -55,7 +55,13 @@ async function AdminContent({ searchParams }: { searchParams: PageProps<"/admin"
 
   return (
     <>
-      <h1 className="font-heading text-3xl font-bold tracking-tight">{ADMIN_COPY.title}</h1>
+      <Link
+        href="/dashboard"
+        className="inline-flex min-h-tap items-center text-sm font-medium text-primary-text underline-offset-4 hover:underline"
+      >
+        {ADMIN_COPY.backToDashboard}
+      </Link>
+      <h1 className="font-heading mt-2 text-3xl font-bold tracking-tight">{ADMIN_COPY.title}</h1>
       <p className="mt-2 max-w-2xl text-muted-foreground">{ADMIN_COPY.intro}</p>
 
       {/* Each tab sizes to its label and count, so "Approved 12" never runs into its

@@ -127,9 +127,17 @@ export const VERIFICATION_COPY = {
   yourPost: "Your post",
 } as const
 
+// Header navigation for signed-in people.
+export const NAV_COPY = {
+  label: "Main",
+  menu: "Menu",
+  dashboard: "Dashboard",
+  admin: "Admin",
+} as const
+
 // Admin review page. {org} is replaced with the organization's name.
 export const ADMIN_COPY = {
-  headerLink: "Admin",
+  backToDashboard: "← Back to dashboard",
   title: "Organization review",
   intro: "Organizations can claim needs and see contact information only after a person approves them here.",
   tabs: { pending: "Pending", approved: "Approved", rejected: "Rejected" },
