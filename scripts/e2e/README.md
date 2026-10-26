@@ -32,6 +32,7 @@ npm run e2e:responsive
 | `e2e:notices` | Real-pixel text contrast of the account-status banners and every Notice tone, on the page and in a card |
 | `e2e:homepage` | Hero reading order on phones, layout shift, photo format, caption and alt text, logo sizes, reduced motion |
 | `e2e:signin` | Sign-in page structure and text contrast, tabs and account-type cards, form error, header active bar and phone menu |
+| `e2e:a11y` | Every page, each kind of account, both themes at 390 and 1280px: text contrast, one h1, landmarks, page language, alt text, named controls, no overflow; reduced motion |
 
 Options (after `--`, e.g. `npm run e2e:responsive -- --themes=dark`):
 
