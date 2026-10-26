@@ -106,8 +106,13 @@ try {
 
   // A pending organization's dashboard never contains anyone's email but its own.
   const pendingHtml = await who.donor3.evaluate("document.documentElement.outerHTML")
-  const otherEmails = (pendingHtml.match(/[a-z0-9.+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi) || []).filter((e) => e.toLowerCase() !== "test.donor3@example.com")
-  check("Pending organization's dashboard HTML has no poster's email (or anyone else's)", otherEmails.length === 0 && !pendingHtml.includes("mailto:"), otherEmails.join(", ") || "none")
+  // The banner's "Questions? Contact …" address (ADMIN_CONTACT_EMAIL) is the only other
+  // email allowed, and the only mailto link.
+  const adminContact = process.env.ADMIN_CONTACT_EMAIL?.trim().toLowerCase()
+  const otherEmails = (pendingHtml.match(/[a-z0-9.+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi) || []).filter((e) => !["test.donor3@example.com", adminContact].includes(e.toLowerCase()))
+  // (In the server payload the link is inside an escaped string, so it ends with a backslash.)
+  const mailtos = (pendingHtml.match(/mailto:[^"]+/g) || []).filter((m) => m.replace(/\\+$/, "").toLowerCase() !== `mailto:${adminContact}`)
+  check("Pending organization's dashboard HTML has no poster's email (or anyone else's but the admin contact)", otherEmails.length === 0 && mailtos.length === 0, `${otherEmails.length} other emails, ${mailtos.length} other mailto links`)
 
   // ---- 2. Admin page ----
   const admin = await browser.newTab(); await admin.signIn("test.admin@example.com")
@@ -148,12 +153,14 @@ try {
   check("Tab counts after approval: Pending 0, Approved 3", JSON.stringify(await admin.evaluate(tabCounts)) === JSON.stringify({ Pending: 0, Approved: 3, Rejected: 0 }))
 
   const D3 = who.donor3
-  await D3.goto("/dashboard")
-  const target = await D3.evaluate(`[...document.querySelectorAll("main [data-slot=card]")].find(c => [...c.querySelectorAll("button")].some(b => b.textContent.trim() === "Offer support"))?.querySelector("[data-slot=card-title]").textContent`)
-  check("Approved test.donor3 now sees Offer support", !!target && !(await D3.evaluate(`!!document.querySelector('[aria-label="Account status"]')`)), target)
-  await clickButton(D3, card(target), "Offer support"); await sleep(200); await clickButton(D3, card(target), "Yes, offer support")
-  await D3.waitFor(`!!(${card(target)})?.querySelector('a[href^="mailto:"]')`, "claimed card with email"); await sleep(500)
-  const claimedEmail = await D3.evaluate(`(${card(target)}).querySelector('a[href^="mailto:"]').getAttribute("href")`)
+  await D3.goto("/board")
+  const needHref = await D3.evaluate(`document.querySelector('main a[data-note="open"]')?.getAttribute("href")`)
+  await D3.goto(needHref)
+  const target = await D3.evaluate(`document.querySelector("main h1").textContent`)
+  check("Approved test.donor3 now sees Claim this need on an open need", !!target && await D3.evaluate(`[...document.querySelectorAll("main button")].some(b => b.textContent.trim() === "Claim this need") && !document.querySelector('[aria-label="Account status"]')`), target)
+  await clickButton(D3, "document.querySelector('main')", "Claim this need"); await sleep(200); await clickButton(D3, "document.querySelector('main')", "Yes, claim it")
+  await D3.waitFor(`!!document.querySelector('main a[href^="mailto:"]')`, "claimed need with email"); await sleep(500)
+  const claimedEmail = await D3.evaluate(`document.querySelector('main a[href^="mailto:"]').getAttribute("href")`)
   check("test.donor3 claims a need and sees the poster's email", /^mailto:test\.outreach\d@example\.com$/.test(claimedEmail), claimedEmail)
 
   // ---- 4. Revoke ----
@@ -164,9 +171,13 @@ try {
   await admin.waitFor(`!${card(ORG_C)}`, "card leaves Approved"); await sleep(800)
   await admin.goto("/admin?tab=rejected")
   check("Revoke asks first, then moves the organization to Rejected", revokeQ.startsWith(`Revoke approval for ${ORG_C}?`) && await admin.evaluate(`!!${card(ORG_C)}`), revokeQ)
+  await D3.goto("/board")
+  const openHref = await D3.evaluate(`document.querySelector('main a[data-note="open"]')?.getAttribute("href")`)
+  await D3.goto(openHref)
+  const afterClaimable = await D3.evaluate(`({ claim: [...document.querySelectorAll("main button")].filter(b => b.textContent.trim() === "Claim this need").length, waiting: document.querySelector("main").innerText.includes("Available after approval.") })`)
   await D3.goto("/dashboard")
-  const after = await D3.evaluate(`(() => { const html = document.documentElement.outerHTML; return { banner: document.querySelector('[aria-label="Account status"]')?.textContent.startsWith("Your organization wasn't approved."), offer: [...document.querySelectorAll("main button")].filter(b => b.textContent.trim() === "Offer support").length, claimStill: !!(${card(target)}), mailto: (html.match(/mailto:test\\.outreach/g) || []).length } })()`)
-  check("After revoking: claim buttons gone, rejected banner shown", after.banner && after.offer === 0, JSON.stringify(after))
+  const after = await D3.evaluate(`(() => { const html = document.documentElement.outerHTML; return { banner: document.querySelector('[aria-label="Account status"]')?.textContent.startsWith("Your organization wasn't approved."), claimStill: !!(${card(target)}), mailto: (html.match(/mailto:test\\.outreach/g) || []).length } })()`)
+  check("After revoking: no Claim this need button (Available after approval instead), rejected banner shown", after.banner && afterClaimable.claim === 0 && afterClaimable.waiting, JSON.stringify({ ...after, ...afterClaimable }))
   check("After revoking: its claim is still listed but the poster's email is gone", after.claimStill && after.mailto === 0, JSON.stringify(after))
 
   // ---- 5. New sign-ups through the forms; reject with an internal note ----

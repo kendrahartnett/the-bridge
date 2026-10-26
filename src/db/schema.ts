@@ -105,6 +105,11 @@ export const foodRequests = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    // When the need moved to each status, for the timeline on its detail page. Set by the
+    // rules in src/lib/request-rules.ts; null on needs that changed before these existed.
+    claimedAt: timestamp("claimed_at", { withTimezone: true }),
+    fulfilledAt: timestamp("fulfilled_at", { withTimezone: true }),
+    cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
   },
   (t) => [
     check(

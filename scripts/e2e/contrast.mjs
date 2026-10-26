@@ -29,6 +29,9 @@ export const TEXT_CONTRAST = `(() => {
   const els = [...document.querySelectorAll("body *")].filter((el) => [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim()))
   for (const el of els) {
     if (el.closest("[aria-hidden=true], option, script, style, .sr-only")) continue
+    // Sticky notes' text sits on the note image, not a CSS background; e2e:board measures it
+    // from real pixels instead.
+    if (el.closest("[data-note]")) continue
     if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue
     const r = el.getBoundingClientRect(); if (r.width < 2 || r.height < 2) continue
     const cs = getComputedStyle(el)
@@ -58,7 +61,9 @@ const TARGETS = (scope) => `(() => {
   const out = []
   for (const el of [...document.querySelectorAll(${JSON.stringify(scope)}), ...document.querySelectorAll(${JSON.stringify(scope)} + " *")]) {
     const own = [...el.childNodes].filter(n => n.nodeType === 3 && n.textContent.trim())
-    if (!own.length || !el.checkVisibility()) continue
+    // Hidden from assistive tech (decorative) or only for screen readers: not measured here,
+    // as in TEXT_CONTRAST. (e2e:board measures the "Claimed" stamp on its own.)
+    if (!own.length || !el.checkVisibility() || el.closest(".sr-only, [aria-hidden=true]")) continue
     const rects = []
     for (const n of own) { const r = document.createRange(); r.selectNodeContents(n); for (const b of r.getClientRects()) if (b.width > 1 && b.height > 1) rects.push({ x: b.x * devicePixelRatio, y: b.y * devicePixelRatio, w: b.width * devicePixelRatio, h: b.height * devicePixelRatio }) }
     const cs = getComputedStyle(el)

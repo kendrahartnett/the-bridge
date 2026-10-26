@@ -150,6 +150,8 @@ export const AUTH_COPY = {
 export const VERIFICATION_COPY = {
   pendingBanner:
     "Your organization is under review. You can browse the Needs Board, but you can't claim needs or see contact information until you're approved.",
+  // Added after the pending banner when ADMIN_CONTACT_EMAIL is set.
+  pendingQuestions: "Questions? Contact {email}.",
   rejectedBanner: "Your organization wasn't approved. If you think this is a mistake, contact {email}.",
   rejectedBannerNoEmail: "Your organization wasn't approved.",
   availableAfterApproval: "Available after approval.",
@@ -172,10 +174,9 @@ export const DASHBOARD_COPY = {
     statsLabel: "Right now",
     openCount: "Open requests",
     peopleWaiting: "People who need support",
-    boardHeading: "Open requests",
-    boardIntro:
-      "Each request shows the neighborhood and time window. After you offer support, you'll see the poster's contact email so you can arrange the handoff.",
-    boardEmpty: "No open requests right now. Check back soon.",
+    latestHeading: "Latest needs",
+    latestIntro: "The newest needs on the Needs Board. Open one to see the details and claim it.",
+    viewBoard: "View the Needs Board",
     supportingHeading: "Needs you're supporting",
     supportingThis: "You're supporting this",
     postsHeading: "Your posts",
@@ -232,9 +233,9 @@ export const REQUEST_COPY = {
 // The actions on a request card. Each asks once before it runs.
 export const REQUEST_ACTIONS = {
   claim: {
-    label: "Offer support",
-    question: "Offer support for this request? You'll see the poster's contact email so you can arrange the handoff.",
-    confirm: "Yes, offer support",
+    label: "Claim this need",
+    question: "Claim this need? You'll see the poster's contact info so you can arrange the handoff.",
+    confirm: "Yes, claim it",
   },
   deliver: {
     label: "Mark fulfilled",
@@ -250,6 +251,35 @@ export const REQUEST_ACTIONS = {
   pending: "One moment…",
 } as const
 
+// The Needs Board (/board) and its sticky notes.
+export const BOARD_COPY = {
+  title: "Needs Board",
+  intro:
+    "Open needs come first, then needs another organization has claimed. Open a note to see the details and claim it.",
+  loading: "Loading the Needs Board…",
+  empty: "No open needs right now. Check back soon.",
+  // The stamp on an In Progress note, and the label on an organization's own post.
+  stamp: "Claimed",
+  yourPost: "Your post",
+  // Read by screen readers on each note (the stamp is decorative).
+  status: "Status:",
+} as const
+
+// A need's own page (/requests/[id]).
+export const DETAIL_COPY = {
+  backToBoard: "← Back to the Needs Board",
+  backToDashboard: "← Back to dashboard",
+  loading: "Loading…",
+  posted: "Posted",
+  timelineHeading: "Status",
+  timeline: { posted: "Posted", claimed: "Claimed", fulfilled: "Fulfilled", cancelled: "Cancelled" },
+  notYet: "Not yet",
+  timeNotRecorded: "Time not recorded",
+  contactAfterClaim: "Contact info appears after you claim.",
+  claimedByOther: "Claimed by another organization.",
+  youClaimed: "Your organization claimed this need.",
+} as const
+
 // The 404 page. Exactly the same for a page that doesn't exist and one the visitor isn't
 // allowed to see (it never reads the session), so it reveals nothing about either.
 export const NOT_FOUND_COPY = {
@@ -263,6 +293,7 @@ export const NAV_COPY = {
   label: "Main",
   menu: "Menu",
   dashboard: "Dashboard",
+  board: "Needs Board",
   admin: "Admin",
 } as const
 
@@ -329,6 +360,9 @@ export const CONTACT_COPY = {
 export const SPANISH_GLOSSARY = [
   ["Post a Need", "Publicar una necesidad"],
   ["Offer Support", "Ofrecer apoyo"],
+  ["Claim this need", "Reclamar esta necesidad"],
+  ["Needs Board", "Tablero de necesidades"],
+  ["Claimed", "Reclamada"],
   ["Open", "Abierta"],
   ["In Progress", "En curso"],
   ["Fulfilled", "Completada"],

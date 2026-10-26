@@ -100,7 +100,7 @@ async function resetPendingOrg(id: string) {
 const scaffolding: { adminId?: string; pendingOrgId?: string } = {}
 
 const SEEDED_PREFIX = "5eed0000-"
-const OTHER_ORG_MESSAGE = "Someone else just offered support for this request."
+const OTHER_ORG_MESSAGE = "Another organization just claimed this need."
 
 async function main() {
   const out1 = await actor("test.outreach1@example.com")

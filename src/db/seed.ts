@@ -232,10 +232,18 @@ async function main() {
     },
   ]
 
+  // When each seeded need changed status, for the timeline on its page (and reset on every
+  // re-run, so needs the browser tests claimed or cancelled go back to their seeded state).
+  const times: Record<string, Pick<NewFoodRequest, "createdAt" | "claimedAt" | "fulfilledAt" | "cancelledAt">> = {
+    "5eed0000-0000-4000-8000-000000000004": { createdAt: chicagoAt(-2, "09:15"), claimedAt: chicagoAt(-1, "14:40"), fulfilledAt: null, cancelledAt: null },
+    "5eed0000-0000-4000-8000-000000000005": { createdAt: chicagoAt(-4, "16:00"), claimedAt: chicagoAt(-3, "10:05"), fulfilledAt: chicagoAt(-2, "09:30"), cancelledAt: null },
+    "5eed0000-0000-4000-8000-000000000006": { createdAt: chicagoAt(-3, "12:00"), claimedAt: null, fulfilledAt: null, cancelledAt: chicagoAt(-2, "08:45") },
+  }
   for (const { id, ...rest } of requests) {
-    await db.insert(foodRequests).values({ id, ...rest }).onConflictDoUpdate({
+    const set = { ...rest, ...(times[id!] ?? { claimedAt: null, fulfilledAt: null, cancelledAt: null }) }
+    await db.insert(foodRequests).values({ id, ...set }).onConflictDoUpdate({
       target: foodRequests.id,
-      set: rest,
+      set,
     })
   }
 

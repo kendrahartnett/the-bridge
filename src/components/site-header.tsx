@@ -5,7 +5,7 @@ import { Suspense } from "react"
 import { signOutAction } from "@/app/sign-in/actions"
 import { AssistantChat } from "@/components/assistant/assistant-chat"
 import { Logo } from "@/components/brand/logo"
-import { HeaderNav } from "@/components/header-nav"
+import { HeaderNav, HeaderNavPlaceholder } from "@/components/header-nav"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
 import { getCurrentUser } from "@/lib/current-user"
@@ -31,8 +31,9 @@ export function SiteHeader({ signedIn = false }: { signedIn?: boolean }) {
           <div className="flex items-center sm:gap-1">
             {signedIn && (
               // Reads the session, so it streams in behind Suspense (cacheComponents). Until
-              // then everyone gets Dashboard; Admin is added for admins.
-              <Suspense fallback={<HeaderNav isAdmin={false} />}>
+              // then everyone gets Dashboard; the Needs Board is added for organizations and
+              // Admin for admins.
+              <Suspense fallback={<HeaderNavPlaceholder isAdmin={false} isOrganization={false} />}>
                 <SignedInNav />
               </Suspense>
             )}
@@ -60,8 +61,11 @@ export function SiteHeader({ signedIn = false }: { signedIn?: boolean }) {
   )
 }
 
-/** Dashboard for everyone signed in; Admin too for admins (checked again at /admin). */
+/**
+ * Dashboard for everyone signed in; the Needs Board for organization accounts and Admin for
+ * admins (checked again at /board and /admin).
+ */
 async function SignedInNav() {
   const user = await getCurrentUser()
-  return <HeaderNav isAdmin={!!user?.isAdmin} />
+  return <HeaderNav isAdmin={!!user?.isAdmin} isOrganization={user?.role === "donor"} />
 }

@@ -23,7 +23,11 @@ async function run(rule: Rule, id: unknown): Promise<RequestActionResult> {
   const user = await getCurrentUser()
   if (!user) return { ok: false, error: "Please sign in again." }
   const result = await rule(db, { id: user.id, role: user.role }, id)
-  if (result.ok) revalidatePath("/dashboard")
+  if (result.ok) {
+    revalidatePath("/dashboard")
+    revalidatePath("/board")
+    revalidatePath("/requests/[id]", "page")
+  }
   return result
 }
 

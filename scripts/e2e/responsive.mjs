@@ -12,6 +12,8 @@ const { audit, widths, themes, long } = createAudit(suite)
 
 const L = `document.querySelector("[data-assistant-launcher]")`
 const P = "[data-assistant-panel]"
+// A seeded Open need (outreach1's "Hot meals").
+const OPEN_NEED = "5eed0000-0000-4000-8000-000000000001"
 const click = (t, label, within = "main") =>
   t.evaluate(`(() => { const b = [...document.querySelectorAll(${JSON.stringify(within)} + " button")].find(b => b.textContent.trim() === ${JSON.stringify(label)}); if (!b) throw new Error("no button " + ${JSON.stringify(label)}); b.click(); return true })()`)
 
@@ -36,8 +38,10 @@ try {
       await audit(outreach, "outreach dashboard (Cancel confirm)", w, theme)
       if (!long) { await outreach.goto("/requests/new", 1400); await audit(outreach, "/requests/new", w, theme) }
       await donor.goto("/dashboard", 1400); await audit(donor, "organization dashboard", w, theme)
-      await click(donor, "Offer support"); await sleep(300)
-      await audit(donor, "org dashboard (Offer confirm)", w, theme)
+      await donor.goto("/board", 1400); await audit(donor, "Needs Board", w, theme)
+      await donor.goto(`/requests/${OPEN_NEED}?from=board`, 1400); await audit(donor, "need page (open)", w, theme)
+      await click(donor, "Claim this need"); await sleep(300)
+      await audit(donor, "need page (Claim confirm)", w, theme)
       if (!long) {
         await donor.goto("/dashboard", 1400)
         await donor.evaluate(`${L}?.click(), true`); await sleep(500)

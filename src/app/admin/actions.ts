@@ -15,6 +15,7 @@ export async function reviewOrganizationAction(input: unknown): Promise<RequestA
   if (result.ok) {
     revalidatePath("/admin")
     revalidatePath("/dashboard")
+    revalidatePath("/board")
   }
   return result
 }

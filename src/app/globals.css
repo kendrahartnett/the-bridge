@@ -152,6 +152,15 @@
 
   /* Minimum touch target */
   --tap-min: 44px;
+
+  /* Needs Board sticky notes. The note image is the same yellow in both themes, so these
+     don't change with the theme. Ink is the light theme's navy text: 10.3:1 on the note's
+     yellow; the badges are that navy with ivory text (11.2:1); the "Claimed" stamp is a deep
+     blue, a little darker than the theme's #1f4e79 so it stays above 7:1 on the paper's
+     darker texture (8.8:1 on the flat yellow). Measured on rendered pixels in e2e:board. */
+  --note-ink: #19354a;
+  --note-badge-foreground: #f5f2ea;
+  --note-stamp: #173f66;
 }
 
 @theme inline {
@@ -165,6 +174,9 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-gold: var(--gold);
+  --color-note-ink: var(--note-ink);
+  --color-note-badge-foreground: var(--note-badge-foreground);
+  --color-note-stamp: var(--note-stamp);
   --color-gold-foreground: var(--gold-foreground);
   --color-surface: var(--surface);
   --color-muted: var(--muted);

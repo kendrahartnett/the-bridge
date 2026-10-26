@@ -1,5 +1,5 @@
-// Contact handoff: who can see which email, before and after an organization offers
-// support, at 320px and 1280px in both themes. Also checks the raw page HTML (which carries
+// Contact handoff: who can see which email, before and after an organization claims a
+// need, at 320px and 1280px in both themes. Also checks the raw page HTML (which carries
 // the server payload), so an email sent to the page but not shown still fails.
 //   npm run e2e:contact
 
@@ -67,6 +67,7 @@ async function verify(tab, label, expected) {
   return s
 }
 
+const R1_ID = "5eed0000-0000-4000-8000-000000000001"
 const R1 = "Hot meals for 25 people", R4 = "Hot meals for 60 people", R5 = "Breakfast burritos for 30 people"
 const VIEWS = [[320, "light"], [320, "dark"], [1280, "light"], [1280, "dark"]]
 
@@ -74,24 +75,26 @@ try {
   const d1 = await signedInTab(EMAIL.d1), d2 = await signedInTab(EMAIL.d2)
   const o1 = await signedInTab(EMAIL.o1), o2 = await signedInTab(EMAIL.o2)
 
-  // Before the offer.
+  // Before the claim.
   await d1.view(1280, "light")
-  const before = await verify(d1, "Before offer — donor1: open request shows no poster email; only the request donor1 already supports does", { [R4]: EMAIL.o2 })
-  check("Before offer — the open request is listed under Open requests", before.cards.some((c) => c.title === R1 && c.section === "Open requests"))
-  await verify(d2, "Before offer — donor2: no email on any open request", { [R5]: EMAIL.o1 }).catch(() => {})
+  await verify(d1, "Before claim — donor1: only the request donor1 already supports shows an email", { [R4]: EMAIL.o2 })
+  await verify(d2, "Before claim — donor2: no email on any open request", { [R5]: EMAIL.o1 }).catch(() => {})
 
-  // donor1 offers support on outreach1's open "Hot meals for 25 people".
-  const card = `[...document.querySelectorAll("[data-slot=card]")].find(c => c.querySelector("[data-slot=card-title]")?.textContent.trim() === ${JSON.stringify(R1)})`
-  await d1.evaluate(`[...(${card}).querySelectorAll("button")].find(b => b.textContent.trim() === "Offer support").click(), true`); await sleep(300)
-  const q = await d1.evaluate(`(${card}).innerText`)
-  check("Offer confirmation uses the new wording", q.includes("Offer support for this request? You'll see the poster's contact email so you can arrange the handoff."), q.split("\n").find((l) => l.startsWith("Offer support for")))
-  await d1.evaluate(`[...(${card}).querySelectorAll("button")].find(b => b.textContent.trim() === "Yes, offer support").click(), true`)
-  await d1.waitFor(`(() => { const c = ${card}; return !!(c && c.querySelector('a[href^="mailto:"]')) })()`, "poster email after offer").catch(async (e) => {
-    await d1.shot("debug-after-offer.png", { full: true })
-    console.log("DEBUG card:", JSON.stringify(await d1.evaluate(`(${card})?.innerText`)))
+  // donor1 opens outreach1's open "Hot meals for 25 people" from the Needs Board and claims it.
+  await d1.goto("/board", 1200)
+  check("Before claim — the open need is on the Needs Board", await d1.evaluate(`!!document.querySelector('a[href="/requests/${R1_ID}?from=board"]')`))
+  await d1.goto(`/requests/${R1_ID}?from=board`, 1200)
+  const pre = await d1.evaluate(`({ html: document.documentElement.outerHTML, text: document.querySelector("main").innerText })`)
+  check("Before claim — the need's page shows no poster email (not even in the HTML)", !ALL.some((e) => pre.html.includes(e)) && pre.text.includes("Contact info appears after you claim."))
+  await d1.evaluate(`[...document.querySelectorAll("main button")].find(b => b.textContent.trim() === "Claim this need").click(), true`); await sleep(300)
+  const q = await d1.evaluate(`document.querySelector("main [role=group]")?.innerText ?? ""`)
+  check("Claim confirmation uses the new wording", q.includes("Claim this need? You'll see the poster's contact info so you can arrange the handoff."), q.split("\n")[0])
+  await d1.evaluate(`[...document.querySelectorAll("main button")].find(b => b.textContent.trim() === "Yes, claim it").click(), true`)
+  await d1.waitFor(`!!document.querySelector('main a[href^="mailto:"]')`, "poster email after claiming").catch(async (e) => {
+    await d1.shot("debug-after-claim.png", { full: true })
     throw e
   })
-  check("donor1: poster's email appears right after offering", true)
+  check("donor1: poster's email appears on the need's page right after claiming", await d1.evaluate(`document.querySelector('main a[href^="mailto:"]').getAttribute("href") === "mailto:${EMAIL.o1}"`))
 
   const expected = {
     d1: { [R1]: EMAIL.o1, [R4]: EMAIL.o2 },

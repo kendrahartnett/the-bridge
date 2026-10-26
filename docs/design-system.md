@@ -302,7 +302,8 @@ All sizes are fluid between 320 px and 1280 px.
 | `Card` | standard (solid), interactive (hover lift), stat, glass (reserved: header, chat, dialogs, menus) | Extend existing |
 | `Badge` | status (Open, In Progress, Fulfilled, Cancelled), category, info | Restyle existing |
 | `RequestCard` | compact card: category badge, status badge, items (title), people count, neighborhood, time window, footer slot for actions | Refactor existing (Phase 4) |
-| `RequestDetailLayout` | layout pattern for the future detail page: header (items, badges), key facts grid (people, neighborhood, window), notes, contact block, action area | **New** (Phase 4; not routed) |
+| `RequestDetailLayout` | the need page (`/requests/[id]`): header (items, badges), key facts grid (people, neighborhood, window), notes, status timeline (Posted, Claimed, Fulfilled or Cancelled, with Chicago times), contact block, action area | **Routed** (Needs Board) |
+| `StickyNote` | a need on the Needs Board: `needs-card-post-board.png` (square, transparent) as the paper; text inset 11–90% across from 19% down, facts stop at 69% across (clear of the curl); Raleway items (3 lines), navy badges, a deep blue "Claimed" stamp on In Progress needs; fixed note tokens (`--note-ink`, `--note-badge-foreground`, `--note-stamp`), the same in both themes; a tilt of -1.5° to 1.5° from the id, straightening and lifting on hover and focus (static with reduced motion) | **New** (Needs Board) |
 | `PageHeader` | back link (optional), eyebrow (optional), h1, intro, actions slot | **New** |
 | `SectionHeader` | h2, optional description, actions slot; `arch` option on the landing page | **New** |
 | `EmptyState` | arch mark, message, optional action | **New** (replaces two implementations) |

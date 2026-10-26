@@ -41,7 +41,11 @@ export const MEASURE = (scopeSel) => `(async () => {
     const el = n.parentElement
     if (!visible(el) || el.closest(".sr-only, svg, script, style, [aria-hidden=true]")) continue
     const range = document.createRange(); range.selectNodeContents(n)
-    const rects = [...range.getClientRects()].filter(r => r.width > 0.5 && r.height > 0.5)
+    let rects = [...range.getClientRects()].filter(r => r.width > 0.5 && r.height > 0.5)
+    // Lines hidden by line-clamp still report boxes; keep only the lines that show (judged by
+    // each line's middle, so a slightly rotated element still counts its lines right).
+    const clamp = el.closest("[style*=line-clamp], .line-clamp-1, .line-clamp-2, .line-clamp-3, .line-clamp-4")
+    if (clamp) { const cb = clamp.getBoundingClientRect(); rects = rects.filter(r => r.top + r.height / 2 < cb.bottom) }
     texts.push({ el, rects, text: n.textContent.trim() })
   }
   // Clipped text: text outside its clipping ancestor or outside the viewport horizontally
@@ -50,6 +54,9 @@ export const MEASURE = (scopeSel) => `(async () => {
     for (let a = t.el; a && a !== document.documentElement; a = a.parentElement) {
       const cs = getComputedStyle(a)
       if (/(hidden|clip)/.test(cs.overflowX + cs.overflowY) && a.tagName !== "BODY") {
+        // Text cut to a set number of lines on purpose (line-clamp, with its ellipsis) isn't
+        // a layout fault; e2e:board checks the line count itself.
+        if (cs.webkitLineClamp && cs.webkitLineClamp !== "none") break
         const ar = a.getBoundingClientRect()
         if (t.rects.some(r => r.right > ar.right + 1 || r.left < ar.left - 1 || (/(hidden|clip)/.test(cs.overflowY) && (r.bottom > ar.bottom + 1 || r.top < ar.top - 1)))) clipped.push({ sel: sel(t.el), by: sel(a) })
         break

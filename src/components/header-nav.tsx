@@ -9,20 +9,37 @@ import { Button } from "@/components/ui/button"
 import { NAV_COPY } from "@/lib/copy"
 
 /**
- * Signed-in navigation: Dashboard for everyone, plus Admin for admins. From 640px up the
+ * Signed-in navigation: Dashboard for everyone, the Needs Board for organization accounts,
+ * plus Admin for admins. From 640px up the
  * links sit in the header; on phones they're behind a menu button, so the header still fits
  * on one row at 320px. The current page's link is marked with aria-current="page" and shown
  * with a blue bar (the same indicator as the sign-in and admin tabs); the others are muted
  * until hovered.
- * Whether Admin shows is decided on the server; /admin checks again on every request.
+ * Whether the Needs Board and Admin show is decided on the server; /board and /admin check
+ * again on every request.
  */
-export function HeaderNav({ isAdmin }: { isAdmin: boolean }) {
-  const pathname = usePathname()
+export function HeaderNav(props: NavProps) {
+  return <NavLinks {...props} pathname={usePathname()} />
+}
+
+/**
+ * The same links with none marked current, for the header's loading state: reading the URL
+ * (usePathname) there would stop pages with a dynamic URL, like /requests/[id], from being
+ * prerendered.
+ */
+export function HeaderNavPlaceholder(props: NavProps) {
+  return <NavLinks {...props} pathname={null} />
+}
+
+type NavProps = { isAdmin: boolean; isOrganization: boolean }
+
+function NavLinks({ isAdmin, isOrganization, pathname }: NavProps & { pathname: string | null }) {
   const links = [
     { href: "/dashboard", label: NAV_COPY.dashboard },
+    ...(isOrganization ? [{ href: "/board", label: NAV_COPY.board }] : []),
     ...(isAdmin ? [{ href: "/admin", label: NAV_COPY.admin }] : []),
   ]
-  const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${href}/`)
+  const isCurrent = (href: string) => !!pathname && (pathname === href || pathname.startsWith(`${href}/`))
 
   return (
     <nav aria-label={NAV_COPY.label}>

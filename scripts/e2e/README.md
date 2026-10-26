@@ -33,6 +33,7 @@ npm run e2e:responsive
 | `e2e:homepage` | Hero reading order on phones, layout shift, photo format, caption and alt text, logo sizes, reduced motion |
 | `e2e:signin` | Sign-in page structure and text contrast, tabs and account-type cards, form error, header active bar and phone menu |
 | `e2e:a11y` | Every page, each kind of account, both themes at 390 and 1280px: text contrast, one h1, landmarks, page language, alt text, named controls, no overflow; reduced motion |
+| `e2e:board` | Needs Board and need pages: who may open them (HTTP status and emails in the HTML for every account), the identical 404, sticky-note layout (strip, curl, 3-line cut, stamp, tilt), note contrast from real pixels, keyboard, both themes at 320–1280px, reduced motion |
 
 Options (after `--`, e.g. `npm run e2e:responsive -- --themes=dark`):
 

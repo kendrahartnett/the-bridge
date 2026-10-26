@@ -1,6 +1,6 @@
 # Test results: request and response rules
 
-Run: 10/25/2026, 8:08:51 PM (Chicago time) · tag `[claim-test 20261026010836]`
+Run: 10/26/2026, 12:24:46 AM (Chicago time) · tag `[claim-test 20261026052438]`
 
 Command: `npm run test:claims` (scripts/test-claim-rules.ts), against the dev database.
 The script calls the same rule functions the server actions call (src/lib/request-rules.ts)
@@ -15,16 +15,16 @@ and removes them afterwards (the app has no way to grant admin), and resets test
 | # | Check | Result | Detail |
 |---|---|---|---|
 | 1 | Organization offers support on an open request → In Progress | PASS | result ok; status claimed (shown as "In Progress") |
-| 2 | Second organization cannot offer support on the same request | PASS | "Someone else just offered support for this request."; still supported by Test — Organization A |
-| 3 | Outreach user cannot offer support | PASS | "Only organization accounts can offer support."; status stays open |
-| 4 | Fulfil: creator cannot fulfil while Open | PASS | "No organization has offered support for this request yet." |
+| 2 | Second organization cannot offer support on the same request | PASS | "Another organization just claimed this need."; still supported by Test — Organization A |
+| 3 | Outreach user cannot offer support | PASS | "Only organization accounts can claim needs."; status stays open |
+| 4 | Fulfil: creator cannot fulfil while Open | PASS | "No organization has claimed this need yet." |
 | 5 | Fulfil: an organization cannot fulfil | PASS | "Only the person who posted this request can change it." |
 | 6 | Fulfil: a different outreach user cannot fulfil | PASS | "Only the person who posted this request can change it." |
 | 7 | Fulfil: creator fulfils when In Progress → Fulfilled | PASS | status claimed → delivered (shown as "Fulfilled") |
 | 8 | Fulfil: cannot fulfil twice | PASS | "This request is already fulfilled." |
 | 9 | Cancel: an organization cannot cancel | PASS | "Only the person who posted this request can change it." |
 | 10 | Cancel: creator cancels while Open → Cancelled | PASS | status cancelled |
-| 11 | Cancel: creator cannot cancel once In Progress | PASS | "An organization is already supporting this request, so it can't be cancelled here."; status stays claimed |
+| 11 | Cancel: creator cannot cancel once In Progress | PASS | "An organization already claimed this need, so it can't be cancelled here."; status stays claimed |
 | 12 | Different outreach user cannot cancel someone else's request | PASS | "Only the person who posted this request can change it." |
 | 13 | Different outreach user cannot fulfil someone else's request | PASS | "Only the person who posted this request can change it." |
 | 14 | Invalid category "weapons" is rejected and no row is created | PASS | category error "Choose the type of support."; rows 13 → 13 |
@@ -39,7 +39,7 @@ and removes them afterwards (the app has no way to grant admin), and resets test
 | 23 | Admin can approve | PASS | status approved |
 | 24 | Approved organization can claim a need | PASS | status claimed |
 | 25 | Approved organization can post a need | PASS | created |
-| 26 | Organization cannot claim its own post | PASS | "This is your own post, so you can't offer support on it."; status stays open |
+| 26 | Organization cannot claim its own post | PASS | "This is your own post, so you can't claim it."; status stays open |
 | 27 | Approved organization sees the poster's email on its claim | PASS | email shown |
 | 28 | After approval is revoked, the poster's email is hidden on its existing claims | PASS | claim still listed: true; email hidden (null from the query) |
 | 29 | Poster still sees who supports the need after a revocation | PASS | "Test — Organization C (pending)" |
@@ -59,13 +59,13 @@ Two organizations offer support on the same open request at the same moment (`Pr
 
 | Run | Winner | Other organization got | Result |
 |---|---|---|---|
-| 1 | Test — Organization A | Someone else just offered support for this request. | PASS |
-| 2 | Test — Organization A | Someone else just offered support for this request. | PASS |
-| 3 | Test — Organization A | Someone else just offered support for this request. | PASS |
-| 4 | Test — Organization A | Someone else just offered support for this request. | PASS |
-| 5 | Test — Organization A | Someone else just offered support for this request. | PASS |
-| 6 | Test — Organization B | Someone else just offered support for this request. | PASS |
-| 7 | Test — Organization A | Someone else just offered support for this request. | PASS |
-| 8 | Test — Organization B | Someone else just offered support for this request. | PASS |
-| 9 | Test — Organization B | Someone else just offered support for this request. | PASS |
-| 10 | Test — Organization A | Someone else just offered support for this request. | PASS |
+| 1 | Test — Organization A | Another organization just claimed this need. | PASS |
+| 2 | Test — Organization A | Another organization just claimed this need. | PASS |
+| 3 | Test — Organization A | Another organization just claimed this need. | PASS |
+| 4 | Test — Organization A | Another organization just claimed this need. | PASS |
+| 5 | Test — Organization B | Another organization just claimed this need. | PASS |
+| 6 | Test — Organization B | Another organization just claimed this need. | PASS |
+| 7 | Test — Organization A | Another organization just claimed this need. | PASS |
+| 8 | Test — Organization A | Another organization just claimed this need. | PASS |
+| 9 | Test — Organization A | Another organization just claimed this need. | PASS |
+| 10 | Test — Organization B | Another organization just claimed this need. | PASS |

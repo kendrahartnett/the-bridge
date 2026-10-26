@@ -29,8 +29,8 @@ const BASICS = `(() => {
 const PAGES = [
   ["signed out", null, ["/", "/sign-in", "/sign-in?role=donor", "/no-such-page"]],
   ["outreach", "test.outreach1@example.com", ["/dashboard", "/requests/new"]],
-  ["approved organization", "test.donor1@example.com", ["/dashboard"]],
-  ["pending organization", "test.donor3@example.com", ["/dashboard"]],
+  ["approved organization", "test.donor1@example.com", ["/dashboard", "/board", "/requests/5eed0000-0000-4000-8000-000000000001?from=board", "/requests/5eed0000-0000-4000-8000-000000000004"]],
+  ["pending organization", "test.donor3@example.com", ["/dashboard", "/board"]],
   ["admin", "test.admin@example.com", ["/admin", "/admin?tab=approved"]],
 ]
 

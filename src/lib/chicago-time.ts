@@ -44,3 +44,15 @@ export function formatWindow(start: Date, end: Date): string {
     ? `${day.format(start)}, ${time.format(start)} – ${time.format(end)}`
     : `${day.format(start)} ${time.format(start)} – ${day.format(end)} ${time.format(end)}`
 }
+
+/** "Oct 24, 2026, 3:15 PM" in Chicago time: when something happened to a request. */
+export function formatDateTime(at: Date): string {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: CHICAGO_TZ,
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(at)
+}

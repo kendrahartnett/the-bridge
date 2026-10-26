@@ -3,7 +3,7 @@
 // scripts/test-claim-rules.ts calls them with real users from the database.
 // Relative .ts imports keep this loadable by Node outside Next.js.
 
-import { and, asc, desc, eq, inArray, ne, sql, type AnyColumn } from "drizzle-orm"
+import { and, asc, desc, eq, inArray, ne, or, sql, type AnyColumn } from "drizzle-orm"
 import { alias } from "drizzle-orm/pg-core"
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http"
 import { z } from "zod"
@@ -28,7 +28,7 @@ export type CreateRequestResult =
 const requestId = z.uuid()
 
 const ROLE_ERRORS = {
-  donor: "Only organization accounts can offer support.",
+  donor: "Only organization accounts can claim needs.",
   outreach: "Only the person who posted this request can change it.",
   notApproved: "Your organization is still under review, so you can't do this yet.",
   rejected: "Your organization wasn't approved, so you can't do this.",
@@ -93,7 +93,7 @@ export async function claimRequest(db: Db, actor: Actor, id: unknown): Promise<R
   // One conditional UPDATE: Postgres row locking means only one organization can win.
   const updated = await db
     .update(foodRequests)
-    .set({ status: "claimed", claimedBy: actor.id })
+    .set({ status: "claimed", claimedBy: actor.id, claimedAt: sql`now()` })
     .where(
       and(
         eq(foodRequests.id, parsed.data),
@@ -111,7 +111,7 @@ export async function claimRequest(db: Db, actor: Actor, id: unknown): Promise<R
       .from(foodRequests)
       .where(eq(foodRequests.id, parsed.data))
     if (row?.createdBy === actor.id) {
-      return { ok: false, error: "This is your own post, so you can't offer support on it." }
+      return { ok: false, error: "This is your own post, so you can't claim it." }
     }
     const now = await standing(db, actor.id)
     if (!isApprovedOrg(now)) return { ok: false, error: orgBlockedError(now) }
@@ -120,7 +120,7 @@ export async function claimRequest(db: Db, actor: Actor, id: unknown): Promise<R
       ok: false,
       error:
         status === "claimed" || status === "delivered"
-          ? "Someone else just offered support for this request."
+          ? "Another organization just claimed this need."
           : status === "cancelled"
             ? "This request was cancelled."
             : status === "open"
@@ -128,7 +128,7 @@ export async function claimRequest(db: Db, actor: Actor, id: unknown): Promise<R
               : "We couldn't find that request.",
     }
   }
-  return { ok: true, message: "You offered support for this request. Thank you!" }
+  return { ok: true, message: "You claimed this need. Thank you!" }
 }
 
 // Marking fulfilled and cancelling are for the person who posted the need, as long as they
@@ -140,7 +140,7 @@ export async function confirmDelivery(db: Db, actor: Actor, id: unknown): Promis
 
   const updated = await db
     .update(foodRequests)
-    .set({ status: "delivered" })
+    .set({ status: "delivered", fulfilledAt: sql`now()` })
     .where(
       and(
         eq(foodRequests.id, parsed.data),
@@ -163,7 +163,7 @@ export async function cancelRequest(db: Db, actor: Actor, id: unknown): Promise<
 
   const updated = await db
     .update(foodRequests)
-    .set({ status: "cancelled" })
+    .set({ status: "cancelled", cancelledAt: sql`now()` })
     .where(
       and(
         eq(foodRequests.id, parsed.data),
@@ -193,11 +193,11 @@ async function explainNoChange(
   if (!row || row.createdBy !== userId) return ROLE_ERRORS.outreach
   if (needed === "claimed") {
     return row.status === "open"
-      ? "No organization has offered support for this request yet."
+      ? "No organization has claimed this need yet."
       : `This request is already ${STATUS_LABELS[row.status].toLowerCase()}.`
   }
   return row.status === "claimed"
-    ? "An organization is already supporting this request, so it can't be cancelled here."
+    ? "An organization already claimed this need, so it can't be cancelled here."
     : `This request is already ${STATUS_LABELS[row.status].toLowerCase()}.`
 }
 
@@ -298,7 +298,7 @@ export async function listMySupported(db: Db, viewerId: string): Promise<Request
 }
 
 /**
- * Open needs (the Needs Board). Request columns only: the poster is never joined, only
+ * Open needs, soonest first. Request columns only: the poster is never joined, only
  * checked, so needs from a revoked or rejected organization are left out.
  */
 export async function listOpen(db: Db): Promise<FoodRequest[]> {
@@ -307,6 +307,103 @@ export async function listOpen(db: Db): Promise<FoodRequest[]> {
     .from(foodRequests)
     .where(and(eq(foodRequests.status, "open"), posterCanStillPost))
     .orderBy(asc(foodRequests.windowStart))
+}
+
+// ---------------------------------------------------------------------------------------
+// The Needs Board and a single need's page
+
+/** The Needs Board is for organization accounts: approved, pending, and rejected alike. */
+export async function canViewBoard(db: Db, viewerId: string): Promise<boolean> {
+  return (await standing(db, viewerId))?.role === "donor"
+}
+
+// On the board: Open needs whose poster can still post (as on listOpen), and In Progress
+// needs. Fulfilled and Cancelled needs never appear.
+const onBoard = or(and(eq(foodRequests.status, "open"), posterCanStillPost), eq(foodRequests.status, "claimed"))
+
+/**
+ * The Needs Board: Open first, then In Progress; within each, the soonest time window
+ * first. Request columns only (no poster or claimer details). Null unless the viewer is an
+ * organization, so no other page can list it.
+ */
+export async function listBoard(db: Db, viewerId: string): Promise<FoodRequest[] | null> {
+  if (!(await canViewBoard(db, viewerId))) return null
+  return db
+    .select()
+    .from(foodRequests)
+    .where(onBoard)
+    .orderBy(sql`case when ${foodRequests.status} = 'open' then 0 else 1 end`, asc(foodRequests.windowStart))
+}
+
+/** The newest Open needs (the dashboard's "Latest needs"). Organizations only, like the board. */
+export async function listLatestOpen(db: Db, viewerId: string, limit = 3): Promise<FoodRequest[] | null> {
+  if (!(await canViewBoard(db, viewerId))) return null
+  return db
+    .select()
+    .from(foodRequests)
+    .where(and(eq(foodRequests.status, "open"), posterCanStillPost))
+    .orderBy(desc(foodRequests.createdAt))
+    .limit(limit)
+}
+
+/**
+ * How the viewer relates to a need: they posted it, their organization claimed it, or
+ * they're an organization looking at it on the board.
+ */
+export type ViewerRelation = "poster" | "claimer" | "organization"
+
+export type RequestDetail = {
+  request: FoodRequest
+  relation: ViewerRelation
+  /** The other side of the handoff: only for the poster (once claimed) and the claimer. */
+  contact: { name: string; email: string | null } | null
+}
+
+/**
+ * One need, as the viewer may see it, or null if they may not see it at all (the page then
+ * answers with the standard not-found page, the same as for a need that doesn't exist):
+ * - the poster always sees their own need;
+ * - the organization that claimed it sees it while In Progress or Fulfilled;
+ * - any organization (approved, pending, or rejected) sees what the Needs Board shows.
+ * Everyone else (outreach accounts viewing someone else's need, signed-out visitors) gets
+ * null. Emails are decided in SQL, as on the dashboard: one that isn't allowed is never read.
+ */
+export async function getRequestForViewer(db: Db, viewerId: string, id: unknown): Promise<RequestDetail | null> {
+  const parsed = requestId.safeParse(id)
+  if (!parsed.success) return null
+  const me = await standing(db, viewerId)
+  if (!me?.role) return null
+
+  const [row] = await db
+    .select({
+      request: foodRequests,
+      onBoard: sql<boolean>`(${onBoard})`,
+      posterName: sql<string | null>`coalesce(${poster.organizationName}, ${poster.displayName})`,
+      claimerName: sql<string | null>`coalesce(${claimer.organizationName}, ${claimer.displayName})`,
+      email: sql<string | null>`case
+        when ${foodRequests.createdBy} = ${viewerId} then ${contactEmail(viewerId, claimer.email)}
+        when ${foodRequests.claimedBy} = ${viewerId} then ${contactEmail(viewerId, poster.email)}
+      end`,
+    })
+    .from(foodRequests)
+    .innerJoin(poster, eq(poster.id, foodRequests.createdBy))
+    .leftJoin(claimer, eq(claimer.id, foodRequests.claimedBy))
+    .where(eq(foodRequests.id, parsed.data))
+  if (!row) return null
+
+  const r = row.request
+  if (r.createdBy === me.id) {
+    return {
+      request: r,
+      relation: "poster",
+      contact: r.claimedBy ? { name: row.claimerName ?? "an organization", email: row.email } : null,
+    }
+  }
+  if (r.claimedBy === me.id && (r.status === "claimed" || r.status === "delivered")) {
+    return { request: r, relation: "claimer", contact: { name: row.posterName ?? "an outreach worker", email: row.email } }
+  }
+  if (me.role === "donor" && row.onBoard) return { request: r, relation: "organization", contact: null }
+  return null
 }
 
 // ---------------------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-// Header navigation for each kind of account: Dashboard and Admin links, current-page
+// Header navigation for each kind of account: Dashboard, Needs Board and Admin links, current-page
 // marking, the phone menu (focus, Escape), 44px targets, and the admin's own dashboard.
 //   npm run e2e:nav
 
@@ -28,23 +28,24 @@ const HEADER = `(() => {
 const MENU_ITEMS = `[...document.querySelectorAll('header nav ul[id] a')].map(a => { const r = a.getBoundingClientRect(); return { label: a.textContent.trim(), current: a.getAttribute("aria-current"), h: Math.round(r.height), left: Math.round(r.left), right: Math.round(r.right) } })`
 
 try {
-  const users = [["outreach", "test.outreach1@example.com", false], ["approved org", "test.donor1@example.com", false], ["pending org", "test.donor3@example.com", false], ["admin", "test.admin@example.com", true]]
+  // [label, email, admin, organization]
+  const users = [["outreach", "test.outreach1@example.com", false, false], ["approved org", "test.donor1@example.com", false, true], ["pending org", "test.donor3@example.com", false, true], ["admin", "test.admin@example.com", true, false]]
   const tabs = {}
   for (const [label, email] of users) { tabs[label] = await browser.newTab(); await tabs[label].signIn(email) }
   const anon = await browser.newTab()
 
   for (const theme of ["light", "dark"]) {
     for (const w of [1280, 320]) {
-      for (const [label, , isAdmin] of users) {
+      for (const [label, , isAdmin, isOrg] of users) {
         const t = tabs[label]
         await t.size(w, 800)
         await t.evaluate(`localStorage.setItem("theme", "${theme}"), true`)
-        const expected = isAdmin ? ["Dashboard", "Admin"] : ["Dashboard"]
-        for (const path of isAdmin ? ["/dashboard", "/admin"] : ["/dashboard"]) {
+        const expected = ["Dashboard", ...(isOrg ? ["Needs Board"] : []), ...(isAdmin ? ["Admin"] : [])]
+        for (const path of isAdmin ? ["/dashboard", "/admin"] : isOrg ? ["/dashboard", "/board"] : ["/dashboard"]) {
           await t.goto(path)
           const tag = `${theme} ${w}px ${label} on ${path}`
           const hd = await t.evaluate(HEADER)
-          const currentLabel = path === "/admin" ? "Admin" : "Dashboard"
+          const currentLabel = path === "/admin" ? "Admin" : path === "/board" ? "Needs Board" : "Dashboard"
           if (w >= 640) {
             const ok = JSON.stringify(hd.inline.map((l) => l.label)) === JSON.stringify(expected) && hd.inline.every((l) => (l.label === currentLabel) === (l.current === "page")) && !hd.menu
             check(`${tag}: header links ${expected.join(" + ")}, current marked`, ok && hd.inline.every((l) => l.h >= 44), JSON.stringify(hd.inline))
@@ -77,7 +78,7 @@ try {
   const A = tabs.admin
   await A.size(1280, 800)
   await A.goto("/dashboard")
-  const dash = await A.evaluate(`({ h2: [...document.querySelectorAll("main h2")].map(h => h.textContent), newRequest: [...document.querySelectorAll("main a")].find(a => a.getAttribute("href") === "/requests/new")?.textContent.trim(), offer: [...document.querySelectorAll("main button")].filter(b => b.textContent.trim() === "Offer support").length, banner: !!document.querySelector('[aria-label="Account status"]') })`)
+  const dash = await A.evaluate(`({ h2: [...document.querySelectorAll("main h2")].map(h => h.textContent), newRequest: [...document.querySelectorAll("main a")].find(a => a.getAttribute("href") === "/requests/new")?.textContent.trim(), offer: [...document.querySelectorAll("main button")].filter(b => b.textContent.trim() === "Claim this need").length, banner: !!document.querySelector('[aria-label="Account status"]') })`)
   check("Admin account's dashboard is the normal outreach dashboard (Your requests + Post a Need)", JSON.stringify(dash.h2) === '["Your requests"]' && dash.newRequest === "Post a Need" && dash.offer === 0 && !dash.banner, JSON.stringify(dash))
   await A.goto("/requests/new")
   check("Admin account can open the request form, like any outreach account", await A.evaluate(`location.pathname === "/requests/new" && !!document.querySelector("main form")`))

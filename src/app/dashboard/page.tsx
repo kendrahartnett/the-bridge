@@ -1,4 +1,4 @@
-import { Clock } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { Suspense } from "react"
@@ -6,21 +6,24 @@ import { Suspense } from "react"
 import { EmptyState } from "@/components/empty-state"
 import { ImpactStat } from "@/components/impact-stat"
 import { LoadingState } from "@/components/loading-state"
-import { Notice } from "@/components/notice"
 import { PageHeader } from "@/components/page-header"
-import { RequestCard, RequestCardNote, RequestCardSupporting, type RequestContact } from "@/components/request-card"
+import { PostNeedButton } from "@/components/post-need-button"
+import { RequestCard, RequestCardSupporting, type RequestContact } from "@/components/request-card"
 import { SectionHeader } from "@/components/section-header"
 import { SiteHeader } from "@/components/site-header"
+import { StickyNote, StickyNoteGrid } from "@/components/sticky-note"
 import { BlurFade } from "@/components/ui/blur-fade"
 import { Button } from "@/components/ui/button"
+import { VerificationBanner } from "@/components/verification-banner"
 import { db } from "@/db"
 import type { FoodRequest, User } from "@/db/schema"
-import { CONTACT_COPY, DASHBOARD_COPY, ROLE_CTAS, VERIFICATION_COPY } from "@/lib/copy"
+import { BOARD_COPY, CONTACT_COPY, DASHBOARD_COPY } from "@/lib/copy"
 import { requireUser } from "@/lib/current-user"
 import { ROLE_LABELS } from "@/lib/labels"
 import {
   canClaimNeeds,
   canPostNeeds,
+  listLatestOpen,
   listMyPosts,
   listMySupported,
   listOpen,
@@ -109,24 +112,14 @@ function outreachFooter(r: FoodRequest) {
 
 async function DonorDashboard({ user }: { user: User }) {
   const approved = canClaimNeeds(user)
-  const [open, supporting, posts] = await Promise.all([
+  const [open, latest, supporting, posts] = await Promise.all([
     listOpen(db),
+    listLatestOpen(db, user.id),
     listMySupported(db, user.id).then((rows) => rows.map((r) => withLabel(r, CONTACT_COPY.postedBy))),
     listMyPosts(db, user.id).then((rows) => rows.map((r) => withLabel(r, CONTACT_COPY.supportedBy))),
   ])
   const waiting = open.reduce((n, r) => n + r.peopleCount, 0)
   const t = DASHBOARD_COPY.organization
-
-  // On the Needs Board: your own post can't be claimed by you; otherwise only an approved
-  // organization gets the button (the claim rule checks this again on the server).
-  const boardFooter = (r: FoodRequest) =>
-    r.createdBy === user.id ? (
-      <RequestCardNote>{VERIFICATION_COPY.yourPost}</RequestCardNote>
-    ) : approved ? (
-      <RequestActionButton kind="claim" requestId={r.id} />
-    ) : (
-      <RequestCardNote>{VERIFICATION_COPY.availableAfterApproval}</RequestCardNote>
-    )
 
   return (
     <>
@@ -137,18 +130,31 @@ async function DonorDashboard({ user }: { user: User }) {
         <ImpactStat value={waiting} label={t.peopleWaiting} />
       </section>
 
+      {/* A short preview of the Needs Board: the 3 newest open needs, each linking to its
+          page, where an approved organization can claim it. */}
       <SectionHeader
         className="mt-12"
-        title={t.boardHeading}
-        description={t.boardIntro}
+        title={t.latestHeading}
+        description={t.latestIntro}
         actions={canPostNeeds(user) && <PostNeedButton />}
       />
-
-      {open.length === 0 ? (
-        <EmptyState className="mt-6">{t.boardEmpty}</EmptyState>
+      {!latest || latest.length === 0 ? (
+        <EmptyState className="mt-6">{BOARD_COPY.empty}</EmptyState>
       ) : (
-        <RequestGrid requests={open} footer={boardFooter} />
+        <StickyNoteGrid className="mt-6">
+          {latest.map((r) => (
+            <li key={r.id} className="min-w-0">
+              <StickyNote request={r} own={approved && r.createdBy === user.id} href={`/requests/${r.id}`} />
+            </li>
+          ))}
+        </StickyNoteGrid>
       )}
+      <Button asChild variant="outline" size="lg" className="mt-8">
+        <Link href="/board">
+          {t.viewBoard}
+          <ArrowRight aria-hidden="true" />
+        </Link>
+      </Button>
 
       {supporting.length > 0 && (
         <>
@@ -176,40 +182,6 @@ async function DonorDashboard({ user }: { user: User }) {
   )
 }
 
-/** Shown to organizations that aren't approved (yet). */
-function VerificationBanner({ status }: { status: User["verificationStatus"] }) {
-  const rejected = status === "rejected"
-  const adminEmail = process.env.ADMIN_CONTACT_EMAIL
-  let message: React.ReactNode = VERIFICATION_COPY.pendingBanner
-  if (rejected) {
-    const [before, after] = VERIFICATION_COPY.rejectedBanner.split("{email}")
-    message = adminEmail ? (
-      <>
-        {before}
-        <a
-          href={`mailto:${adminEmail}`}
-          className="font-semibold break-all underline underline-offset-4 hover:no-underline"
-        >
-          {adminEmail}
-        </a>
-        {after}
-      </>
-    ) : (
-      VERIFICATION_COPY.rejectedBannerNoEmail
-    )
-  }
-  return (
-    <Notice
-      tone={rejected ? "error" : "info"}
-      icon={rejected ? undefined : Clock}
-      label={DASHBOARD_COPY.organization.accountStatusLabel}
-      className="mt-6"
-    >
-      <p>{message}</p>
-    </Notice>
-  )
-}
-
 type CardRequest = FoodRequest & { contact?: RequestContact }
 
 function RequestGrid({
@@ -228,13 +200,5 @@ function RequestGrid({
         </li>
       ))}
     </ul>
-  )
-}
-
-function PostNeedButton() {
-  return (
-    <Button asChild size="lg">
-      <Link href="/requests/new">{ROLE_CTAS.outreach.label}</Link>
-    </Button>
   )
 }
