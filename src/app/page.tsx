@@ -35,18 +35,17 @@ export default function Home() {
         <section aria-labelledby="hero-title" className="relative isolate overflow-hidden">
           <HeroAtmosphere />
           {/* A small gap under the header: 20px on phones, 24px from 640px. Wider than the other
-              sections so the artwork can reach about 1200px. */}
-          <div className="mx-auto flex w-full max-w-[78rem] flex-col items-center px-4 pt-5 pb-14 text-center sm:px-6 sm:pt-6 lg:pb-16">
+              sections so the artwork can reach 1280px. */}
+          <div className="mx-auto flex w-full max-w-[83rem] flex-col items-center px-4 pt-5 pb-14 text-center sm:px-6 sm:pt-6 lg:pb-16">
             {/* The headline artwork, exactly as designed (transparent, the same in both themes),
                 is the h1, so its alt text ("Bridging the Gap.") is the headline for screen
                 readers and search engines. Full container width on phones and tablets; from
-                1024px as wide as the page allows (at most 1200px), with its height capped by
-                the screen height (100svh - 17rem) so it fills the hero down to about where the
-                lead line used to sit. The import's width and height reserve its space, so
+                1024px as wide as the page allows (at most 1280px), with its height capped by
+                the screen height (100svh - 13rem), so it fills most of the hero. The import's width and height reserve its space, so
                 nothing shifts while it loads. */}
             <h1
               id="hero-title"
-              className="hero-photo relative w-full lg:w-[min(100%,1200px,calc((100svh-17rem)*1.777))]"
+              className="hero-photo relative w-full lg:w-[min(100%,1280px,calc((100svh-13rem)*1.777))]"
             >
               {/* A very faint blue glow behind the artwork, a little larger than it, to lift it
                   from the page. Decorative and still; the section clips it. */}
@@ -54,7 +53,7 @@ export default function Home() {
               <Image
                 src={heroArt}
                 alt={HERO_IMAGE.alt}
-                sizes="(min-width: 1024px) 1200px, 100vw"
+                sizes="(min-width: 1024px) 1280px, 100vw"
                 loading="eager"
                 fetchPriority="high"
                 className="h-auto w-full"
@@ -120,16 +119,16 @@ export default function Home() {
           </BlurFade>
         </section>
 
-        {/* An illustration between the two sections: centered, up to 720px wide, full
+        {/* An illustration between the two sections: centered, up to 662px wide, full
             container width on phones, loaded only when it comes near the screen. */}
         <div className="border-t border-border">
           <BlurFade inView className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
             <Image
               src={bridgeArt}
               alt={BRIDGE_IMAGE.alt}
-              sizes="(min-width: 768px) 720px, 100vw"
+              sizes="(min-width: 768px) 662px, 100vw"
               loading="lazy"
-              className="mx-auto h-auto w-full max-w-[720px]"
+              className="mx-auto h-auto w-full max-w-[662px]"
             />
           </BlurFade>
         </div>

@@ -84,7 +84,7 @@ try {
       const centered = [H.art, H.every].every((b) => Math.abs(b.center - H.pageCenter) <= 2) && Math.abs((Math.min(...H.ctas.map((c) => c.left)) + Math.max(...H.ctas.map((c) => c.right))) / 2 - H.pageCenter) <= 2
       check(`${tag}: stacked and centered: artwork, line, lead, description, then the buttons; no eyebrow in the hero`, order && centered && !H.hasHeroEyebrow, { order, centered, eyebrowInHero: H.hasHeroEyebrow })
       if (w < 1024) check(`${tag}: artwork full container width on phones and tablets`, Math.abs(H.art.width - H.innerWidth) <= 1, `${Math.round(H.art.width)} / ${Math.round(H.innerWidth)}`)
-      else check(`${tag}: artwork as wide as the page allows, at most 1200px`, H.art.width <= 1200.5 && H.art.width <= H.innerWidth + 0.5 && H.art.width >= 700, `${Math.round(H.art.width)}px of ${Math.round(H.innerWidth)}px`)
+      else check(`${tag}: artwork as wide as the page allows, at most 1280px`, H.art.width <= 1280.5 && H.art.width <= H.innerWidth + 0.5 && H.art.width >= 700, `${Math.round(H.art.width)}px of ${Math.round(H.innerWidth)}px`)
       check(`${tag}: faint glow behind the artwork: decorative, still, a little larger than it`, !!H.glow && H.glow.hidden === "true" && H.glow.events === "none" && H.glow.anim === "none" && H.glow.bigger, H.glow)
       const sideBySide = Math.abs(H.ctas[0].top - H.ctas[1].top) < 1
       check(`${tag}: two buttons, 44-48px tall, ${w >= 640 ? "side by side" : "stacked"}`, H.ctaCount === 2 && H.ctas.every((c) => c.height >= 44 && c.height <= 48.5) && sideBySide === w >= 640, H.ctas.map((c) => Math.round(c.height)))
@@ -119,7 +119,7 @@ try {
         const r = img.getBoundingClientRect(), wrap = img.parentElement.getBoundingClientRect()
         return { loading: img.loading, between: after && before, width: Math.round(r.width), centered: Math.abs(r.left + r.width / 2 - (wrap.left + wrap.width / 2)) <= 2 }
       })()`)
-      check(`${tag}: bridge illustration between the two sections, lazy, centered, at most 720px`, !!art && art.between && art.loading === "lazy" && art.centered && art.width <= 720, art)
+      check(`${tag}: bridge illustration between the two sections, lazy, centered, at most 662px`, !!art && art.between && art.loading === "lazy" && art.centered && art.width <= 662, art)
     }
   }
 
