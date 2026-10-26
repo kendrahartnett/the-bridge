@@ -35,8 +35,10 @@ export default function Home() {
             page's h1), the lead and description, then the two calls to action. */}
         <section aria-labelledby="hero-title" className="relative isolate overflow-hidden">
           <HeroAtmosphere />
-          {/* A very small gap under the header: 4px on phones, 8px from 640px. */}
-          <div className="mx-auto flex w-full max-w-[90rem] flex-col items-center px-4 pt-1 pb-14 text-center sm:px-6 sm:pt-2 lg:pb-16">
+          {/* The gap under the header: 4px on phones; from 640px, 5% of the screen height
+              plus 8px. (On phones the extra gap would push Post a Need under the chat
+              button.) */}
+          <div className="mx-auto flex w-full max-w-[90rem] flex-col items-center px-4 pt-1 pb-14 text-center sm:px-6 sm:pt-[calc(5svh+0.5rem)] lg:pb-16">
             {/* The bridge illustration, the same in both themes. Full container width on phones
                 and tablets; from 1024px its height is capped by the screen at
                 (100svh - 13rem) x 1.15, 15% larger than the headline artwork had here. The import's width and height

@@ -138,8 +138,8 @@ try {
   for (const [w, h] of [[1280, 800], [1440, 900]]) {
     await t.send("Emulation.setDeviceMetricsOverride", { width: w, height: h, deviceScaleFactor: 1, mobile: false })
     await t.goto("/", 400)
-    const f = await t.evaluate(`(() => { const q = (s) => document.querySelector(s).getBoundingClientRect(); const ctas = [...document.querySelectorAll('main a[href^="/sign-in?role="]')].map((a) => a.getBoundingClientRect()); return { artTop: Math.round(q("main section img").top), artBottom: Math.round(q("main section img").bottom), artWidth: Math.round(q("main section img").width), h1Bottom: Math.round(q("main h1").bottom), ctaTop: Math.round(Math.min(...ctas.map((c) => c.top))), ctaBottom: Math.round(Math.max(...ctas.map((c) => c.bottom))), fold: innerHeight } })()`)
-    check(`${w}x${h}: the bridge illustration is fully visible; buttons at ${f.ctaTop}–${f.ctaBottom}px (fold ${f.fold}px)`, f.artBottom <= f.fold && f.artTop <= 90, f)
+    const f = await t.evaluate(`(() => { const q = (s) => document.querySelector(s).getBoundingClientRect(); const ctas = [...document.querySelectorAll('main a[href^="/sign-in?role="]')].map((a) => a.getBoundingClientRect()); return { header: Math.round(q("header").bottom), artTop: Math.round(q("main section img").top), artBottom: Math.round(q("main section img").bottom), artVisibleBottom: Math.round(q("main section img").bottom - q("main section img").height * 0.046), artWidth: Math.round(q("main section img").width), h1Bottom: Math.round(q("main h1").bottom), ctaTop: Math.round(Math.min(...ctas.map((c) => c.top))), ctaBottom: Math.round(Math.max(...ctas.map((c) => c.bottom))), fold: innerHeight } })()`)
+    check(`${w}x${h}: the bridge illustration starts 5% of the screen below the header and its art is fully visible (its bottom 4.6% is transparent); buttons at ${f.ctaTop}–${f.ctaBottom}px (fold ${f.fold}px)`, f.artVisibleBottom <= f.fold && f.artTop >= f.header + f.fold * 0.05 - 1 && f.artTop <= f.header + f.fold * 0.05 + 10, f)
     await t.shot(`home-dark-fold-${w}x${h}.png`)
   }
 
