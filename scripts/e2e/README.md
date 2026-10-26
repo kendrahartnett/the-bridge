@@ -35,6 +35,7 @@ npm run e2e:responsive
 | `e2e:a11y` | Every page, each kind of account, both themes at 390 and 1280px: text contrast, one h1, landmarks, page language, alt text, named controls, no overflow; reduced motion |
 | `e2e:board` | Needs Board and need pages: who may open them (HTTP status and emails in the HTML for every account), the identical 404, sticky-note layout (strip, curl, 3-line cut, stamp, tilt), note contrast from real pixels, keyboard; the inbox and header bell (count, 9+, opening and marking read, empty state); board, need page and inbox in both themes at 320–1280px, reduced motion |
 | `e2e:spanish` | The EN / ES switch (radio group, arrow keys, 44px), the `lang` cookie (a year, SameSite=Lax) and the first-visit default from the browser's language, `<html lang>`, no English left on the main pages in Spanish (apart from people's own text, names, neighborhoods and The Bridge), ¿ ¡ and accents, Spanish dates, and layout in Spanish at 320 and 390px in both themes (plus the header and homepage buttons up to 1280px) |
+| `e2e:not-found` | The not-found page with JavaScript off, in English and with the Spanish cookie: HTTP 404, the 404 image, heading and link home, no client shell; identical for a missing page, /board signed out, /admin for a non-admin, and a need the viewer can't see; both themes at 320, 390 and 1280px with JavaScript on and off |
 
 Options (after `--`, e.g. `npm run e2e:responsive -- --themes=dark`):
 

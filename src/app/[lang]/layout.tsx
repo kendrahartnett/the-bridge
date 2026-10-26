@@ -1,29 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Raleway } from "next/font/google";
 
 import { Providers } from "@/components/providers";
 import { copyFor } from "@/lib/copy";
 import { LANGS } from "@/lib/i18n";
 import { currentLang } from "@/lib/i18n-server";
 import "../globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-// Headlines and titles only (the font-heading utility). Body text stays on Geist.
-const raleway = Raleway({
-  variable: "--font-heading",
-  subsets: ["latin"],
-  weight: ["500", "600", "700", "800"],
-  display: "swap",
-});
+import { htmlClassName } from "../fonts";
 
 // Every page exists once per language (app/[lang]); proxy.ts picks which one from the
 // "lang" cookie without changing the address (see src/lib/i18n.ts).
@@ -49,7 +31,7 @@ export default async function RootLayout({ children }: LayoutProps<"/[lang]">) {
     <html
       lang={lang}
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} ${raleway.variable} h-full antialiased`}
+      className={htmlClassName}
     >
       <body className="min-h-full flex flex-col">
         <Providers lang={lang}>{children}</Providers>

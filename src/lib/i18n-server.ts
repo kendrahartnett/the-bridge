@@ -6,10 +6,18 @@ import { lang as langParam } from "next/root-params"
 import { copyFor, type Copy } from "@/lib/copy"
 import { DEFAULT_LANG, isLang, LANG_COOKIE, type Lang } from "@/lib/i18n"
 
-/** The page's language, from the root [lang] segment (Server Components only). */
+/**
+ * The page's language (Server Components only): the root [lang] segment, or, on the one page
+ * outside it (app/global-not-found.tsx, the 404 page), the "lang" cookie.
+ */
 export async function currentLang(): Promise<Lang> {
-  const lang = await langParam()
-  return isLang(lang) ? lang : DEFAULT_LANG
+  let lang: string | undefined
+  try {
+    lang = await langParam()
+  } catch {
+    // Not under app/[lang]: the global not-found page.
+  }
+  return isLang(lang) ? lang : requestLang()
 }
 
 /** The page's copy, in its language (Server Components only). */

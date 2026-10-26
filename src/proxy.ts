@@ -75,12 +75,22 @@ function inLang(request: NextRequest, lang: Lang, from?: NextResponse, init?: Re
   return response
 }
 
-/** The not-found page in the reader's language, with a real 404. */
+/**
+ * The not-found page in the reader's language, with a real 404: an address that isn't a
+ * page, which Next.js answers with app/global-not-found.tsx.
+ */
 function notFound(request: NextRequest, lang: Lang) {
   const url = request.nextUrl.clone()
   url.pathname = `/${lang}/not-found`
   url.search = ""
-  return NextResponse.rewrite(url, { status: 404 })
+  // That page reads the language from the "lang" cookie. On a first visit the cookie is
+  // only being set now, so pass the chosen language along on this request too.
+  const headers = new Headers(request.headers)
+  if (request.cookies.get(LANG_COOKIE)?.value !== lang) {
+    const others = request.cookies.getAll().filter((c) => c.name !== LANG_COOKIE).map((c) => `${c.name}=${c.value}`)
+    headers.set("cookie", [...others, `${LANG_COOKIE}=${lang}`].join("; "))
+  }
+  return NextResponse.rewrite(url, { status: 404, request: { headers } })
 }
 
 /**
