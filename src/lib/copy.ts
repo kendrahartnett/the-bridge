@@ -52,15 +52,14 @@ const en = {
   HOME_CTAS: { outreach: "Post a need", donor: "Offer support" },
 
   // "How it works" section. Verbatim; do not edit without sign-off.
-HOW_IT_WORKS_HEADING: "How it works",
-JOURNEY: [
-  { label: "Request", description: "Anyone in the community can share a need." },
-  { label: "Connect", description: "People and organizations come together to help." },
-  { label: "Provide", description: "Help, resources, and information reach those who need them." },
-  { label: "Support", description: "Ongoing connections create pathways to housing and essential services." },
-  { label: "Transform", description: "Communities work together toward ending homelessness." },
-],
-
+  HOW_IT_WORKS_HEADING: "How it works",
+  JOURNEY: [
+    { label: "Request", description: "Anyone in the community can share a need." },
+    { label: "Connect", description: "People and organizations come together to help." },
+    { label: "Provide", description: "Help, resources, and information reach those who need them." },
+    { label: "Support", description: "Ongoing connections create pathways to housing and essential services." },
+    { label: "Transform", description: "Communities work together toward ending homelessness." },
+  ],
 
   // "What is The Bridge?" section. Verbatim; do not edit without sign-off.
   WHAT_IS_HEADING: "What is The Bridge?",
@@ -456,11 +455,11 @@ const es: Copy = {
   // needs review: approved verbatim English copy ("How it works").
   HOW_IT_WORKS_HEADING: "Cómo funciona",
   JOURNEY: [
-    { label: "Solicitar", description: "Un trabajador de alcance comunitario describe una necesidad." },
-    { label: "Conectar", description: "Una organización ofrece apoyo." },
-    { label: "Entregar", description: "Los recursos llegan a las personas que los necesitan." },
-    { label: "Acompañar", description: "El trabajador de alcance comunitario y la persona se conectan con servicios de atención." },
-    { label: "Reconstruir", description: "Trabajar hacia una estabilidad duradera." },
+    { label: "Solicitar", description: "Cualquier persona de la comunidad puede compartir una necesidad." },
+    { label: "Conectar", description: "Personas y organizaciones se unen para ayudar." },
+    { label: "Brindar", description: "La ayuda, los recursos y la información llegan a quienes los necesitan." },
+    { label: "Apoyar", description: "Las conexiones continuas abren caminos hacia la vivienda y los servicios esenciales." },
+    { label: "Transformar", description: "Las comunidades trabajan juntas para poner fin a la falta de vivienda." },
   ],
 
   // needs review: approved verbatim English copy ("What is The Bridge?").

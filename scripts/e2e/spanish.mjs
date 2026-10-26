@@ -147,8 +147,8 @@ try {
     check(`ES · ${name}: <html lang="es">`, (await t.evaluate("document.documentElement.lang")) === "es")
   }
   await anon.goto("/", 800)
-  const glyphs = await anon.evaluate(`(() => { const t = document.body.innerText; const fonts = [...new Set([...document.querySelectorAll("h1, h2, p, button")].map(e => { const cs = getComputedStyle(e); return cs.fontWeight + " 16px " + cs.fontFamily.split(",")[0] }))]; return { marks: ["¿", "ó", "í", "ñ"].filter(c => t.includes(c)), fonts: fonts.map(f => [f.split(",")[0], document.fonts.check(f, "¿¡áéíóúüñÁÉÍÓÚÑ")]) } })()`)
-  check("¿ and accented letters are on the page, and every font in use has them", glyphs.marks.length === 4 && glyphs.fonts.every(([, ok]) => ok), glyphs)
+  const glyphs = await anon.evaluate(`(() => { const t = document.body.innerText; const fonts = [...new Set([...document.querySelectorAll("h1, h2, p, button")].map(e => { const cs = getComputedStyle(e); return cs.fontWeight + " 16px " + cs.fontFamily.split(",")[0] }))]; return { marks: ["¿", "ó", "í"].filter(c => t.includes(c)), fonts: fonts.map(f => [f.split(",")[0], document.fonts.check(f, "¿¡áéíóúüñÁÉÍÓÚÑ")]) } })()`)
+  check("¿ and accented letters are on the page, and every font in use has them (¿ ¡ á é í ó ú ü ñ)", glyphs.marks.length === 3 && glyphs.fonts.every(([, ok]) => ok), glyphs)
   // Spanish dates: the board's time windows and the timeline.
   await tabs.org.goto("/requests/5eed0000-0000-4000-8000-000000000004", 1000)
   const when = await tabs.org.evaluate(`[...document.querySelectorAll("time")].map(t => t.textContent)`)
