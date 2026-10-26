@@ -49,9 +49,8 @@
   --surface-raised: #ffffff; /* hovered interactive cards, menus */
   --border-strong: #8a8170; /* inputs and dividers that must be seen */
 
-  /* Behind artwork with dark shapes (the homepage headline): nothing in light mode, an
-     ivory panel in dark mode so the dark shapes stay visible. */
-  --art-panel: transparent;
+  /* The faint blue glow behind the homepage artwork: half strength in light mode. */
+  --hero-glow: color-mix(in srgb, var(--primary) 5%, transparent);
 
   /* The logo's gold arch, for the arch motif (the logo itself is an image). */
   --arch-1: #eca31f; /* arch left end (sampled from design/source/new-light-logo.png) */
@@ -79,7 +78,7 @@
   --surface-raised: #111a2b;
   --border-strong: #557290;
 
-  --art-panel: #f5f2ea;
+  --hero-glow: color-mix(in srgb, var(--primary) 10%, transparent);
 
   /* The logo's gold arch, for the arch motif (the logo itself is an image). */
   --arch-1: #f4a321; /* sampled from design/source/new-dark-logo.png */
@@ -196,7 +195,6 @@
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
   --color-scrim: var(--scrim);
-  --color-art-panel: var(--art-panel);
   --spacing-tap: var(--tap-min);
 
   /* Type scale. Fluid between 320px and 1280px; Raleway sizes pair with font-heading. */
@@ -264,6 +262,13 @@
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+}
+
+/* The soft glow behind the homepage artwork: a radial fade of --hero-glow, blurred further.
+   Static (no animation). */
+@utility hero-glow {
+  background: radial-gradient(closest-side, var(--hero-glow), transparent);
+  filter: blur(40px);
 }
 
 /* The homepage eyebrow ("ROOTED IN CHICAGO · BUILT FOR CHANGE"): the eyebrow style, always on

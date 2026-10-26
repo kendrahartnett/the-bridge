@@ -30,38 +30,37 @@ export default function Home() {
     <>
       <SiteHeader />
       <main className="flex-1">
-        {/* The hero, stacked and centered: the eyebrow, the headline artwork (the page's h1),
-            the line and description, then the two calls to action. */}
+        {/* The hero, stacked and centered: the headline artwork (the page's h1), the line and
+            description, then the two calls to action. */}
         <section aria-labelledby="hero-title" className="relative isolate overflow-hidden">
           <HeroAtmosphere />
-          {/* Top padding: 28px on phones, 36px from 640px (the space under the header). */}
-          <div className="mx-auto flex w-full max-w-5xl flex-col items-center px-4 pt-7 pb-14 text-center sm:px-6 sm:pt-9 lg:pb-16">
-            {/* Always one line (see hero-eyebrow in globals.css); the gold line shows from 640px. */}
-            <p className="hero-rise hero-eyebrow flex items-center gap-3 text-foreground">
-              <span aria-hidden="true" className="hidden h-px w-6 shrink-0 bg-gold sm:block" />
-              {HERO_BADGE}
-            </p>
-            {/* The headline artwork is the h1, so its alt text ("Bridging the Gap.") is the
-                headline for screen readers and search engines. Full container width on phones;
-                from 640px its height is capped by the screen height (100svh - 26.5rem), so the
-                eyebrow, artwork, line, description and buttons all fit above the fold on
-                laptop screens. In dark mode it sits on a light panel: its dark lettering would
-                otherwise disappear into the page. The width and height from the import reserve
-                its space, so nothing shifts while it loads. */}
+          {/* A small gap under the header: 20px on phones, 24px from 640px. Wider than the other
+              sections so the artwork can reach about 1200px. */}
+          <div className="mx-auto flex w-full max-w-[78rem] flex-col items-center px-4 pt-5 pb-14 text-center sm:px-6 sm:pt-6 lg:pb-16">
+            {/* The headline artwork, exactly as designed (transparent, the same in both themes),
+                is the h1, so its alt text ("Bridging the Gap.") is the headline for screen
+                readers and search engines. Full container width on phones and tablets; from
+                1024px as wide as the page allows (at most 1200px), with its height capped by
+                the screen height (100svh - 17rem) so it fills the hero down to about where the
+                lead line used to sit. The import's width and height reserve its space, so
+                nothing shifts while it loads. */}
             <h1
               id="hero-title"
-              className="hero-photo mt-4 w-full rounded-2xl bg-art-panel sm:w-[min(100%,max(22rem,calc((100svh-26.5rem)*1.777)))] dark:p-3"
+              className="hero-photo relative w-full lg:w-[min(100%,1200px,calc((100svh-17rem)*1.777))]"
             >
+              {/* A very faint blue glow behind the artwork, a little larger than it, to lift it
+                  from the page. Decorative and still; the section clips it. */}
+              <span aria-hidden="true" className="hero-glow pointer-events-none absolute -inset-[8%] -z-10" />
               <Image
                 src={heroArt}
                 alt={HERO_IMAGE.alt}
-                sizes="(min-width: 1024px) 900px, (min-width: 640px) 90vw, 100vw"
+                sizes="(min-width: 1024px) 1200px, 100vw"
                 loading="eager"
                 fetchPriority="high"
                 className="h-auto w-full"
               />
             </h1>
-            <p className="hero-rise font-heading mt-5 text-display-sub font-semibold text-balance text-primary-text [animation-delay:200ms]">
+            <p className="hero-rise font-heading mt-4 text-display-sub font-semibold text-balance text-primary-text [animation-delay:200ms]">
               {HERO_HEADLINE[1]}
             </p>
             <p className="hero-rise mt-3 font-semibold tracking-wide text-foreground [animation-delay:280ms]">
@@ -99,6 +98,12 @@ export default function Home() {
                 </li>
               ))}
             </ol>
+            {/* The closing line under the steps: always one line (see hero-eyebrow in
+                globals.css); the gold line before it shows from 640px. */}
+            <p className="hero-eyebrow mt-10 flex items-center justify-center gap-3 text-foreground">
+              <span aria-hidden="true" className="hidden h-px w-6 shrink-0 bg-gold sm:block" />
+              {HERO_BADGE}
+            </p>
           </BlurFade>
         </section>
 

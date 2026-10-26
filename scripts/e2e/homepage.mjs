@@ -1,8 +1,9 @@
-// The homepage: the stacked, centered hero (eyebrow on one line, the headline artwork as the
-// page's h1, the line and description, then the two calls to action), no layout shift, the
-// artwork served as AVIF or WebP, the hero above the fold on laptop screens, the illustration
-// between "What is The Bridge?" and the Mission Statement, the dark-mode panel behind the
-// headline artwork, text contrast from real pixels, the logo's sizes, and reduced motion.
+// The homepage: the stacked, centered hero (the headline artwork as the page's h1, exactly as
+// designed with no panel behind it, a faint decorative glow, then the line, description and
+// the two calls to action), no layout shift, the artwork served as AVIF or WebP, its size,
+// the eyebrow moved under the How it works cards (one line), the illustration between "What
+// is The Bridge?" and the Mission Statement, text contrast from real pixels, the logo's
+// sizes, and reduced motion.
 //   npm run e2e:homepage
 
 import { launchBrowser, sleep } from "./browser.mjs"
@@ -32,7 +33,9 @@ const HERO = `(() => {
   return {
     h1Count: document.querySelectorAll("h1").length, h1Images: h1.querySelectorAll("img").length, h1Text: h1.textContent.trim(),
     alt: img.alt, loading: img.loading, fetchPriority: img.fetchPriority, imgHasSize: img.hasAttribute("width") && img.hasAttribute("height"),
-    eyebrow: box(ps[0]), art: box(h1), every: box(ps[1]), lead: box(ps[2]), desc: box(ps[3]), ctas: ctas.map(box), ctaCount: ctas.length,
+    art: box(h1), every: box(ps[0]), lead: box(ps[1]), desc: box(ps[2]), ctas: ctas.map(box), ctaCount: ctas.length,
+    glow: (() => { const g = h1.querySelector(".hero-glow"); if (!g) return null; const cs = getComputedStyle(g); return { hidden: g.getAttribute("aria-hidden"), events: cs.pointerEvents, anim: cs.animationName, bigger: g.getBoundingClientRect().width > h1.getBoundingClientRect().width } })(),
+    hasHeroEyebrow: !!section.querySelector(".hero-eyebrow"),
     pageCenter: (inner.left + inner.right) / 2, innerWidth: inner.right - inner.left,
     artPanel: getComputedStyle(h1).backgroundColor,
     noHelper: !/Request support for someone|Respond with food, clothing/.test(section.innerText),
@@ -44,12 +47,15 @@ const HERO = `(() => {
 
 // The eyebrow's text, rendered lines (of the text itself), size, spacing and overflow.
 const EYEBROW = `(() => {
-  const eb = document.querySelector("main section p"), cs = getComputedStyle(eb), line = eb.querySelector("span")
+  const eb = document.querySelector("main .hero-eyebrow"), cs = getComputedStyle(eb), line = eb.querySelector("span")
+  const steps = document.querySelector("#journey").closest("section").querySelector("ol"), r0 = eb.getBoundingClientRect(), page = document.documentElement.clientWidth
+  const belowCards = !!(steps.compareDocumentPosition(eb) & Node.DOCUMENT_POSITION_FOLLOWING) && r0.top >= steps.getBoundingClientRect().bottom - 0.5 && !!eb.closest("section")?.querySelector("#journey")
+  const centered = Math.abs(r0.left + r0.width / 2 - page / 2) <= 2
   const text = [...eb.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join("").trim()
   const r = document.createRange(); r.selectNodeContents([...eb.childNodes].find((n) => n.nodeType === 3 && n.textContent.trim()))
   const lines = new Set([...r.getClientRects()].map((b) => Math.round(b.top))).size
   const box = r.getBoundingClientRect()
-  return { text, lines, font: cs.fontSize, tracking: cs.letterSpacing, overflow: eb.scrollWidth > eb.clientWidth + 0.5 || box.left < 15.5 || box.right > innerWidth - 15.5, lineShown: !!line && line.getClientRects().length > 0 }
+  return { text, lines, belowCards, centered, font: cs.fontSize, tracking: cs.letterSpacing, overflow: eb.scrollWidth > eb.clientWidth + 0.5 || box.left < 15.5 || box.right > innerWidth - 15.5, lineShown: !!line && line.getClientRects().length > 0 }
 })()`
 
 const LOGO = `(() => {
@@ -74,16 +80,18 @@ try {
       check(`${tag}: no horizontal overflow; header on one row`, !H.overflow && H.headerRow)
       check(`${tag}: one h1, holding only the headline artwork, its alt text "${HERO_IMAGE.alt}"`, H.h1Count === 1 && H.h1Images === 1 && H.h1Text === "" && H.alt === HERO_IMAGE.alt && H.imgHasSize, H)
       check(`${tag}: no text headline, gold arch connector, or CTA helper text`, H.noArch && H.noHelper)
-      const order = [H.eyebrow, H.art, H.every, H.lead, H.desc].every((b, i, all) => i === 0 || b.top >= all[i - 1].bottom - 0.5) && H.ctas.every((c) => c.top >= H.desc.bottom - 0.5)
-      const centered = [H.eyebrow, H.art, H.every].every((b) => Math.abs(b.center - H.pageCenter) <= 2) && Math.abs((Math.min(...H.ctas.map((c) => c.left)) + Math.max(...H.ctas.map((c) => c.right))) / 2 - H.pageCenter) <= 2
-      check(`${tag}: stacked and centered: eyebrow, artwork, line, lead, description, then the buttons`, order && centered, { order, centered })
-      if (w < 640) check(`${tag}: artwork full container width on phones`, Math.abs(H.art.width - H.innerWidth) <= 1, `${Math.round(H.art.width)} / ${Math.round(H.innerWidth)}`)
+      const order = [H.art, H.every, H.lead, H.desc].every((b, i, all) => i === 0 || b.top >= all[i - 1].bottom - 0.5) && H.ctas.every((c) => c.top >= H.desc.bottom - 0.5)
+      const centered = [H.art, H.every].every((b) => Math.abs(b.center - H.pageCenter) <= 2) && Math.abs((Math.min(...H.ctas.map((c) => c.left)) + Math.max(...H.ctas.map((c) => c.right))) / 2 - H.pageCenter) <= 2
+      check(`${tag}: stacked and centered: artwork, line, lead, description, then the buttons; no eyebrow in the hero`, order && centered && !H.hasHeroEyebrow, { order, centered, eyebrowInHero: H.hasHeroEyebrow })
+      if (w < 1024) check(`${tag}: artwork full container width on phones and tablets`, Math.abs(H.art.width - H.innerWidth) <= 1, `${Math.round(H.art.width)} / ${Math.round(H.innerWidth)}`)
+      else check(`${tag}: artwork as wide as the page allows, at most 1200px`, H.art.width <= 1200.5 && H.art.width <= H.innerWidth + 0.5 && H.art.width >= 700, `${Math.round(H.art.width)}px of ${Math.round(H.innerWidth)}px`)
+      check(`${tag}: faint glow behind the artwork: decorative, still, a little larger than it`, !!H.glow && H.glow.hidden === "true" && H.glow.events === "none" && H.glow.anim === "none" && H.glow.bigger, H.glow)
       const sideBySide = Math.abs(H.ctas[0].top - H.ctas[1].top) < 1
       check(`${tag}: two buttons, 44-48px tall, ${w >= 640 ? "side by side" : "stacked"}`, H.ctaCount === 2 && H.ctas.every((c) => c.height >= 44 && c.height <= 48.5) && sideBySide === w >= 640, H.ctas.map((c) => Math.round(c.height)))
-      check(`${tag}: ${theme === "dark" ? "light panel behind the headline artwork" : "no panel behind the headline artwork"}`, theme === "dark" ? H.artPanel === "rgb(245, 242, 234)" : H.artPanel === "rgba(0, 0, 0, 0)", H.artPanel)
+      check(`${tag}: no panel or background behind the headline artwork`, H.artPanel === "rgba(0, 0, 0, 0)", H.artPanel)
 
       const eb = await t.evaluate(EYEBROW)
-      check(`${tag}: eyebrow on one line, no overflow (${eb.font}, letter spacing ${eb.tracking})`, eb.text === "Rooted in Chicago · Built for change" && eb.lines === 1 && !eb.overflow && parseFloat(eb.font) >= 10 && eb.lineShown === w >= 640, eb)
+      check(`${tag}: eyebrow under the How it works cards, centered, on one line, no overflow (${eb.font}, letter spacing ${eb.tracking})`, eb.text === "Rooted in Chicago · Built for change" && eb.belowCards && eb.centered && eb.lines === 1 && !eb.overflow && parseFloat(eb.font) >= 10 && eb.lineShown === w >= 640, eb)
 
       const logo = await t.evaluate(LOGO)
       const want = w < 360 ? 100 : w < 640 ? 110 : 130
@@ -94,7 +102,7 @@ try {
         const type = t.images.filter((i) => i.url.includes("hero-landing-image")).at(-1)?.mimeType ?? "not loaded"
         check(`${tag}: headline artwork served as AVIF or WebP`, /image\/(avif|webp)/.test(type), type)
         await sleep(600) // let the entrance animation finish before measuring pixels
-        for (const [sel, name] of [["main h1 ~ p:nth-of-type(2)", "Every Connection line"], ["main h1 ~ p:nth-of-type(4)", "description"]]) {
+        for (const [sel, name] of [["main h1 ~ p:nth-of-type(1)", "Every Connection line"], ["main h1 ~ p:nth-of-type(3)", "description"]]) {
           const c = await lowestPixelContrast(t, sel)
           check(`${tag}: ${name} readable (${c.need}:1 needed)`, c.worst >= c.need, `${c.worst}:1`)
         }
@@ -115,13 +123,13 @@ try {
     }
   }
 
-  // The hero, both buttons included, fits above the fold on common laptop screens (dark mode,
-  // where the panel makes the artwork 24px taller).
+  // On laptop screens the artwork fills most of the hero and is fully visible; the buttons may
+  // fall below the fold (where they land is reported).
   for (const [w, h] of [[1280, 800], [1440, 900]]) {
     await t.send("Emulation.setDeviceMetricsOverride", { width: w, height: h, deviceScaleFactor: 1, mobile: false })
     await t.goto("/", 400)
-    const f = await t.evaluate(`(() => { const q = (s) => document.querySelector(s).getBoundingClientRect().bottom; const ctas = [...document.querySelectorAll('main a[href^="/sign-in?role="]')].map((a) => a.getBoundingClientRect().bottom); return { artBottom: Math.round(q("main h1")), everyBottom: Math.round(q("main h1 ~ p:nth-of-type(2)")), descriptionBottom: Math.round(q("main h1 ~ p:nth-of-type(4)")), ctaBottom: Math.round(Math.max(...ctas)), fold: innerHeight } })()`)
-    check(`${w}x${h}: eyebrow, artwork, line, description and both buttons above the fold`, f.ctaBottom <= f.fold && f.descriptionBottom <= f.fold, f)
+    const f = await t.evaluate(`(() => { const q = (s) => document.querySelector(s).getBoundingClientRect(); const ctas = [...document.querySelectorAll('main a[href^="/sign-in?role="]')].map((a) => a.getBoundingClientRect()); return { artTop: Math.round(q("main h1").top), artBottom: Math.round(q("main h1").bottom), artWidth: Math.round(q("main h1").width), leadBottom: Math.round(q("main h1 ~ p:nth-of-type(2)").bottom), ctaTop: Math.round(Math.min(...ctas.map((c) => c.top))), ctaBottom: Math.round(Math.max(...ctas.map((c) => c.bottom))), fold: innerHeight } })()`)
+    check(`${w}x${h}: the artwork is fully visible; buttons at ${f.ctaTop}–${f.ctaBottom}px (fold ${f.fold}px)`, f.artBottom <= f.fold && f.artTop <= 90, f)
     await t.shot(`home-dark-fold-${w}x${h}.png`)
   }
 
