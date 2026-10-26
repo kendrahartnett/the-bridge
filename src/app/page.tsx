@@ -55,7 +55,7 @@ export default function Home() {
             >
               {HERO_HEADLINE[1]}
             </h1>
-            <p className="hero-rise mt-3 text-lead font-semibold tracking-wide text-balance text-foreground [animation-delay:280ms]">
+            <p className="hero-rise mt-5 text-lead font-semibold tracking-wide text-balance text-foreground [animation-delay:280ms]">
               {HERO_LEAD}
             </p>
             <p className="hero-fade mt-2 max-w-[38rem] text-lead text-pretty text-muted-foreground [animation-delay:280ms]">

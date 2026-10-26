@@ -39,9 +39,11 @@ try {
           h1InCard: !!card?.querySelector("h1"), h1: card?.querySelector("h1")?.textContent,
           tabsInCard: !!card?.querySelector('[role=tablist]'), overflow: document.documentElement.scrollWidth > innerWidth,
           pageBg: getComputedStyle(main.parentElement).backgroundColor, bodyBg: getComputedStyle(document.body).backgroundColor,
+          glow: card && getComputedStyle(card).filter, border: card && getComputedStyle(card).borderTopColor,
         }
       })()`)
       check(`${tag}: logo link above one card holding the heading and tabs; deeper page color`, s.logoAboveCard && s.h1InCard && s.h1 === AUTH_COPY.heading && s.tabsInCard && s.pageBg !== s.bodyBg && s.logoWidth >= 160, s)
+      check(`${tag}: the card glows slightly blue, like the homepage cards`, !!s.glow?.startsWith("drop-shadow") && /oklab|color\(/.test(s.border ?? ""), { glow: s.glow, border: s.border })
       check(`${tag}: no horizontal scroll`, !s.overflow)
       const a = await t.evaluate(TEXT_CONTRAST)
       check(`${tag}: all text readable on the create-account form (${a.checked} elements)`, a.failures.length === 0, a.failures.join(" | "))
