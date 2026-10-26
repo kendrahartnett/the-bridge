@@ -1,6 +1,5 @@
 import Image from "next/image"
 
-import { ARCH_CENTERLINE, ARCH_CENTERLINE_VIEWBOX, ARCH_STOPS } from "@/components/brand/arch"
 import { CtaLink } from "@/components/cta-link"
 import { HeroAtmosphere } from "@/components/hero-atmosphere"
 import { SectionHeader } from "@/components/section-header"
@@ -8,6 +7,7 @@ import { SiteHeader } from "@/components/site-header"
 import { BlurFade } from "@/components/ui/blur-fade"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
+  BRIDGE_IMAGE,
   FOOTER_TEXT,
   HERO_BADGE,
   HERO_DESCRIPTION,
@@ -22,88 +22,58 @@ import {
   WHAT_IS_HEADING,
   WHAT_IS_PARAGRAPHS,
 } from "@/lib/copy"
-import heroArt from "../../public/images/hero-bridge.png"
-
-// Widths of the hero lines at 1em (measured in their fonts, plus 2% to spare), so each can be
-// sized to fill its column on one line: "Bridging the Gap." in Zen Tokyo Zoo is 6.98em,
-// "Every Connection is a Step Forward." in Raleway 600 is 16.89em.
-const HEADLINE_EM = 7.12
-const SUBLINE_EM = 17.2
+import bridgeArt from "../../public/images/new-bridge.png"
+import heroArt from "../../public/images/hero-landing-image.png"
 
 export default function Home() {
   return (
     <>
       <SiteHeader />
       <main className="flex-1">
+        {/* The hero, stacked and centered: the eyebrow, the headline artwork (the page's h1),
+            the line and description, then the two calls to action. */}
         <section aria-labelledby="hero-title" className="relative isolate overflow-hidden">
           <HeroAtmosphere />
-          {/* Phones and tablets: text first (headline and both calls to action), then the
-              image. Desktop: text and image share the width, the image's top aligned with
-              the eyebrow line. */}
           {/* Top padding: 28px on phones, 36px from 640px (the space under the header). */}
-          <div className="mx-auto grid w-full max-w-5xl gap-10 px-4 pt-7 pb-14 sm:px-6 sm:pt-9 lg:grid-cols-12 lg:items-start lg:gap-8 lg:pb-20">
-            <div className="@container lg:col-span-6">
-              {/* Always one line (see hero-eyebrow in globals.css); the gold line shows from 640px. */}
-              <p className="hero-rise hero-eyebrow flex items-center gap-3 text-foreground">
-                <span aria-hidden="true" className="hidden h-px w-6 shrink-0 bg-gold sm:block" />
-                {HERO_BADGE}
-              </p>
-              <h1 id="hero-title" className="mt-5">
-                {/* Phones: may wrap, never under 2.5rem (the stripes need the size). From
-                    768px: one line, sized to fit the text column (cqi) but no larger than the
-                    desktop size (3.5rem), so it never shrinks as the screen widens. From 1024px
-                    it fills 85% of the column (about 56px), leaving room for the gold arch that
-                    runs on to the image's edge. */}
-                <span
-                  className="hero-rise font-display block text-display text-foreground [--rise:12px] [animation-delay:80ms] md:flex md:items-center md:whitespace-nowrap md:text-(length:--headline-md) lg:text-(length:--headline-lg)"
-                  style={
-                    {
-                      "--headline-md": `min(calc(100cqi / ${HEADLINE_EM}), 3.5rem)`,
-                      "--headline-lg": `calc(85cqi / ${HEADLINE_EM})`,
-                    } as React.CSSProperties
-                  }
-                >
-                  <span>{HERO_HEADLINE[0]}</span>
-                  <HeroArch />
-                </span>
-                {/* One line from 1024px (fitted to the column, at most 1.625rem), clearly
-                    smaller than the headline; may wrap below that. */}
-                <span
-                  className="hero-rise font-heading mt-4 block text-display-sub font-semibold text-primary-text [animation-delay:200ms] lg:whitespace-nowrap lg:text-(length:--subline-lg)"
-                  style={{ "--subline-lg": `min(calc(100cqi / ${SUBLINE_EM}), 1.625rem)` } as React.CSSProperties}
-                >
-                  {HERO_HEADLINE[1]}
-                </span>
-              </h1>
-              <p className="hero-rise mt-6 font-semibold tracking-wide text-foreground [animation-delay:280ms]">
-                {HERO_LEAD}
-              </p>
-              <p className="hero-fade mt-2 max-w-[34rem] text-lead text-pretty text-muted-foreground [animation-delay:280ms]">
-                {HERO_DESCRIPTION}
-              </p>
-              <div className="hero-rise mt-8 flex flex-col gap-5 sm:flex-row sm:items-start [animation-delay:360ms]">
-                <CtaLink href="/sign-in?role=outreach" variant="primary" className="sm:w-64 lg:w-auto lg:min-w-0 lg:flex-1" {...ROLE_CTAS.outreach} />
-                <CtaLink href="/sign-in?role=donor" variant="secondary" className="sm:w-64 lg:w-auto lg:min-w-0 lg:flex-1" {...ROLE_CTAS.donor} />
-              </div>
-            </div>
-
-            {/* Below 1024px the illustration at its own 4:3 shape (nothing cropped). From
-                1024px a 7:6 crop at 78% of its column (left edge fixed, so the gold arch still
-                meets it), no taller than the text from the eyebrow to the buttons: the widest crop that
-                still shows the whole bridge (about 2% to 86% across) and both figures, so it
-                sits just left of center. The fixed-aspect frame keeps the layout still while
-                the image loads. */}
-            <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-border bg-muted lg:col-span-6 lg:aspect-[7/6] lg:w-[78%]">
+          <div className="mx-auto flex w-full max-w-5xl flex-col items-center px-4 pt-7 pb-14 text-center sm:px-6 sm:pt-9 lg:pb-16">
+            {/* Always one line (see hero-eyebrow in globals.css); the gold line shows from 640px. */}
+            <p className="hero-rise hero-eyebrow flex items-center gap-3 text-foreground">
+              <span aria-hidden="true" className="hidden h-px w-6 shrink-0 bg-gold sm:block" />
+              {HERO_BADGE}
+            </p>
+            {/* The headline artwork is the h1, so its alt text ("Bridging the Gap.") is the
+                headline for screen readers and search engines. Full container width on phones;
+                from 640px its height is capped by the screen height (100svh - 26.5rem), so the
+                eyebrow, artwork, line, description and buttons all fit above the fold on
+                laptop screens. In dark mode it sits on a light panel: its dark lettering would
+                otherwise disappear into the page. The width and height from the import reserve
+                its space, so nothing shifts while it loads. */}
+            <h1
+              id="hero-title"
+              className="hero-photo mt-4 w-full rounded-2xl bg-art-panel sm:w-[min(100%,max(22rem,calc((100svh-26.5rem)*1.777)))] dark:p-3"
+            >
               <Image
                 src={heroArt}
                 alt={HERO_IMAGE.alt}
-                fill
-                sizes="(min-width: 1024px) 368px, (min-width: 640px) 90vw, 100vw"
+                sizes="(min-width: 1024px) 900px, (min-width: 640px) 90vw, 100vw"
                 loading="eager"
                 fetchPriority="high"
-                placeholder="blur"
-                className="hero-photo object-cover object-center lg:object-[5%_50%]"
+                className="h-auto w-full"
               />
+            </h1>
+            <p className="hero-rise font-heading mt-5 text-display-sub font-semibold text-balance text-primary-text [animation-delay:200ms]">
+              {HERO_HEADLINE[1]}
+            </p>
+            <p className="hero-rise mt-3 font-semibold tracking-wide text-foreground [animation-delay:280ms]">
+              {HERO_LEAD}
+            </p>
+            <p className="hero-fade mt-2 max-w-[38rem] text-lead text-pretty text-muted-foreground [animation-delay:280ms]">
+              {HERO_DESCRIPTION}
+            </p>
+            {/* Side by side and centered from 640px, stacked (full width) below. */}
+            <div className="hero-rise mt-6 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:justify-center [animation-delay:360ms]">
+              <CtaLink href="/sign-in?role=outreach" variant="primary" className="sm:w-56" {...ROLE_CTAS.outreach} />
+              <CtaLink href="/sign-in?role=donor" variant="secondary" className="sm:w-56" {...ROLE_CTAS.donor} />
             </div>
           </div>
         </section>
@@ -145,6 +115,20 @@ export default function Home() {
           </BlurFade>
         </section>
 
+        {/* An illustration between the two sections: centered, up to 720px wide, full
+            container width on phones, loaded only when it comes near the screen. */}
+        <div className="border-t border-border">
+          <BlurFade inView className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
+            <Image
+              src={bridgeArt}
+              alt={BRIDGE_IMAGE.alt}
+              sizes="(min-width: 768px) 720px, 100vw"
+              loading="lazy"
+              className="mx-auto h-auto w-full max-w-[720px]"
+            />
+          </BlurFade>
+        </div>
+
         <section aria-labelledby="mission" className="border-t border-border">
           <BlurFade inView className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
             <SectionHeader id="mission" title={MISSION_HEADING} />
@@ -158,41 +142,5 @@ export default function Home() {
         <p className="mx-auto max-w-5xl px-4 py-6 text-sm text-muted-foreground sm:px-6">{FOOTER_TEXT}</p>
       </footer>
     </>
-  )
-}
-
-/**
- * Desktop only: a thin gold arch, the logo's curve and gradient, that runs from the end of
- * "the Gap." to the image's edge: the bridge between the words and the picture. It fills
- * the rest of the line and reaches across the column gap (2rem, less a hair so it meets the
- * image without overlapping it).
- */
-function HeroArch() {
-  return (
-    <svg
-      aria-hidden="true"
-      focusable="false"
-      viewBox={ARCH_CENTERLINE_VIEWBOX}
-      preserveAspectRatio="none"
-      className="pointer-events-none ml-[0.25em] -mr-[1.875rem] hidden h-[0.4em] min-w-16 flex-1 overflow-visible lg:block"
-    >
-      <defs>
-        <linearGradient id="hero-arch-gold" gradientUnits="objectBoundingBox" x1="0" y1="0" x2="1" y2="0">
-          {ARCH_STOPS.map((s) => (
-            <stop key={s.offset} offset={s.offset} stopColor={s.color} />
-          ))}
-        </linearGradient>
-      </defs>
-      <path
-        d={ARCH_CENTERLINE}
-        pathLength={1}
-        fill="none"
-        stroke="url(#hero-arch-gold)"
-        strokeWidth={3}
-        strokeLinecap="round"
-        vectorEffect="non-scaling-stroke"
-        className="arch-draw"
-      />
-    </svg>
   )
 }

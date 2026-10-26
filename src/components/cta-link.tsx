@@ -11,7 +11,7 @@ const VARIANTS = {
 } as const
 
 /**
- * A homepage call to action: a 52px link button with an arrow. Motion is cosmetic: hover
+ * A homepage call to action: a 48px link button with an arrow. Motion is cosmetic: hover
  * lift and arrow nudge only, and none with reduced motion.
  */
 export function CtaLink({
@@ -29,7 +29,7 @@ export function CtaLink({
     <Link
       href={href}
       className={cn(
-        "group inline-flex h-13 items-center justify-center gap-3 rounded-lg px-6 text-base font-semibold outline-none",
+        "group inline-flex h-12 items-center justify-center gap-2.5 rounded-lg px-5 text-base font-semibold outline-none",
         "transition-[translate,box-shadow,background-color] duration-(--duration-base) ease-(--ease-brand) motion-reduce:transition-none motion-reduce:hover:translate-y-0",
         "focus-visible:ring-[3px] focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         VARIANTS[variant],
