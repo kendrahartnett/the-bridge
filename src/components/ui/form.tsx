@@ -16,6 +16,9 @@ import {
 
 import { Label } from "@/components/ui/label"
 
+import { useLang } from "@/components/providers"
+import { translateMessage } from "@/lib/copy"
+
 const Form = FormProvider
 
 type FormFieldContextValue<
@@ -139,7 +142,9 @@ function FormDescription({ className, ...props }: React.ComponentProps<"p">) {
 
 function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
   const { error, formMessageId } = useFormField()
-  const body = error ? String(error?.message ?? "") : props.children
+  const lang = useLang()
+  // Validation messages come from the shared schemas in English (src/lib/validation.ts).
+  const body = error ? translateMessage(String(error?.message ?? ""), lang) : props.children
 
   if (!body) {
     return null

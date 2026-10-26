@@ -5,8 +5,10 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useEffect, useId, useRef, useState } from "react"
 
+import { LangSwitch } from "@/components/lang-switch"
+import { useCopy } from "@/components/providers"
 import { Button } from "@/components/ui/button"
-import { INBOX_COPY, NAV_COPY } from "@/lib/copy"
+import type { Copy } from "@/lib/copy"
 import { cn } from "@/lib/utils"
 
 /**
@@ -23,6 +25,9 @@ import { cn } from "@/lib/utils"
  * to the dashboard's inbox. Below 360px it doesn't fit on the row beside the menu, theme
  * and sign-out buttons, so it moves into the phone menu as "Inbox", and the menu button
  * shows a dot while anything is unread.
+ *
+ * The phone menu also holds the language switch (EN / ES); from 640px it's in the header.
+ * Signed-out visitors get the menu with only the language switch, and no bell.
  */
 export function HeaderNav(props: NavProps) {
   return <NavLinks {...props} pathname={usePathname()} />
@@ -38,24 +43,27 @@ export function HeaderNavPlaceholder(props: NavProps) {
 }
 
 /** unread: the count for the bell, or null while it's still loading (no count shown). */
-type NavProps = { isAdmin: boolean; isOrganization: boolean; unread: number | null }
+type NavProps = { signedIn: boolean; isAdmin: boolean; isOrganization: boolean; unread: number | null }
 
-const bellLabel = (n: number | null) =>
-  n ? INBOX_COPY.bellLabel.replace("{n}", String(n)) : INBOX_COPY.bellLabelNone
+const bellLabel = (n: number | null, c: Copy) =>
+  n ? c.INBOX_COPY.bellLabel.replace("{n}", String(n)) : c.INBOX_COPY.bellLabelNone
 const countText = (n: number) => (n > 9 ? "9+" : String(n))
 
-function NavLinks({ isAdmin, isOrganization, unread, pathname }: NavProps & { pathname: string | null }) {
-  const links = [
-    { href: "/dashboard", label: NAV_COPY.dashboard },
-    ...(isOrganization ? [{ href: "/board", label: NAV_COPY.board }] : []),
-    ...(isAdmin ? [{ href: "/admin", label: NAV_COPY.admin }] : []),
-  ]
+function NavLinks({ signedIn, isAdmin, isOrganization, unread, pathname }: NavProps & { pathname: string | null }) {
+  const c = useCopy()
+  const links = signedIn
+    ? [
+        { href: "/dashboard", label: c.NAV_COPY.dashboard },
+        ...(isOrganization ? [{ href: "/board", label: c.NAV_COPY.board }] : []),
+        ...(isAdmin ? [{ href: "/admin", label: c.NAV_COPY.admin }] : []),
+      ]
+    : []
   const isCurrent = (href: string) => !!pathname && (pathname === href || pathname.startsWith(`${href}/`))
 
   return (
     <>
-      <nav aria-label={NAV_COPY.label}>
-        <ul className="hidden items-center gap-1 sm:flex">
+      <nav aria-label={c.NAV_COPY.label}>
+        <ul className={cn("hidden items-center gap-1", links.length > 0 && "sm:flex")}>
           {links.map(({ href, label }) => (
             <li key={href}>
               <Button asChild variant="ghost" className="px-3">
@@ -70,10 +78,11 @@ function NavLinks({ isAdmin, isOrganization, unread, pathname }: NavProps & { pa
             </li>
           ))}
         </ul>
-        <PhoneMenu links={links} isCurrent={isCurrent} unread={unread} />
+        <PhoneMenu links={links} isCurrent={isCurrent} unread={unread} signedIn={signedIn} c={c} />
       </nav>
+      {signedIn && (
       <Button asChild variant="ghost" size="icon" className="relative hidden min-[360px]:inline-flex">
-        <Link href="/dashboard#inbox" aria-label={bellLabel(unread)} data-inbox-bell>
+        <Link href="/dashboard#inbox" aria-label={bellLabel(unread, c)} data-inbox-bell>
           <Bell aria-hidden="true" className="size-5" />
           {!!unread && (
             <span
@@ -86,6 +95,7 @@ function NavLinks({ isAdmin, isOrganization, unread, pathname }: NavProps & { pa
           )}
         </Link>
       </Button>
+      )}
     </>
   )
 }
@@ -94,10 +104,14 @@ function PhoneMenu({
   links,
   isCurrent,
   unread,
+  signedIn,
+  c,
 }: {
   links: { href: string; label: string }[]
   isCurrent: (href: string) => boolean
   unread: number | null
+  signedIn: boolean
+  c: Copy
 }) {
   const [open, setOpen] = useState(false)
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -118,7 +132,7 @@ function PhoneMenu({
     }
     document.addEventListener("keydown", onKey)
     document.addEventListener("pointerdown", onPointer)
-    panelRef.current?.querySelector("a")?.focus()
+    panelRef.current?.querySelector<HTMLElement>("a, [role=radio][tabindex='0']")?.focus()
     return () => {
       document.removeEventListener("keydown", onKey)
       document.removeEventListener("pointerdown", onPointer)
@@ -137,7 +151,7 @@ function PhoneMenu({
         variant="ghost"
         size="icon"
         className="relative"
-        aria-label={NAV_COPY.menu}
+        aria-label={c.NAV_COPY.menu}
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((o) => !o)}
@@ -152,7 +166,7 @@ function PhoneMenu({
         ref={panelRef}
         id={panelId}
         hidden={!open}
-        className="absolute right-4 top-full z-50 mt-2 w-52 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-surface-raised p-1.5 text-foreground shadow-lg animate-in fade-in slide-in-from-top-1 duration-(--duration-base) motion-reduce:animate-none"
+        className="absolute right-4 top-full z-50 mt-2 w-60 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-surface-raised p-1.5 text-foreground shadow-lg animate-in fade-in slide-in-from-top-1 duration-(--duration-base) motion-reduce:animate-none"
       >
         {links.map(({ href, label }) => (
           <li key={href}>
@@ -168,10 +182,11 @@ function PhoneMenu({
         ))}
         {/* The bell's place below 360px. The count is drawn from data-count (not text), so
             the item reads as "Inbox"; its name carries the count. */}
+        {signedIn && (
         <li className="min-[360px]:hidden">
           <Link
             href="/dashboard#inbox"
-            aria-label={bellLabel(unread)}
+            aria-label={bellLabel(unread, c)}
             data-count={unread ? countText(unread) : undefined}
             onClick={() => setOpen(false)}
             className={cn(
@@ -181,8 +196,14 @@ function PhoneMenu({
             )}
           >
             <Bell aria-hidden="true" className="size-4" />
-            {INBOX_COPY.menuItem}
+            {c.INBOX_COPY.menuItem}
           </Link>
+        </li>
+        )}
+        {/* The language switch's place on phones. */}
+        <li className={cn("flex items-center justify-between gap-3 px-3 py-1", links.length > 0 && "mt-1 border-t border-border pt-2")}>
+          <span className="font-medium text-muted-foreground">{c.UI.language}</span>
+          <LangSwitch />
         </li>
       </ul>
     </div>

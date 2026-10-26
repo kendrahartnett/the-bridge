@@ -32,7 +32,7 @@ export function CtaLink({
       href={href}
       data-compact-target
       className={cn(
-        "group inline-flex h-10 items-center justify-center gap-2.5 rounded-[0.5rem] px-5 text-base font-semibold outline-none",
+        "group inline-flex h-10 items-center justify-center gap-2.5 rounded-[0.5rem] px-5 text-base font-semibold whitespace-nowrap outline-none",
         "transition-[translate,box-shadow,background-color] duration-(--duration-base) ease-(--ease-brand) motion-reduce:transition-none motion-reduce:hover:translate-y-0",
         "focus-visible:ring-[3px] focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         VARIANTS[variant],

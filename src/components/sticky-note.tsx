@@ -4,8 +4,9 @@ import Link from "next/link"
 
 import type { FoodRequest } from "@/db/schema"
 import { formatWindow } from "@/lib/chicago-time"
-import { BOARD_COPY, REQUEST_COPY } from "@/lib/copy"
-import { CATEGORY_LABELS, STATUS_LABELS } from "@/lib/labels"
+import { peopleText } from "@/components/request-card"
+import { copyFor } from "@/lib/copy"
+import { currentLang } from "@/lib/i18n-server"
 import { neighborhoodLabel } from "@/lib/neighborhoods"
 import { cn } from "@/lib/utils"
 import noteArt from "../../public/images/sticky-note-card.png"
@@ -36,7 +37,7 @@ const NOTE_SIZES = "(min-width: 1024px) 320px, (min-width: 640px) 50vw, 100vw"
  * Every color here is fixed (the note is yellow in both themes): navy ink and badges, and a
  * deep blue "Claimed" stamp on In Progress needs.
  */
-export function StickyNote({
+export async function StickyNote({
   request,
   own = false,
   href,
@@ -47,7 +48,9 @@ export function StickyNote({
   href: string
 }) {
   const claimed = request.status === "claimed"
-  const people = `${request.peopleCount} ${request.peopleCount === 1 ? REQUEST_COPY.person : REQUEST_COPY.people}`
+  const lang = await currentLang()
+  const c = copyFor(lang)
+  const people = peopleText(request.peopleCount, c)
   return (
     <Link
       href={href}
@@ -73,15 +76,15 @@ export function StickyNote({
         {/* The badges, and on In Progress notes the "Claimed" stamp at the right end of the
             same row, so the row makes room for it and it never covers the items text. */}
         <span data-note-badges className="flex flex-wrap items-center gap-[1.6cqi]">
-          <NoteBadge>{CATEGORY_LABELS[request.category]}</NoteBadge>
-          {own && <NoteBadge>{BOARD_COPY.yourPost}</NoteBadge>}
+          <NoteBadge>{c.LABELS.category[request.category]}</NoteBadge>
+          {own && <NoteBadge>{c.BOARD_COPY.yourPost}</NoteBadge>}
           {claimed && (
             <span
               aria-hidden="true"
               data-note-stamp
               className="ml-auto -rotate-4 rounded-[1cqi] border-[0.6cqi] border-note-stamp px-[2cqi] py-[0.6cqi] text-[max(4.2cqi,0.8125rem)] leading-none font-extrabold tracking-[0.12em] text-note-stamp uppercase"
             >
-              {BOARD_COPY.stamp}
+              {c.BOARD_COPY.stamp}
             </span>
           )}
         </span>
@@ -92,12 +95,12 @@ export function StickyNote({
           {request.items}
         </span>
         <span data-note-facts className="flex flex-col gap-[0.6cqi] pr-[8%] text-[max(4.3cqi,0.875rem)] leading-[1.25]">
-          <NoteFact Icon={Users} label={REQUEST_COPY.peopleLabel}>{people}</NoteFact>
-          <NoteFact Icon={MapPin} label={REQUEST_COPY.where}>{neighborhoodLabel(request.neighborhood)}</NoteFact>
-          <NoteFact Icon={Clock} label={REQUEST_COPY.when}>{formatWindow(request.windowStart, request.windowEnd)}</NoteFact>
+          <NoteFact Icon={Users} label={c.REQUEST_COPY.peopleLabel}>{people}</NoteFact>
+          <NoteFact Icon={MapPin} label={c.REQUEST_COPY.where}>{neighborhoodLabel(request.neighborhood)}</NoteFact>
+          <NoteFact Icon={Clock} label={c.REQUEST_COPY.when}>{formatWindow(request.windowStart, request.windowEnd, lang)}</NoteFact>
         </span>
         <span className="sr-only">
-          {BOARD_COPY.status} {STATUS_LABELS[request.status]}
+          {c.BOARD_COPY.status} {c.LABELS.status[request.status]}
         </span>
       </span>
     </Link>

@@ -8,9 +8,7 @@ import { Notice } from "@/components/notice"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { MAX_MESSAGE_CHARS, MAX_USER_MESSAGES } from "@/lib/assistant-config"
-import { ASSISTANT_COPY } from "@/lib/copy"
-
-const COPY = ASSISTANT_COPY.panel
+import { useCopy } from "@/components/providers"
 
 type Message = { role: "user" | "assistant"; content: string }
 
@@ -37,6 +35,8 @@ const HINT_DURATION_MS = 5000
  * sheet; above, it sits in the bottom-right corner.
  */
 export function AssistantChat() {
+  const { ASSISTANT_COPY } = useCopy()
+  const COPY = ASSISTANT_COPY.panel
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [draft, setDraft] = useState("")

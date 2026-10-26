@@ -78,7 +78,8 @@ try {
   for (const [key, email] of Object.entries(EMAIL)) { tabs[key] = await browser.newTab({ width: 1280, height: 900 }); await tabs[key].signIn(email) }
   tabs.anon = await browser.newTab({ width: 1280, height: 900 }); await tabs.anon.goto("/")
   const notFoundMain = await mainOf(tabs.anon, (await fetchPage(tabs.anon, "/no-such-page")).html)
-  check("The not-found page is the illustrated one", notFoundMain.includes(NOT_FOUND_COPY.title))
+  await tabs.anon.goto("/no-such-page", 1000)
+  check("The not-found page is the illustrated one", await tabs.anon.evaluate(`document.querySelector("main h1")?.textContent === ${JSON.stringify(NOT_FOUND_COPY.title)} && !!document.querySelector("main img")`))
 
   // [page, { viewer: emails that may appear }]; a viewer not listed gets the 404.
   const ACCESS = [
@@ -171,7 +172,7 @@ try {
       const boxes = []
       for (const el of a.querySelectorAll("[data-note-body] *, [data-note-stamp]")) {
         if (el.closest(".sr-only")) continue
-        if (el.matches("[data-note-badge], [data-note-stamp], svg")) { boxes.push([el.matches("svg") ? "icon" : el.textContent, el.getBoundingClientRect()]); continue }
+        if (el.matches("[data-note-badge], [data-note-stamp], svg")) { boxes.push([el.matches("svg") ? "icon" : el.textContent, el.getBoundingClientRect(), el.matches("[data-note-stamp]")]); continue }
         // Lines hidden by the 3-line clamp still report boxes; only the lines that show count.
         const clampBottom = el.closest("[data-note-title]")?.getBoundingClientRect().bottom ?? Infinity
         for (const t of el.childNodes) if (t.nodeType === 3 && t.textContent.trim()) { const r = document.createRange(); r.selectNodeContents(t); for (const b of r.getClientRects()) if (b.top < clampBottom - 1) boxes.push([t.textContent.slice(0, 20), b]) }
@@ -184,7 +185,7 @@ try {
       }
       // The stamp never covers other text or a badge.
       const stamp = a.querySelector("[data-note-stamp]")?.getBoundingClientRect()
-      if (stamp) for (const [label, b] of boxes) if (label !== ${JSON.stringify(BOARD_COPY.stamp)} && b.left < stamp.right && b.right > stamp.left && b.top < stamp.bottom && b.bottom > stamp.top) bad.push(label + " under the stamp")
+      if (stamp) for (const [label, b, isStamp] of boxes) if (!isStamp && b.left < stamp.right && b.right > stamp.left && b.top < stamp.bottom && b.bottom > stamp.top) bad.push(label + " under the stamp")
       const title = a.querySelector("[data-note-title]"), lh = parseFloat(getComputedStyle(title).lineHeight)
       return { href: a.getAttribute("href"), bad, lines: Math.round(title.getBoundingClientRect().height / lh), cut: title.scrollHeight > title.clientHeight + 1, size: Math.round(n.width) }
     })

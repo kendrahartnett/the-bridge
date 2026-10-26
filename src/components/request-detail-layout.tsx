@@ -9,7 +9,8 @@ import {
 } from "@/components/request-card"
 import type { FoodRequest } from "@/db/schema"
 import { formatDateTime } from "@/lib/chicago-time"
-import { DETAIL_COPY } from "@/lib/copy"
+import { copyFor } from "@/lib/copy"
+import { currentLang, getCopy } from "@/lib/i18n-server"
 import { cn } from "@/lib/utils"
 
 /**
@@ -19,7 +20,7 @@ import { cn } from "@/lib/utils"
  * and an action area. Two columns from 768px: the details, and a side column for the
  * contact and actions.
  */
-export function RequestDetailLayout({
+export async function RequestDetailLayout({
   request,
   contact,
   actions,
@@ -40,7 +41,7 @@ export function RequestDetailLayout({
       {back}
       <header className="flex flex-col gap-3">
         <RequestBadges request={request} />
-        <h1 className="font-heading text-h1 font-bold [overflow-wrap:anywhere]">{requestTitle(request)}</h1>
+        <h1 className="font-heading text-h1 font-bold [overflow-wrap:anywhere]">{requestTitle(request, await getCopy())}</h1>
       </header>
       <div className="grid items-start gap-6 md:grid-cols-[minmax(0,1fr)_minmax(16rem,20rem)]">
         <div className="flex min-w-0 flex-col gap-6">
@@ -66,7 +67,9 @@ export function RequestDetailLayout({
  * Chicago time. Steps still ahead read "Not yet"; a step from before these times were
  * recorded reads "Time not recorded".
  */
-export function RequestTimeline({ request }: { request: FoodRequest }) {
+export async function RequestTimeline({ request }: { request: FoodRequest }) {
+  const lang = await currentLang()
+  const DETAIL_COPY = copyFor(lang).DETAIL_COPY
   const t = DETAIL_COPY.timeline
   const reached = (s: FoodRequest["status"][]) => s.includes(request.status)
   const steps =
@@ -108,7 +111,7 @@ export function RequestTimeline({ request }: { request: FoodRequest }) {
                 {!s.done ? (
                   DETAIL_COPY.notYet
                 ) : s.at ? (
-                  <time dateTime={s.at.toISOString()}>{formatDateTime(s.at)}</time>
+                  <time dateTime={s.at.toISOString()}>{formatDateTime(s.at, lang)}</time>
                 ) : (
                   DETAIL_COPY.timeNotRecorded
                 )}

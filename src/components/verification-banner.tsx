@@ -2,13 +2,14 @@ import { Clock } from "lucide-react"
 
 import { Notice } from "@/components/notice"
 import type { User } from "@/db/schema"
-import { DASHBOARD_COPY, VERIFICATION_COPY } from "@/lib/copy"
+import { getCopy } from "@/lib/i18n-server"
 
 /**
  * Shown to organizations that aren't approved (yet), on the dashboard and the Needs Board.
  * Both versions end with ADMIN_CONTACT_EMAIL when it's set.
  */
-export function VerificationBanner({ status }: { status: User["verificationStatus"] }) {
+export async function VerificationBanner({ status }: { status: User["verificationStatus"] }) {
+  const { DASHBOARD_COPY, VERIFICATION_COPY } = await getCopy()
   const rejected = status === "rejected"
   const adminEmail = process.env.ADMIN_CONTACT_EMAIL
   const email = adminEmail && (

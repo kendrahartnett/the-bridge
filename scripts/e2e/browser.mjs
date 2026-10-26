@@ -7,7 +7,7 @@ import fs, { mkdtempSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 
-import { AUTH_ERRORS } from "../../src/lib/copy.ts"
+import { copyFor } from "../../src/lib/copy.ts"
 import { redact } from "../../src/lib/redact.ts"
 import { timeoutMessage, withTimeout } from "./harness.ts"
 
@@ -107,6 +107,8 @@ export async function launchBrowser(suite) {
     await send("DOM.enable"); await send("Accessibility.enable")
     if (log) await send("Log.enable")
     if (noScript) await send("Emulation.setScriptExecutionDisabled", { value: true })
+    // --lang=es: the tab browses in Spanish, as if the reader had chosen it with the switch.
+    if (suite.flags?.lang) await send("Network.setCookie", { name: "lang", value: String(suite.flags.lang), url: suite.base, sameSite: "Lax" })
     // POST requests sent, and the type each image actually arrived as.
     const posts = [], images = []
     listeners.push((m) => {
@@ -193,10 +195,11 @@ export async function launchBrowser(suite) {
         await goto("/sign-in")
         await fill("#panel-sign-in", { email, password })
         await evaluate(`document.querySelector('#panel-sign-in button[type=submit]').click(), true`)
-        await waitFor(`(location.pathname === "/dashboard" && document.body.innerText.includes("Hi,")) || !!document.querySelector('#panel-sign-in [role=alert]')`, `sign in ${email}`)
+        // The dashboard's greeting (in either language), or the form's error.
+        await waitFor(`(location.pathname === "/dashboard" && !!document.querySelector("main h1")) || !!document.querySelector('#panel-sign-in [role=alert]')`, `sign in ${email}`)
         const alert = await evaluate(`document.querySelector('#panel-sign-in [role=alert]')?.textContent ?? ""`)
         if (!alert) break
-        if (alert !== AUTH_ERRORS.tooManyAttempts || attempt === 4) throw new Error(`sign in ${email} failed: ${alert}`)
+        if (!["en", "es"].some((l) => copyFor(l).AUTH_ERRORS.tooManyAttempts === alert) || attempt === 4) throw new Error(`sign in ${email} failed: ${alert}`)
         console.log(`(sign-in rate-limited for ${email}; waiting 20s, then retrying)`)
         await sleep(20000)
       }

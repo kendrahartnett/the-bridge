@@ -15,7 +15,8 @@ import {
   stripSpanishLabels,
   trimToLastSentence,
 } from "@/lib/assistant-reply"
-import { ASSISTANT_COPY } from "@/lib/copy"
+import { copyFor } from "@/lib/copy"
+import { requestLang } from "@/lib/i18n-server"
 import { clientIp, rateLimit } from "@/lib/rate-limit"
 
 // The assistant. The browser keeps the chat (up to 10 questions) and sends it each time;
@@ -44,6 +45,9 @@ function reply(text: string, source: "assistant" | "fallback") {
 let client: Anthropic | null = null
 
 export async function POST(request: Request) {
+  // Errors and the fallback in the reader's language (the "lang" cookie). The assistant's
+  // own replies follow the language of the question.
+  const { ASSISTANT_COPY } = copyFor(await requestLang())
   // 1. Rate limit every request, before doing any work.
   const limited = rateLimit(`chat:${clientIp(request.headers)}`, RATE_LIMIT_PER_HOUR)
   if (!limited.ok) {

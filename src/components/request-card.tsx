@@ -5,7 +5,8 @@ import { StatusBadge } from "@/components/status-badge"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import type { FoodRequest } from "@/db/schema"
 import { formatWindow } from "@/lib/chicago-time"
-import { CONTACT_COPY, REQUEST_COPY } from "@/lib/copy"
+import { copyFor, fill, type Copy } from "@/lib/copy"
+import { currentLang, getCopy } from "@/lib/i18n-server"
 import { neighborhoodLabel } from "@/lib/neighborhoods"
 import { cn } from "@/lib/utils"
 
@@ -14,15 +15,20 @@ import { cn } from "@/lib/utils"
 
 /** The other side of an offer: who they are and, when allowed, their account email. */
 export type RequestContact = {
-  label: typeof CONTACT_COPY.supportedBy | typeof CONTACT_COPY.postedBy
+  /** "Supported by" or "Posted by", in the page's language. */
+  label: string
   name: string
   /** Only set by the server for the poster and the supporting organization. */
   email: string | null
 }
 
+/** "40 people", in the page's language. */
+export const peopleText = (count: number, c: Copy) =>
+  `${count} ${count === 1 ? c.REQUEST_COPY.person : c.REQUEST_COPY.people}`
+
 /** "10 winter coats for 40 people": the request's title everywhere it appears. */
-export function requestTitle(request: Pick<FoodRequest, "items" | "peopleCount">) {
-  return `${request.items} for ${request.peopleCount} ${request.peopleCount === 1 ? REQUEST_COPY.person : REQUEST_COPY.people}`
+export function requestTitle(request: Pick<FoodRequest, "items" | "peopleCount">, c: Copy) {
+  return fill(c.REQUEST_COPY.title, { items: request.items, people: peopleText(request.peopleCount, c) })
 }
 
 /** Type of support and status, side by side (they wrap on a narrow card). */
@@ -39,7 +45,7 @@ export function RequestBadges({ request }: { request: FoodRequest }) {
  * Where and when, with icons. People is already in the card's title; the detail layout
  * passes `withPeople` to list it as a fact too.
  */
-export function RequestFacts({
+export async function RequestFacts({
   request,
   withPeople = false,
   className,
@@ -48,10 +54,12 @@ export function RequestFacts({
   withPeople?: boolean
   className?: string
 }) {
+  const lang = await currentLang()
+  const c = copyFor(lang)
   const facts = [
-    ...(withPeople ? [{ Icon: Users, label: REQUEST_COPY.peopleLabel, value: `${request.peopleCount} ${request.peopleCount === 1 ? REQUEST_COPY.person : REQUEST_COPY.people}` }] : []),
-    { Icon: MapPin, label: REQUEST_COPY.where, value: neighborhoodLabel(request.neighborhood) },
-    { Icon: Clock, label: REQUEST_COPY.when, value: formatWindow(request.windowStart, request.windowEnd) },
+    ...(withPeople ? [{ Icon: Users, label: c.REQUEST_COPY.peopleLabel, value: peopleText(request.peopleCount, c) }] : []),
+    { Icon: MapPin, label: c.REQUEST_COPY.where, value: neighborhoodLabel(request.neighborhood) },
+    { Icon: Clock, label: c.REQUEST_COPY.when, value: formatWindow(request.windowStart, request.windowEnd, lang) },
   ]
   return (
     <dl className={cn("grid gap-2", className)}>
@@ -66,10 +74,11 @@ export function RequestFacts({
   )
 }
 
-export function RequestNotes({ notes }: { notes: string }) {
+export async function RequestNotes({ notes }: { notes: string }) {
+  const c = await getCopy()
   return (
     <p className="text-muted-foreground [overflow-wrap:anywhere]">
-      <span className="font-medium text-foreground">{REQUEST_COPY.notes}: </span>
+      <span className="font-medium text-foreground">{c.REQUEST_COPY.notes}: </span>
       {notes}
     </p>
   )
@@ -79,7 +88,8 @@ export function RequestNotes({ notes }: { notes: string }) {
  * Who is on the other side of the handoff, with their email when the server allowed it,
  * on a quiet panel so it reads as the next step.
  */
-export function RequestContactBlock({ contact }: { contact: RequestContact }) {
+export async function RequestContactBlock({ contact }: { contact: RequestContact }) {
+  const c = await getCopy()
   return (
     <div data-contact className="flex flex-col gap-1 rounded-lg bg-muted/60 p-3">
       <p>
@@ -90,7 +100,7 @@ export function RequestContactBlock({ contact }: { contact: RequestContact }) {
         <>
           <a
             href={`mailto:${contact.email}`}
-            aria-label={`${CONTACT_COPY.emailLabel} ${contact.name}: ${contact.email}`}
+            aria-label={`${c.CONTACT_COPY.emailLabel} ${contact.name}: ${contact.email}`}
             className="inline-flex min-h-tap items-center gap-2 self-start rounded-md font-medium text-primary-text underline underline-offset-4 outline-none [overflow-wrap:anywhere] hover:no-underline focus-visible:ring-[3px] focus-visible:ring-ring"
           >
             <Mail aria-hidden="true" className="size-4 shrink-0" />
@@ -100,7 +110,7 @@ export function RequestContactBlock({ contact }: { contact: RequestContact }) {
               {contact.email.split("@").slice(1).join("@")}
             </span>
           </a>
-          <p className="text-sm text-muted-foreground">{CONTACT_COPY.note}</p>
+          <p className="text-sm text-muted-foreground">{c.CONTACT_COPY.note}</p>
         </>
       )}
     </div>
@@ -132,7 +142,7 @@ export function RequestCardSupporting({ children }: { children: React.ReactNode 
  * Needs Board's states (claimable, your post, available after approval, supporting) are
  * footers, so every card keeps the same shape.
  */
-export function RequestCard({
+export async function RequestCard({
   request,
   contact,
   footer,
@@ -146,7 +156,7 @@ export function RequestCard({
     <Card className="h-full gap-4">
       <CardHeader className="gap-3">
         <RequestBadges request={request} />
-        <CardTitle className="font-heading text-h3 leading-snug [overflow-wrap:anywhere]">{requestTitle(request)}</CardTitle>
+        <CardTitle className="font-heading text-h3 leading-snug [overflow-wrap:anywhere]">{requestTitle(request, await getCopy())}</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-4 text-base">
         <RequestFacts request={request} />

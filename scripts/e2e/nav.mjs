@@ -72,7 +72,9 @@ try {
       }
       await anon.size(w, 800)
       await anon.goto("/")
-      check(`${theme} ${w}px signed out: no Dashboard link or menu`, !(await anon.evaluate(`!!document.querySelector('header nav') || [...document.querySelectorAll("header a")].some(a => a.textContent.trim() === "Dashboard")`)))
+      // Signed out: no account links; on phones a menu holding only the language switch.
+      const out = await anon.evaluate(`({ links: document.querySelectorAll("header nav a").length, dashboard: [...document.querySelectorAll("header a")].some(a => a.textContent.trim() === "Dashboard"), menu: !!document.querySelector('header button[aria-label="Menu"]')?.getClientRects().length, menuSwitch: !!document.querySelector("header nav ul[id] [role=radiogroup]") })`)
+      check(`${theme} ${w}px signed out: no Dashboard or other account links${w < 640 ? "; the menu holds only the language switch" : ", no menu"}`, out.links === 0 && !out.dashboard && out.menu === w < 640 && out.menuSwitch, out)
     }
   }
 

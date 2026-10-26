@@ -34,12 +34,16 @@ npm run e2e:responsive
 | `e2e:signin` | Sign-in page structure and text contrast, tabs and account-type cards, form error, header active bar and phone menu |
 | `e2e:a11y` | Every page, each kind of account, both themes at 390 and 1280px: text contrast, one h1, landmarks, page language, alt text, named controls, no overflow; reduced motion |
 | `e2e:board` | Needs Board and need pages: who may open them (HTTP status and emails in the HTML for every account), the identical 404, sticky-note layout (strip, curl, 3-line cut, stamp, tilt), note contrast from real pixels, keyboard; the inbox and header bell (count, 9+, opening and marking read, empty state); board, need page and inbox in both themes at 320–1280px, reduced motion |
+| `e2e:spanish` | The EN / ES switch (radio group, arrow keys, 44px), the `lang` cookie (a year, SameSite=Lax) and the first-visit default from the browser's language, `<html lang>`, no English left on the main pages in Spanish (apart from people's own text, names, neighborhoods and The Bridge), ¿ ¡ and accents, Spanish dates, and layout in Spanish at 320 and 390px in both themes (plus the header and homepage buttons up to 1280px) |
 
 Options (after `--`, e.g. `npm run e2e:responsive -- --themes=dark`):
 
 - Layout audits: `--widths=320,390` and `--themes=light,dark` (default: 320, 390, 768, 1024, 1280
   and 1440 in both themes), `--shots` to save screenshots, `--long` to swap contact emails for a
   very long one.
+- `--lang=es` runs any suite with the Spanish cookie set in every tab (as if the reader chose ES).
+  Layout, access and contrast checks apply as they are; checks that compare English wording
+  expect English, so in Spanish they report the Spanish text instead.
 - `e2e:panel -- --live` also sends one real question to the assistant.
 - `e2e:verification -- --signups` also signs up a new poster and organization through the
   forms. It creates two accounts on the-bridge-dev that reseeding doesn't remove, so it only

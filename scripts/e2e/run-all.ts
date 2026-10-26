@@ -6,7 +6,7 @@ import { spawn, spawnSync } from "node:child_process"
 
 import { acquireLock } from "./lock.ts"
 
-const SUITES = ["responsive", "dashboards", "admin", "contact", "nav", "verification", "form", "dropdown", "panel", "notices", "homepage", "signin", "a11y", "board"]
+const SUITES = ["responsive", "dashboards", "admin", "contact", "nav", "verification", "form", "dropdown", "panel", "notices", "homepage", "signin", "a11y", "board", "spanish"]
 
 // One lock for the whole run; the suites started here run under it (E2E_LOCK_OWNER).
 acquireLock("npm run e2e")

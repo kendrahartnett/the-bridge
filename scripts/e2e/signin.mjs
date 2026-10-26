@@ -50,7 +50,7 @@ try {
 
       // Account-type cards: one chosen (blue outline), the other with a 3:1 border.
       const cards = await t.evaluate(`(() => {
-        const radios = [...document.querySelectorAll('[role=radiogroup] [role=radio]')]
+        const radios = [...document.querySelectorAll('#panel-create [role=radiogroup] [role=radio]')]
         const chosen = radios.find((r) => r.getAttribute("aria-checked") === "true"), other = radios.find((r) => r !== chosen)
         return { count: radios.length, chosen: chosen?.textContent.includes("organization"), chosenBorder: getComputedStyle(chosen).borderColor, otherBorder: getComputedStyle(other).borderColor, cardBg: getComputedStyle(chosen.closest(".rounded-2xl")).backgroundColor }
       })()`)
@@ -72,9 +72,9 @@ try {
   await t.key("ArrowRight", "ArrowRight", 39); await sleep(200)
   const tabNow = await t.evaluate(`({ focused: document.activeElement?.textContent, selected: document.querySelector('[role=tab][aria-selected=true]')?.textContent, panel: !document.getElementById("panel-create").hidden })`)
   check("Arrow Right moves to the Create account tab and shows its panel", tabNow.focused === AUTH_COPY.tabs.create && tabNow.selected === AUTH_COPY.tabs.create && tabNow.panel, tabNow)
-  await t.evaluate(`document.querySelector('[role=radio][aria-checked=true]').focus(), true`)
+  await t.evaluate(`document.querySelector('#panel-create [role=radio][aria-checked=true]').focus(), true`)
   await t.key("ArrowRight", "ArrowRight", 39); await sleep(200)
-  const typeNow = await t.evaluate(`document.querySelector('[role=radio][aria-checked=true]')?.textContent`)
+  const typeNow = await t.evaluate(`document.querySelector('#panel-create [role=radio][aria-checked=true]')?.textContent`)
   check("Arrow Right moves the account type to the other option", typeNow?.includes("organization"), typeNow)
 
   // A form error shows as the error notice (role=alert), readable.

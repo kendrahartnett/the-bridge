@@ -1,3 +1,5 @@
+import { DATE_LOCALE, type Lang } from "./i18n.ts"
+
 // The Bridge only serves Chicago, so times are entered and shown in Chicago time
 // no matter where the server runs.
 export const CHICAGO_TZ = "America/Chicago"
@@ -27,14 +29,14 @@ export function chicagoLocalToDate(local: string): Date {
   return new Date(asUtc - offset * 60_000)
 }
 
-export function formatWindow(start: Date, end: Date): string {
-  const day = new Intl.DateTimeFormat("en-US", {
+export function formatWindow(start: Date, end: Date, lang: Lang = "en"): string {
+  const day = new Intl.DateTimeFormat(DATE_LOCALE[lang], {
     timeZone: CHICAGO_TZ,
     weekday: "short",
     month: "short",
     day: "numeric",
   })
-  const time = new Intl.DateTimeFormat("en-US", {
+  const time = new Intl.DateTimeFormat(DATE_LOCALE[lang], {
     timeZone: CHICAGO_TZ,
     hour: "numeric",
     minute: "2-digit",
@@ -46,8 +48,8 @@ export function formatWindow(start: Date, end: Date): string {
 }
 
 /** "Oct 24, 2026, 3:15 PM" in Chicago time: when something happened to a request. */
-export function formatDateTime(at: Date): string {
-  return new Intl.DateTimeFormat("en-US", {
+export function formatDateTime(at: Date, lang: Lang = "en"): string {
+  return new Intl.DateTimeFormat(DATE_LOCALE[lang], {
     timeZone: CHICAGO_TZ,
     month: "short",
     day: "numeric",
