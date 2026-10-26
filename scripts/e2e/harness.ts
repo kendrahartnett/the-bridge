@@ -65,6 +65,8 @@ export type Suite = {
   flags: Record<string, string | true>
   check: (name: string, ok: unknown, detail?: unknown) => boolean
   results: Check[]
+  /** When the suite started: notifications created after it are this suite's own. */
+  startedAt: Date
 }
 
 function refuse(reason: string): never {
@@ -139,7 +141,22 @@ export async function setup(name: string): Promise<Suite> {
     console.log(`${ok ? "PASS" : "FAIL"}  ${name}${d ? "  — " + d : ""}`)
     return !!ok
   }
-  return { name, base, password, sql: timedSql(url), outDir, flags, check, results }
+  return { name, base, password, sql: timedSql(url), outDir, flags, check, results, startedAt: new Date() }
+}
+
+/**
+ * Deletes the notifications this suite caused (claims, fulfilments, reviews done in the
+ * browser): only the test accounts' (test.*@example.com), only ones created since the suite
+ * started, and never the seeded ones (fixed 5eed0000- ids, which the reseed resets).
+ */
+async function removeOwnNotifications(suite: Suite) {
+  const gone = await suite.sql`
+    delete from notifications
+    where created_at >= ${suite.startedAt.toISOString()}
+      and id::text not like '5eed0000-%'
+      and user_id in (select id from users where email like 'test.%@example.com')
+    returning id`
+  if (gone.length) console.log(`removed ${gone.length} notifications this suite created`)
 }
 
 /**
@@ -158,6 +175,7 @@ export async function finish(
   }
   fs.writeFileSync(join(suite.outDir, "results.json"), JSON.stringify(suite.results, null, 2))
   console.log("")
+  await removeOwnNotifications(suite)
   reseed()
   const passed = suite.results.filter((r) => r.ok).length
   console.log(`\n${suite.name}: ${passed}/${suite.results.length} checks passed`)

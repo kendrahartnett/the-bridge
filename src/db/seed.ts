@@ -15,7 +15,7 @@ import { drizzle } from "drizzle-orm/neon-http"
 import { chicagoLocalToDate } from "../lib/chicago-time.ts"
 import { installRedaction } from "../lib/redact.ts"
 import { requireDevDatabase } from "./dev-guard.ts"
-import { foodRequests, users, type NewFoodRequest } from "./schema.ts"
+import { foodRequests, notifications, users, type NewFoodRequest } from "./schema.ts"
 
 // Nothing this script prints (including errors) may show a connection string or password.
 installRedaction()
@@ -245,6 +245,19 @@ async function main() {
       target: foodRequests.id,
       set,
     })
+  }
+
+  // The inbox for the seeded needs and approvals. Fixed ids, so re-runs reset each one
+  // (including whether it was read) instead of adding more.
+  const seededNotifications = [
+    { id: "5eed0000-0000-4000-8000-000000000101", userId: ids.outreach2, requestId: "5eed0000-0000-4000-8000-000000000004", type: "need_claimed", createdAt: times["5eed0000-0000-4000-8000-000000000004"].claimedAt!, readAt: null },
+    { id: "5eed0000-0000-4000-8000-000000000102", userId: ids.outreach1, requestId: "5eed0000-0000-4000-8000-000000000005", type: "need_claimed", createdAt: times["5eed0000-0000-4000-8000-000000000005"].claimedAt!, readAt: chicagoAt(-3, "11:00") },
+    { id: "5eed0000-0000-4000-8000-000000000103", userId: ids.donor2, requestId: "5eed0000-0000-4000-8000-000000000005", type: "need_fulfilled", createdAt: times["5eed0000-0000-4000-8000-000000000005"].fulfilledAt!, readAt: null },
+    { id: "5eed0000-0000-4000-8000-000000000104", userId: ids.donor1, requestId: null, type: "org_approved", createdAt: chicagoAt(-6, "10:00"), readAt: chicagoAt(-6, "12:00") },
+    { id: "5eed0000-0000-4000-8000-000000000105", userId: ids.donor2, requestId: null, type: "org_approved", createdAt: chicagoAt(-6, "10:05"), readAt: null },
+  ] as const
+  for (const { id, ...rest } of seededNotifications) {
+    await db.insert(notifications).values({ id, ...rest }).onConflictDoUpdate({ target: notifications.id, set: rest })
   }
 
   const [counts] = await db.execute<{ users: number; requests: number }>(sql`

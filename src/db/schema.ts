@@ -135,6 +135,39 @@ export const foodRequests = pgTable(
   ]
 )
 
+// What happened, for the inbox. The text is built when it's shown, from the request and the
+// people involved: no free text is stored, and admin review notes are never used.
+export const notificationType = pgEnum("notification_type", [
+  "need_claimed",
+  "need_fulfilled",
+  "org_approved",
+  "org_rejected",
+])
+
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    requestId: uuid("request_id").references(() => foodRequests.id, { onDelete: "cascade" }),
+    type: notificationType("type").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    readAt: timestamp("read_at", { withTimezone: true }),
+  },
+  (t) => [
+    // Need notifications point at a need; account notifications don't.
+    check(
+      "notification_request_matches_type",
+      sql`(${t.type} IN ('need_claimed', 'need_fulfilled')) = (${t.requestId} IS NOT NULL)`
+    ),
+    index("notifications_user_created_idx").on(t.userId, t.createdAt),
+  ]
+)
+
 export type User = typeof users.$inferSelect
 export type FoodRequest = typeof foodRequests.$inferSelect
 export type NewFoodRequest = typeof foodRequests.$inferInsert

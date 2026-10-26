@@ -8,7 +8,7 @@ import { alias } from "drizzle-orm/pg-core"
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http"
 import { z } from "zod"
 
-import { foodRequests, users, type FoodRequest, type User } from "../db/schema.ts"
+import { foodRequests, notifications, users, type FoodRequest, type User } from "../db/schema.ts"
 import type * as schema from "../db/schema.ts"
 import { chicagoLocalToDate } from "./chicago-time.ts"
 import { STATUS_LABELS } from "./labels.ts"
@@ -82,6 +82,8 @@ const actorIsApprovedOrg = (actorId: string) =>
 /**
  * Claim a need: approved organizations only, never their own post. The checks are repeated
  * inside the UPDATE, so a revoked approval or a second organization can't slip through.
+ * The poster's "need_claimed" notification is written by the same statement, so it exists
+ * exactly when the claim does.
  */
 export async function claimRequest(db: Db, actor: Actor, id: unknown): Promise<RequestActionResult> {
   const me = await standing(db, actor.id)
@@ -90,20 +92,23 @@ export async function claimRequest(db: Db, actor: Actor, id: unknown): Promise<R
   const parsed = requestId.safeParse(id)
   if (!parsed.success) return { ok: false, error: "We couldn't find that request." }
 
-  // One conditional UPDATE: Postgres row locking means only one organization can win.
-  const updated = await db
-    .update(foodRequests)
-    .set({ status: "claimed", claimedBy: actor.id, claimedAt: sql`now()` })
-    .where(
-      and(
+  // One statement: a conditional UPDATE (Postgres row locking means only one organization
+  // can win) and the poster's notification, inserted only for the row it changed.
+  const { rows: updated } = await db.execute(sql`
+    with claimed as (
+      update ${foodRequests} set status = 'claimed', claimed_by = ${actor.id}, claimed_at = now()
+      where ${and(
         eq(foodRequests.id, parsed.data),
         eq(foodRequests.status, "open"),
         ne(foodRequests.createdBy, actor.id),
         actorIsApprovedOrg(actor.id),
         posterCanStillPost
-      )
+      )}
+      returning id, created_by
     )
-    .returning({ id: foodRequests.id })
+    insert into ${notifications} (user_id, request_id, type)
+    select created_by, id, 'need_claimed' from claimed
+    returning request_id`)
 
   if (updated.length === 0) {
     const [row] = await db
@@ -132,23 +137,27 @@ export async function claimRequest(db: Db, actor: Actor, id: unknown): Promise<R
 }
 
 // Marking fulfilled and cancelling are for the person who posted the need, as long as they
-// can still post (outreach, or an organization that is currently approved).
+// can still post (outreach, or an organization that is currently approved). Marking it
+// fulfilled notifies the organization that claimed it, in the same statement; cancelling
+// (only possible while Open) notifies no one.
 export async function confirmDelivery(db: Db, actor: Actor, id: unknown): Promise<RequestActionResult> {
   if (!canPost(await standing(db, actor.id))) return { ok: false, error: ROLE_ERRORS.outreach }
   const parsed = requestId.safeParse(id)
   if (!parsed.success) return { ok: false, error: "We couldn't find that request." }
 
-  const updated = await db
-    .update(foodRequests)
-    .set({ status: "delivered", fulfilledAt: sql`now()` })
-    .where(
-      and(
+  const { rows: updated } = await db.execute(sql`
+    with fulfilled as (
+      update ${foodRequests} set status = 'delivered', fulfilled_at = now()
+      where ${and(
         eq(foodRequests.id, parsed.data),
         eq(foodRequests.createdBy, actor.id),
         eq(foodRequests.status, "claimed")
-      )
+      )}
+      returning id, claimed_by
     )
-    .returning({ id: foodRequests.id })
+    insert into ${notifications} (user_id, request_id, type)
+    select claimed_by, id, 'need_fulfilled' from fulfilled
+    returning request_id`)
 
   if (updated.length === 0) {
     return { ok: false, error: await explainNoChange(db, parsed.data, actor.id, "claimed") }
@@ -417,7 +426,9 @@ const reviewInput = z.object({
 
 /**
  * Approve or reject an organization (rejecting an approved one revokes it). Admins only,
- * checked again inside the UPDATE. Records who reviewed it and when; the note is internal.
+ * checked again inside the UPDATE. Records who reviewed it and when; the note is internal
+ * and never reaches the organization. The organization's "org_approved" or "org_rejected"
+ * notification is written by the same statement.
  */
 export async function reviewOrganization(
   db: Db,
@@ -432,22 +443,19 @@ export async function reviewOrganization(
   }
   const { organizationId, decision, note } = parsed.data
 
-  const updated = await db
-    .update(users)
-    .set({
-      verificationStatus: decision,
-      reviewedAt: new Date(),
-      reviewedBy: actor.id,
-      reviewNote: note || null,
-    })
-    .where(
-      and(
+  const { rows: updated } = await db.execute(sql`
+    with reviewed as (
+      update ${users} set verification_status = ${decision}, reviewed_at = now(), reviewed_by = ${actor.id}, review_note = ${note || null}
+      where ${and(
         eq(users.id, organizationId),
         eq(users.role, "donor"),
         sql`exists (select 1 from ${users} as reviewer where reviewer.id = ${actor.id} and reviewer.is_admin)`
-      )
+      )}
+      returning id
     )
-    .returning({ id: users.id })
+    insert into ${notifications} (user_id, type)
+    select id, ${decision === "approved" ? "org_approved" : "org_rejected"}::notification_type from reviewed
+    returning user_id`)
   if (updated.length === 0) return { ok: false, error: "We couldn't find that organization." }
   return {
     ok: true,
@@ -504,4 +512,86 @@ export async function listOrganizationsForReview(
     .leftJoin(reviewer, eq(reviewer.id, users.reviewedBy))
     .where(eq(users.role, "donor"))
     .orderBy(asc(users.createdAt))
+}
+
+
+// ---------------------------------------------------------------------------------------
+// Inbox
+
+export type NotificationType = (typeof notifications.$inferSelect)["type"]
+
+/**
+ * One inbox item, with what's needed to word it when it's shown: the need's items, and the
+ * other side's name (the organization that claimed it, or the person who posted it).
+ */
+export type InboxItem = {
+  id: string
+  type: NotificationType
+  requestId: string | null
+  createdAt: Date
+  read: boolean
+  items: string | null
+  claimerName: string | null
+  posterName: string | null
+}
+
+/** The viewer's own notifications, newest first (10 by default). Never anyone else's. */
+export async function listNotifications(db: Db, viewerId: string, limit = 10): Promise<InboxItem[]> {
+  const rows = await db
+    .select({
+      id: notifications.id,
+      type: notifications.type,
+      requestId: notifications.requestId,
+      createdAt: notifications.createdAt,
+      readAt: notifications.readAt,
+      items: foodRequests.items,
+      claimerName: sql<string | null>`coalesce(${claimer.organizationName}, ${claimer.displayName})`,
+      posterName: sql<string | null>`coalesce(${poster.organizationName}, ${poster.displayName})`,
+    })
+    .from(notifications)
+    .leftJoin(foodRequests, eq(foodRequests.id, notifications.requestId))
+    .leftJoin(claimer, eq(claimer.id, foodRequests.claimedBy))
+    .leftJoin(poster, eq(poster.id, foodRequests.createdBy))
+    .where(eq(notifications.userId, viewerId))
+    .orderBy(desc(notifications.createdAt), desc(notifications.id))
+    .limit(limit)
+  return rows.map(({ readAt, ...r }) => ({ ...r, read: readAt !== null }))
+}
+
+/** How many of the viewer's own notifications are unread (the header bell). */
+export async function countUnread(db: Db, viewerId: string): Promise<number> {
+  const [row] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(notifications)
+    .where(and(eq(notifications.userId, viewerId), sql`${notifications.readAt} is null`))
+  return row?.n ?? 0
+}
+
+const notificationId = z.uuid()
+
+/**
+ * Marks one of the viewer's own notifications read and says where it leads: a need's page,
+ * or the dashboard for account updates. Null if it isn't theirs (or doesn't exist), so no
+ * one can mark or follow anyone else's.
+ */
+export async function openNotification(db: Db, actor: Actor, id: unknown): Promise<{ href: string } | null> {
+  const parsed = notificationId.safeParse(id)
+  if (!parsed.success) return null
+  const [row] = await db
+    .update(notifications)
+    .set({ readAt: sql`coalesce(${notifications.readAt}, now())` })
+    .where(and(eq(notifications.id, parsed.data), eq(notifications.userId, actor.id)))
+    .returning({ requestId: notifications.requestId })
+  if (!row) return null
+  return { href: row.requestId ? `/requests/${row.requestId}` : "/dashboard" }
+}
+
+/** Marks all of the viewer's own unread notifications read. Returns how many changed. */
+export async function markAllNotificationsRead(db: Db, actor: Actor): Promise<number> {
+  const rows = await db
+    .update(notifications)
+    .set({ readAt: sql`now()` })
+    .where(and(eq(notifications.userId, actor.id), sql`${notifications.readAt} is null`))
+    .returning({ id: notifications.id })
+  return rows.length
 }

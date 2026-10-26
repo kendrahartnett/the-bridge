@@ -30,6 +30,7 @@ import {
   type RequestWithContact,
 } from "@/lib/request-rules"
 
+import { Inbox } from "./inbox"
 import { RequestActionButton } from "./request-action-button"
 
 export const metadata: Metadata = { title: "Dashboard · The Bridge" }
@@ -61,6 +62,7 @@ async function DashboardContent() {
           title={DASHBOARD_COPY.greeting.replace("{name}", greeting)}
         />
       </BlurFade>
+      <Inbox userId={user.id} />
       {user.role === "outreach" ? (
         <OutreachDashboard userId={user.id} />
       ) : (

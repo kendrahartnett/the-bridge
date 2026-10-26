@@ -280,6 +280,30 @@ export const DETAIL_COPY = {
   youClaimed: "Your organization claimed this need.",
 } as const
 
+// The inbox on the dashboard, and the bell in the header. Messages are built when shown,
+// from the need and the people involved: {org}, {items}, {poster}, {email}.
+export const INBOX_COPY = {
+  heading: "Inbox",
+  markAllRead: "Mark all as read",
+  empty: "No updates yet. You'll see claims, completed needs, and account updates here.",
+  unread: "Unread",
+  messages: {
+    needClaimed: "{org} claimed your need: {items}",
+    needFulfilled: "{poster} marked a need you supported as fulfilled.",
+    orgApproved: "Your organization was approved. You can now claim needs and post needs.",
+    orgRejected: "Your organization wasn't approved. Contact {email} with questions.",
+    orgRejectedNoEmail: "Your organization wasn't approved.",
+  },
+  // Who to name when a name isn't on record.
+  someOrganization: "An organization",
+  someone: "The person who posted it",
+  // The bell's name for screen readers: "Inbox, 3 unread" or "Inbox, no unread".
+  bellLabel: "Inbox, {n} unread",
+  bellLabelNone: "Inbox, no unread",
+  // In the phone menu below 360px, where the bell moves.
+  menuItem: "Inbox",
+} as const
+
 // The 404 page. Exactly the same for a page that doesn't exist and one the visitor isn't
 // allowed to see (it never reads the session), so it reveals nothing about either.
 export const NOT_FOUND_COPY = {

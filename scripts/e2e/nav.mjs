@@ -55,8 +55,10 @@ try {
             const items = await t.evaluate(MENU_ITEMS)
             const focusFirst = await t.evaluate(`document.activeElement?.textContent.trim()`)
             const expanded = await t.evaluate(`document.querySelector('header button[aria-label="Menu"]').getAttribute("aria-expanded")`)
-            const okItems = JSON.stringify(items.map((i) => i.label)) === JSON.stringify(expected) && items.every((i) => (i.label === currentLabel) === (i.current === "page") && i.h >= 44 && i.left >= 0 && i.right <= w)
-            check(`${tag}: menu opens with ${expected.join(" + ")}, current marked, 44px, on screen, focus on first link`, okItems && expanded === "true" && focusFirst === expected[0], JSON.stringify(items))
+            // Below 360px the inbox bell moves into the menu, after the links.
+            const menuExpected = w < 360 ? [...expected, "Inbox"] : expected
+            const okItems = JSON.stringify(items.map((i) => i.label)) === JSON.stringify(menuExpected) && items.every((i) => (i.label === currentLabel) === (i.current === "page") && i.h >= 44 && i.left >= 0 && i.right <= w)
+            check(`${tag}: menu opens with ${(w < 360 ? [...expected, "Inbox"] : expected).join(" + ")}, current marked, 44px, on screen, focus on first link`, okItems && expanded === "true" && focusFirst === expected[0], JSON.stringify(items))
             if (label === "admin") await t.shot(`menu-open-${path.replace("/", "")}-320-${theme}.png`)
             await t.key("Escape", "Escape", 27); await sleep(200)
             check(`${tag}: Escape closes the menu and returns focus to the button`, await t.evaluate(`document.querySelector('header nav ul[id]').hidden && document.activeElement?.getAttribute("aria-label") === "Menu"`))
@@ -79,7 +81,7 @@ try {
   await A.size(1280, 800)
   await A.goto("/dashboard")
   const dash = await A.evaluate(`({ h2: [...document.querySelectorAll("main h2")].map(h => h.textContent), newRequest: [...document.querySelectorAll("main a")].find(a => a.getAttribute("href") === "/requests/new")?.textContent.trim(), offer: [...document.querySelectorAll("main button")].filter(b => b.textContent.trim() === "Claim this need").length, banner: !!document.querySelector('[aria-label="Account status"]') })`)
-  check("Admin account's dashboard is the normal outreach dashboard (Your requests + Post a Need)", JSON.stringify(dash.h2) === '["Your requests"]' && dash.newRequest === "Post a Need" && dash.offer === 0 && !dash.banner, JSON.stringify(dash))
+  check("Admin account's dashboard is the normal outreach dashboard (Inbox, Your requests, Post a Need)", JSON.stringify(dash.h2) === '["Inbox","Your requests"]' && dash.newRequest === "Post a Need" && dash.offer === 0 && !dash.banner, JSON.stringify(dash))
   await A.goto("/requests/new")
   check("Admin account can open the request form, like any outreach account", await A.evaluate(`location.pathname === "/requests/new" && !!document.querySelector("main form")`))
 } catch (e) {

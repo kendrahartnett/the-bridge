@@ -8,7 +8,9 @@ import { Logo } from "@/components/brand/logo"
 import { HeaderNav, HeaderNavPlaceholder } from "@/components/header-nav"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
+import { db } from "@/db"
 import { getCurrentUser } from "@/lib/current-user"
+import { countUnread } from "@/lib/request-rules"
 
 // Every page with this header (the landing page and the signed-in pages) also gets the
 // assistant chat button. It renders beside the header, not inside it: the header's
@@ -33,7 +35,7 @@ export function SiteHeader({ signedIn = false }: { signedIn?: boolean }) {
               // Reads the session, so it streams in behind Suspense (cacheComponents). Until
               // then everyone gets Dashboard; the Needs Board is added for organizations and
               // Admin for admins.
-              <Suspense fallback={<HeaderNavPlaceholder isAdmin={false} isOrganization={false} />}>
+              <Suspense fallback={<HeaderNavPlaceholder isAdmin={false} isOrganization={false} unread={null} />}>
                 <SignedInNav />
               </Suspense>
             )}
@@ -63,9 +65,11 @@ export function SiteHeader({ signedIn = false }: { signedIn?: boolean }) {
 
 /**
  * Dashboard for everyone signed in; the Needs Board for organization accounts and Admin for
- * admins (checked again at /board and /admin).
+ * admins (checked again at /board and /admin); the inbox bell with the unread count, read
+ * on each page load.
  */
 async function SignedInNav() {
   const user = await getCurrentUser()
-  return <HeaderNav isAdmin={!!user?.isAdmin} isOrganization={user?.role === "donor"} />
+  const unread = user ? await countUnread(db, user.id) : 0
+  return <HeaderNav isAdmin={!!user?.isAdmin} isOrganization={user?.role === "donor"} unread={unread} />
 }

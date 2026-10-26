@@ -1,6 +1,6 @@
 # Test results: request and response rules
 
-Run: 10/26/2026, 12:24:46 AM (Chicago time) · tag `[claim-test 20261026052438]`
+Run: 10/26/2026, 12:56:21 AM (Chicago time) · tag `[claim-test 20261026055613]`
 
 Command: `npm run test:claims` (scripts/test-claim-rules.ts), against the dev database.
 The script calls the same rule functions the server actions call (src/lib/request-rules.ts)
@@ -63,9 +63,9 @@ Two organizations offer support on the same open request at the same moment (`Pr
 | 2 | Test — Organization A | Another organization just claimed this need. | PASS |
 | 3 | Test — Organization A | Another organization just claimed this need. | PASS |
 | 4 | Test — Organization A | Another organization just claimed this need. | PASS |
-| 5 | Test — Organization B | Another organization just claimed this need. | PASS |
-| 6 | Test — Organization B | Another organization just claimed this need. | PASS |
+| 5 | Test — Organization A | Another organization just claimed this need. | PASS |
+| 6 | Test — Organization A | Another organization just claimed this need. | PASS |
 | 7 | Test — Organization A | Another organization just claimed this need. | PASS |
-| 8 | Test — Organization A | Another organization just claimed this need. | PASS |
-| 9 | Test — Organization A | Another organization just claimed this need. | PASS |
+| 8 | Test — Organization B | Another organization just claimed this need. | PASS |
+| 9 | Test — Organization B | Another organization just claimed this need. | PASS |
 | 10 | Test — Organization B | Another organization just claimed this need. | PASS |
