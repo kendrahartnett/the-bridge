@@ -1,6 +1,6 @@
-// The homepage: the stacked, centered hero (the headline artwork as the page's h1, exactly as
-// designed with no panel behind it, a faint decorative glow, then the line, description and
-// the two calls to action), no layout shift, the artwork served as AVIF or WebP, its size,
+// The homepage: the stacked, centered hero (the headline artwork as the page's h1, one
+// version per theme with nothing behind it, then the line, description and the two calls to
+// action), no layout shift, the artwork served as AVIF or WebP, its size,
 // the eyebrow moved under the How it works cards (one line), the illustration between "What
 // is The Bridge?" and the Mission Statement, text contrast from real pixels, the logo's
 // sizes, and reduced motion.
@@ -24,17 +24,21 @@ const CLS = `new Promise((resolve) => {
 
 const HERO = `(() => {
   const box = (el) => { const r = el.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, left: r.left, right: r.right, width: r.width, height: r.height, center: r.left + r.width / 2 } }
-  const section = document.querySelector("main section"), h1 = document.querySelector("main h1"), img = h1.querySelector("img")
+  const section = document.querySelector("main section"), h1 = document.querySelector("main h1")
+  const imgs = [...h1.querySelectorAll("img")], img = imgs.find((i) => i.getClientRects().length) ?? imgs[0]
   // The hero's content container (the h1's parent; the section's first div is the background layer).
   const container = h1.parentElement, ps = container.querySelectorAll(":scope > p")
   const ctas = [...section.querySelectorAll('a[href^="/sign-in?role="]')]
   const cs = getComputedStyle(container)
   const inner = { left: container.getBoundingClientRect().left + parseFloat(cs.paddingLeft), right: container.getBoundingClientRect().right - parseFloat(cs.paddingRight) }
   return {
-    h1Count: document.querySelectorAll("h1").length, h1Images: h1.querySelectorAll("img").length, h1Text: h1.textContent.trim(),
-    alt: img.alt, loading: img.loading, fetchPriority: img.fetchPriority, imgHasSize: img.hasAttribute("width") && img.hasAttribute("height"),
+    h1Count: document.querySelectorAll("h1").length, h1Images: imgs.length, visibleImages: imgs.filter((i) => i.getClientRects().length).length, h1Text: h1.textContent.trim(),
+    alt: img.alt, allAlts: imgs.every((i) => i.alt === img.alt), src: img.currentSrc, loading: img.loading, fetchPriority: img.fetchPriority,
+    reserved: getComputedStyle(h1).aspectRatio !== "auto" && h1.getBoundingClientRect().height > 0, frameRatio: h1.getBoundingClientRect().width / h1.getBoundingClientRect().height,
     art: box(h1), every: box(ps[0]), lead: box(ps[1]), desc: box(ps[2]), ctas: ctas.map(box), ctaCount: ctas.length,
-    glow: (() => { const g = h1.querySelector(".hero-glow"); if (!g) return null; const cs = getComputedStyle(g); return { hidden: g.getAttribute("aria-hidden"), events: cs.pointerEvents, anim: cs.animationName, bigger: g.getBoundingClientRect().width > h1.getBoundingClientRect().width } })(),
+    noGlow: !section.querySelector(".hero-glow") && h1.children.length === imgs.length,
+    ctaRadius: getComputedStyle(ctas[0]).borderTopLeftRadius,
+    cardRadii: ["journey", "what-is", "mission"].flatMap((id) => [...document.getElementById(id).closest("section").querySelectorAll("[data-slot=card]")].map((c) => getComputedStyle(c).borderTopLeftRadius)),
     hasHeroEyebrow: !!section.querySelector(".hero-eyebrow"),
     pageCenter: (inner.left + inner.right) / 2, innerWidth: inner.right - inner.left,
     artPanel: getComputedStyle(h1).backgroundColor,
@@ -78,16 +82,19 @@ try {
 
       const H = await t.evaluate(HERO)
       check(`${tag}: no horizontal overflow; header on one row`, !H.overflow && H.headerRow)
-      check(`${tag}: one h1, holding only the headline artwork, its alt text "${HERO_IMAGE.alt}"`, H.h1Count === 1 && H.h1Images === 1 && H.h1Text === "" && H.alt === HERO_IMAGE.alt && H.imgHasSize, H)
+      check(`${tag}: one h1, holding only the headline artwork (one version shown), alt text "${HERO_IMAGE.alt}", space reserved`, H.h1Count === 1 && H.h1Images === 2 && H.visibleImages === 1 && H.h1Text === "" && H.alt === HERO_IMAGE.alt && H.allAlts && H.reserved, H)
+      const artFile = theme === "dark" ? "hero-light-mode" : "hero-landing-image"
+      check(`${tag}: the ${theme}-mode artwork (${artFile}.png) is the one shown`, H.src.includes(artFile), H.src.split("url=")[1]?.split("&")[0] ?? H.src)
       check(`${tag}: no text headline, gold arch connector, or CTA helper text`, H.noArch && H.noHelper)
       const order = [H.art, H.every, H.lead, H.desc].every((b, i, all) => i === 0 || b.top >= all[i - 1].bottom - 0.5) && H.ctas.every((c) => c.top >= H.desc.bottom - 0.5)
       const centered = [H.art, H.every].every((b) => Math.abs(b.center - H.pageCenter) <= 2) && Math.abs((Math.min(...H.ctas.map((c) => c.left)) + Math.max(...H.ctas.map((c) => c.right))) / 2 - H.pageCenter) <= 2
       check(`${tag}: stacked and centered: artwork, line, lead, description, then the buttons; no eyebrow in the hero`, order && centered && !H.hasHeroEyebrow, { order, centered, eyebrowInHero: H.hasHeroEyebrow })
-      if (w < 1024) check(`${tag}: artwork full container width on phones and tablets`, Math.abs(H.art.width - H.innerWidth) <= 1, `${Math.round(H.art.width)} / ${Math.round(H.innerWidth)}`)
-      else check(`${tag}: artwork as wide as the page allows, at most 1280px`, H.art.width <= 1280.5 && H.art.width <= H.innerWidth + 0.5 && H.art.width >= 700, `${Math.round(H.art.width)}px of ${Math.round(H.innerWidth)}px`)
-      check(`${tag}: faint glow behind the artwork: decorative, still, a little larger than it`, !!H.glow && H.glow.hidden === "true" && H.glow.events === "none" && H.glow.anim === "none" && H.glow.bigger, H.glow)
+      if (w < 1024) check(`${tag}: artwork full container width at its own shape on phones and tablets`, Math.abs(H.art.width - H.innerWidth) <= 1 && Math.abs(H.frameRatio - 1672 / 941) < 0.02, `${Math.round(H.art.width)} / ${Math.round(H.innerWidth)}, ratio ${H.frameRatio.toFixed(3)}`)
+      else check(`${tag}: artwork frame 8% wider than the artwork's shape (1.919), at most 1382px`, H.art.width <= 1382.5 && H.art.width <= H.innerWidth + 0.5 && H.art.width >= 700 && Math.abs(H.frameRatio - 1.919) < 0.02, `${Math.round(H.art.width)}px of ${Math.round(H.innerWidth)}px, ratio ${H.frameRatio.toFixed(3)}`)
+      check(`${tag}: no glow or anything else behind the artwork`, H.noGlow)
       const sideBySide = Math.abs(H.ctas[0].top - H.ctas[1].top) < 1
-      check(`${tag}: two buttons, 44-48px tall, ${w >= 640 ? "side by side" : "stacked"}`, H.ctaCount === 2 && H.ctas.every((c) => c.height >= 44 && c.height <= 48.5) && sideBySide === w >= 640, H.ctas.map((c) => Math.round(c.height)))
+      check(`${tag}: two slim buttons, 40px tall with 8px corners, ${w >= 640 ? "side by side" : "stacked"}`, H.ctaCount === 2 && H.ctas.every((c) => Math.abs(c.height - 40) < 0.5) && H.ctaRadius === "8px" && sideBySide === w >= 640, { heights: H.ctas.map((c) => Math.round(c.height)), radius: H.ctaRadius })
+      check(`${tag}: How it works, What is The Bridge? and Mission Statement cards have 8px corners`, H.cardRadii.length === 7 && H.cardRadii.every((r) => r === "8px"), H.cardRadii)
       check(`${tag}: no panel or background behind the headline artwork`, H.artPanel === "rgba(0, 0, 0, 0)", H.artPanel)
 
       const eb = await t.evaluate(EYEBROW)
@@ -99,7 +106,7 @@ try {
 
       if ([320, 390, 1280].includes(w)) {
         check(`${tag}: headline artwork loaded eagerly at high priority`, H.loading === "eager" && H.fetchPriority === "high", `${H.loading}/${H.fetchPriority}`)
-        const type = t.images.filter((i) => i.url.includes("hero-landing-image")).at(-1)?.mimeType ?? "not loaded"
+        const type = t.images.filter((i) => i.url.includes(theme === "dark" ? "hero-light-mode" : "hero-landing-image")).at(-1)?.mimeType ?? "not loaded"
         check(`${tag}: headline artwork served as AVIF or WebP`, /image\/(avif|webp)/.test(type), type)
         await sleep(600) // let the entrance animation finish before measuring pixels
         for (const [sel, name] of [["main h1 ~ p:nth-of-type(1)", "Every Connection line"], ["main h1 ~ p:nth-of-type(3)", "description"]]) {

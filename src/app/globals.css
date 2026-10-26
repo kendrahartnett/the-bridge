@@ -49,9 +49,6 @@
   --surface-raised: #ffffff; /* hovered interactive cards, menus */
   --border-strong: #8a8170; /* inputs and dividers that must be seen */
 
-  /* The soft blue glow behind the homepage artwork: half strength in light mode. */
-  --hero-glow: color-mix(in srgb, var(--primary) 7.5%, transparent);
-
   /* The logo's gold arch, for the arch motif (the logo itself is an image). */
   --arch-1: #eca31f; /* arch left end (sampled from design/source/new-light-logo.png) */
   --arch-2: #fcdd6e; /* arch crown */
@@ -77,8 +74,6 @@
   --background-deep: #010412;
   --surface-raised: #111a2b;
   --border-strong: #557290;
-
-  --hero-glow: color-mix(in srgb, var(--primary) 15%, transparent);
 
   /* The logo's gold arch, for the arch motif (the logo itself is an image). */
   --arch-1: #f4a321; /* sampled from design/source/new-dark-logo.png */
@@ -262,13 +257,6 @@
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-}
-
-/* The soft glow behind the homepage artwork: a radial fade of --hero-glow, blurred further.
-   Static (no animation). */
-@utility hero-glow {
-  background: radial-gradient(closest-side, var(--hero-glow), transparent);
-  filter: blur(40px);
 }
 
 /* The homepage eyebrow ("ROOTED IN CHICAGO · BUILT FOR CHANGE"): the eyebrow style, always on

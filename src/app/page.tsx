@@ -23,6 +23,7 @@ import {
   WHAT_IS_PARAGRAPHS,
 } from "@/lib/copy"
 import bridgeArt from "../../public/images/new-bridge.png"
+import heroArtDark from "../../public/images/hero-light-mode.png"
 import heroArt from "../../public/images/hero-landing-image.png"
 
 export default function Home() {
@@ -34,29 +35,41 @@ export default function Home() {
             description, then the two calls to action. */}
         <section aria-labelledby="hero-title" className="relative isolate overflow-hidden">
           <HeroAtmosphere />
-          {/* A small gap under the header: 20px on phones, 24px from 640px. Wider than the other
-              sections so the artwork can reach 1280px. */}
-          <div className="mx-auto flex w-full max-w-[83rem] flex-col items-center px-4 pt-5 pb-14 text-center sm:px-6 sm:pt-6 lg:pb-16">
-            {/* The headline artwork, exactly as designed (transparent, the same in both themes),
-                is the h1, so its alt text ("Bridging the Gap.") is the headline for screen
-                readers and search engines. Full container width on phones and tablets; from
-                1024px as wide as the page allows (at most 1280px), with its height capped by
-                the screen height (100svh - 13rem), so it fills most of the hero. The import's width and height reserve its space, so
-                nothing shifts while it loads. */}
+          {/* A very small gap under the header: 4px on phones, 8px from 640px. Wider than the
+              other sections so the artwork can reach about 1380px. */}
+          <div className="mx-auto flex w-full max-w-[90rem] flex-col items-center px-4 pt-1 pb-14 text-center sm:px-6 sm:pt-2 lg:pb-16">
+            {/* The headline artwork is the h1, so its alt text ("Bridging the Gap.") is the
+                headline for screen readers and search engines. Two versions of the artwork, the
+                same size: hero-landing-image.png in light mode and hero-light-mode.png in dark
+                mode (CSS shows the one for the theme; the hidden one is out of the
+                accessibility tree). Full container width on phones and tablets, at the
+                artwork's own shape. From 1024px the frame is 8% wider than the artwork at the
+                same height (aspect 1.919), up to 1382px, with the height capped by the screen
+                (100svh - 13rem): the artwork fills the width and the extra 8% of its height is
+                trimmed from the top, which is transparent padding (the artwork's top 12% is
+                empty), so nothing visible is cut and it sits closer to the header. The frame's
+                fixed shape reserves the space, so nothing shifts while it loads. */}
             <h1
               id="hero-title"
-              className="hero-photo relative w-full lg:w-[min(100%,1280px,calc((100svh-13rem)*1.777))]"
+              className="hero-photo relative aspect-[1672/941] w-full lg:aspect-[1.919] lg:w-[min(100%,1382px,calc((100svh-13rem)*1.919))]"
             >
-              {/* A very faint blue glow behind the artwork, a little larger than it, to lift it
-                  from the page. Decorative and still; the section clips it. */}
-              <span aria-hidden="true" className="hero-glow pointer-events-none absolute -inset-[8%] -z-10" />
               <Image
                 src={heroArt}
                 alt={HERO_IMAGE.alt}
-                sizes="(min-width: 1024px) 1280px, 100vw"
+                fill
+                sizes="(min-width: 1024px) 1382px, 100vw"
                 loading="eager"
                 fetchPriority="high"
-                className="h-auto w-full"
+                className="object-cover object-bottom dark:hidden"
+              />
+              <Image
+                src={heroArtDark}
+                alt={HERO_IMAGE.alt}
+                fill
+                sizes="(min-width: 1024px) 1382px, 100vw"
+                loading="eager"
+                fetchPriority="high"
+                className="hidden object-cover object-bottom dark:block"
               />
             </h1>
             <p className="hero-rise font-heading mt-4 text-display-sub font-semibold text-balance text-primary-text [animation-delay:200ms]">
@@ -82,7 +95,7 @@ export default function Home() {
             <ol className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
               {JOURNEY.map((step, i) => (
                 <li key={step.label}>
-                  <Card variant="interactive" className="h-full gap-3 p-5">
+                  <Card variant="interactive" className="h-full gap-3 rounded-[0.5rem] p-5">
                     <CardHeader className="gap-3 px-0">
                       <span
                         aria-hidden="true"
@@ -109,7 +122,7 @@ export default function Home() {
         <section aria-labelledby="what-is" className="border-t border-border">
           <BlurFade inView className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
             <SectionHeader id="what-is" title={WHAT_IS_HEADING} />
-            <Card className="mt-6 py-5 sm:py-7">
+            <Card className="mt-6 rounded-[0.5rem] py-5 sm:py-7">
               <CardContent className="flex flex-col gap-4 px-5 text-base leading-relaxed sm:px-7">
                 {WHAT_IS_PARAGRAPHS.map((text) => (
                   <p key={text.slice(0, 24)}>{text}</p>
@@ -136,7 +149,7 @@ export default function Home() {
         <section aria-labelledby="mission" className="border-t border-border">
           <BlurFade inView className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
             <SectionHeader id="mission" title={MISSION_HEADING} />
-            <Card className="mt-6 border-l-4 border-l-gold py-5 sm:py-7">
+            <Card className="mt-6 rounded-[0.5rem] border-l-4 border-l-gold py-5 sm:py-7">
               <CardContent className="px-5 text-lead leading-relaxed sm:px-7">{MISSION}</CardContent>
             </Card>
           </BlurFade>

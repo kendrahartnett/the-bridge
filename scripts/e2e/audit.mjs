@@ -95,7 +95,10 @@ export const MEASURE = (scopeSel) => `(async () => {
     if (r.width <= 1 || r.height <= 1 || c.closest("[aria-hidden=true]")) continue
     // A radio inside a 44px label card counts as the label's size
     const box = c.matches("input[type=radio], input[type=checkbox]") && c.closest("label") ? c.closest("label").getBoundingClientRect() : r
-    if (box.width < 44 - 0.5 || box.height < 44 - 0.5) {
+    // 44px, except controls deliberately marked data-compact-target (the homepage buttons,
+    // 40px by design), which must still meet the 24px WCAG 2.2 AA minimum.
+    const min = c.closest("[data-compact-target]") ? 24 : 44
+    if (box.width < min - 0.5 || box.height < min - 0.5) {
       const inline = c.tagName === "A" && getComputedStyle(c).display === "inline" && c.closest("p")
       small.push({ sel: sel(c), w: Math.round(box.width), h: Math.round(box.height), inline: !!inline })
     }
