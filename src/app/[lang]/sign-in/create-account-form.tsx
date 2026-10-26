@@ -4,7 +4,6 @@ import { ClipboardPlus, HandHeart } from "lucide-react"
 import { useActionState, useRef, useState, type KeyboardEvent } from "react"
 
 import { Notice } from "@/components/notice"
-import { Button } from "@/components/ui/button"
 import { useCopy } from "@/components/providers"
 import { cn } from "@/lib/utils"
 import { organizationSignUpSchema, posterSignUpSchema } from "@/lib/validation"
@@ -118,9 +117,9 @@ function PosterForm() {
       <TextField prefix={p} name="organizationName" label={AUTH_COPY.fields.team} autoComplete="organization" defaultValue={v?.organizationName} errors={errors.organizationName} />
       <PledgeField prefix={p} name="pledge" label={AUTH_COPY.posterPledge} defaultChecked={v?.pledge === "on"} errors={errors.pledge} />
       <FormError message={state?.error} />
-      <Button type="submit" size="lg" disabled={isPending}>
+      <button type="submit" className="auth-submit" disabled={isPending} aria-busy={isPending}>
         {isPending ? AUTH_COPY.pending : AUTH_COPY.submitCreate}
-      </Button>
+      </button>
     </form>
   )
 }
@@ -148,9 +147,9 @@ function OrganizationForm() {
       <TextField prefix={p} name="confirmPassword" label={AUTH_COPY.fields.confirmPassword} type="password" autoComplete="new-password" errors={errors.confirmPassword} />
       <PledgeField prefix={p} name="pledge" label={AUTH_COPY.organizationPledge} defaultChecked={v?.pledge === "on"} errors={errors.pledge} />
       <FormError message={state?.error} />
-      <Button type="submit" size="lg" disabled={isPending}>
+      <button type="submit" className="auth-submit" disabled={isPending} aria-busy={isPending}>
         {isPending ? AUTH_COPY.pending : AUTH_COPY.submitCreate}
-      </Button>
+      </button>
     </form>
   )
 }

@@ -340,6 +340,50 @@
   filter: blur(40px);
 }
 
+/* The sign-in and create-account submit buttons. Design from Uiverse.io by ShrinilDhorda:
+   a near-black button with a soft blue glow and a faint reflection below; on hover a
+   blue-to-cyan gradient with dark text; pressing shrinks it slightly. Added here: a visible
+   focus ring, a dimmed disabled state while sending, and no animation with reduced motion.
+   The label keeps its own capitalization ("Sign In", "Create my account"). */
+@layer components {
+.auth-submit {
+  font-size: 1.2rem;
+  padding: 1rem 2.5rem;
+  border: none;
+  border-radius: 0.4rem;
+  cursor: pointer;
+  background-color: rgb(14, 14, 26);
+  color: rgb(234, 234, 234);
+  font-weight: 700;
+  transition: 0.6s;
+  box-shadow: 0px 0px 60px #1f4c65;
+  -webkit-box-reflect: below 10px linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.4));
+  &:active {
+    scale: 0.92;
+  }
+  &:hover {
+    background: rgb(2, 29, 78);
+    background: linear-gradient(270deg, rgba(2, 29, 78, 0.681) 0%, rgba(31, 215, 232, 0.873) 60%);
+    color: rgb(4, 4, 38);
+  }
+  &:focus-visible {
+    outline: 3px solid var(--ring);
+    outline-offset: 3px;
+  }
+  &:disabled {
+    cursor: default;
+    opacity: 0.7;
+    scale: 1;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+    &:active {
+      scale: 1;
+    }
+  }
+}
+}
+
 @utility hero-photo {
   animation: hero-photo 500ms var(--ease-brand) 200ms both;
   @media (prefers-reduced-motion: reduce) {

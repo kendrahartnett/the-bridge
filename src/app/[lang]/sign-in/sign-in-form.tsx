@@ -2,7 +2,6 @@
 
 import { useActionState } from "react"
 
-import { Button } from "@/components/ui/button"
 import { useCopy } from "@/components/providers"
 import { signInSchema } from "@/lib/validation"
 
@@ -36,9 +35,9 @@ export function SignInForm() {
         errors={errors.password}
       />
       <FormError message={state?.error} />
-      <Button type="submit" size="lg" disabled={isPending}>
+      <button type="submit" className="auth-submit" disabled={isPending} aria-busy={isPending}>
         {isPending ? AUTH_COPY.pending : AUTH_COPY.submitSignIn}
-      </Button>
+      </button>
     </form>
   )
 }

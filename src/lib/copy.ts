@@ -175,7 +175,7 @@ const en = {
       "I confirm I'm authorized to represent this organization, and we'll use contact information only to coordinate support.",
     organizationReview:
       "Organization accounts are reviewed by a person before they can claim needs or see contact information. This usually takes one business day.",
-    submitSignIn: "Sign in",
+    submitSignIn: "Sign In",
     submitCreate: "Create my account",
     pending: "One moment…",
   },
