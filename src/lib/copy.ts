@@ -48,6 +48,8 @@ const en = {
   // The two ways to use The Bridge: the homepage buttons, the dashboard's Post a Need
   // button, and the Post a Need page title, so the wording always matches.
   ROLE_CTAS: { outreach: { label: "Post a Need" }, donor: { label: "Offer Support" } },
+  // The homepage's two buttons (shown in capitals, with an arrow).
+  HOME_CTAS: { outreach: "Post a need", donor: "Offer support" },
 
   // "How it works" section. Verbatim; do not edit without sign-off.
 HOW_IT_WORKS_HEADING: "How it works",
@@ -449,6 +451,7 @@ const es: Copy = {
     alt: "Ilustración de dos personas cruzando un puente dorado sobre el río Chicago, con el horizonte de la ciudad detrás.",
   },
   ROLE_CTAS: { outreach: { label: "Publicar una necesidad" }, donor: { label: "Ofrecer apoyo" } },
+  HOME_CTAS: { outreach: "Publicar una necesidad", donor: "Ofrecer apoyo" },
 
   // needs review: approved verbatim English copy ("How it works").
   HOW_IT_WORKS_HEADING: "Cómo funciona",
