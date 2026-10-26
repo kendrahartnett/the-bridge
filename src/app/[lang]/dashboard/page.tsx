@@ -1,4 +1,3 @@
-import { ArrowRight } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { Suspense } from "react"
@@ -13,7 +12,6 @@ import { SectionHeader } from "@/components/section-header"
 import { SiteHeader } from "@/components/site-header"
 import { StickyNote, StickyNoteGrid } from "@/components/sticky-note"
 import { BlurFade } from "@/components/ui/blur-fade"
-import { Button } from "@/components/ui/button"
 import { VerificationBanner } from "@/components/verification-banner"
 import { db } from "@/db"
 import type { FoodRequest, User } from "@/db/schema"
@@ -156,12 +154,10 @@ async function DonorDashboard({ user }: { user: User }) {
           ))}
         </StickyNoteGrid>
       )}
-      <Button asChild variant="outline" size="lg" className="mt-8">
-        <Link href="/board">
-          {t.viewBoard}
-          <ArrowRight aria-hidden="true" />
-        </Link>
-      </Button>
+      {/* Room below for the button's reflection before the next section. */}
+      <Link href="/board" className="glow-button mt-8 mb-8">
+        {t.viewBoard}
+      </Link>
 
       {supporting.length > 0 && (
         <>

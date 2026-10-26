@@ -35,7 +35,7 @@ export function SignInForm() {
         errors={errors.password}
       />
       <FormError message={state?.error} />
-      <button type="submit" className="auth-submit" disabled={isPending} aria-busy={isPending}>
+      <button type="submit" className="glow-button" disabled={isPending} aria-busy={isPending}>
         {isPending ? AUTH_COPY.pending : AUTH_COPY.submitSignIn}
       </button>
     </form>

@@ -117,7 +117,7 @@ function PosterForm() {
       <TextField prefix={p} name="organizationName" label={AUTH_COPY.fields.team} autoComplete="organization" defaultValue={v?.organizationName} errors={errors.organizationName} />
       <PledgeField prefix={p} name="pledge" label={AUTH_COPY.posterPledge} defaultChecked={v?.pledge === "on"} errors={errors.pledge} />
       <FormError message={state?.error} />
-      <button type="submit" className="auth-submit" disabled={isPending} aria-busy={isPending}>
+      <button type="submit" className="glow-button" disabled={isPending} aria-busy={isPending}>
         {isPending ? AUTH_COPY.pending : AUTH_COPY.submitCreate}
       </button>
     </form>
@@ -147,7 +147,7 @@ function OrganizationForm() {
       <TextField prefix={p} name="confirmPassword" label={AUTH_COPY.fields.confirmPassword} type="password" autoComplete="new-password" errors={errors.confirmPassword} />
       <PledgeField prefix={p} name="pledge" label={AUTH_COPY.organizationPledge} defaultChecked={v?.pledge === "on"} errors={errors.pledge} />
       <FormError message={state?.error} />
-      <button type="submit" className="auth-submit" disabled={isPending} aria-busy={isPending}>
+      <button type="submit" className="glow-button" disabled={isPending} aria-busy={isPending}>
         {isPending ? AUTH_COPY.pending : AUTH_COPY.submitCreate}
       </button>
     </form>

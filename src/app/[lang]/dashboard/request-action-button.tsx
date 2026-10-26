@@ -61,16 +61,30 @@ export function RequestActionButton({
             <p>{error}</p>
           </Notice>
         )}
-        <Button
-          className="w-full"
-          variant={kind === "cancel" ? "outline" : "default"}
-          onClick={() => {
-            setError(null)
-            setAsking(true)
-          }}
-        >
-          {k.label}
-        </Button>
+        {/* Claim this need is the glowing button; Mark fulfilled and Cancel keep theirs. */}
+        {kind === "claim" ? (
+          <button
+            type="button"
+            className="glow-button w-full"
+            onClick={() => {
+              setError(null)
+              setAsking(true)
+            }}
+          >
+            {k.label}
+          </button>
+        ) : (
+          <Button
+            className="w-full"
+            variant={kind === "cancel" ? "outline" : "default"}
+            onClick={() => {
+              setError(null)
+              setAsking(true)
+            }}
+          >
+            {k.label}
+          </Button>
+        )}
       </div>
     )
   }

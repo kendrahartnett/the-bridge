@@ -340,13 +340,20 @@
   filter: blur(40px);
 }
 
-/* The sign-in and create-account submit buttons. Design from Uiverse.io by ShrinilDhorda:
+/* The glowing button: Sign In, Create my account, Post a Need (dashboard and Needs Board),
+   View the Needs Board, and Claim this need. Design from Uiverse.io by ShrinilDhorda:
    a near-black button with a soft blue glow and a faint reflection below; on hover a
    blue-to-cyan gradient with dark text; pressing shrinks it slightly. Added here: a visible
    focus ring, a dimmed disabled state while sending, and no animation with reduced motion.
-   The label keeps its own capitalization ("Sign In", "Create my account"). */
+   The label keeps its own capitalization ("Sign In", "Create my account"). On links, the
+   label is centered and not underlined, like the buttons. */
 @layer components {
-.auth-submit {
+.glow-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  text-decoration: none;
   font-size: 1.2rem;
   padding: 1rem 2.5rem;
   border: none;

@@ -94,8 +94,9 @@ async function Actions({ detail, canPost, approved }: { detail: RequestDetail; c
   if (!approved) return <RequestCardNote>{VERIFICATION_COPY.availableAfterApproval}</RequestCardNote>
   return (
     <>
-      <RequestActionButton kind="claim" requestId={request.id} />
+      {/* Above the button: the button's reflection would cover text below it. */}
       <p className="text-sm text-muted-foreground">{DETAIL_COPY.contactAfterClaim}</p>
+      <RequestActionButton kind="claim" requestId={request.id} />
     </>
   )
 }
