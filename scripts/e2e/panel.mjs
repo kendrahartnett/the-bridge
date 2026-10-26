@@ -109,7 +109,7 @@ try {
         role: p.getAttribute("role"), labelled: document.getElementById(p.getAttribute("aria-labelledby"))?.textContent,
         notice: !!notice && vis(notice), noticeTop: notice && notice.getBoundingClientRect().top - r.top,
         crisis: !!crisis && vis(crisis), crisisBottom: crisis && r.bottom - crisis.getBoundingClientRect().bottom,
-        starters: [...p.querySelectorAll("button")].map(b => b.textContent.trim()).filter(Boolean),
+        starters: [...p.querySelectorAll("button:not([type=submit])")].map(b => b.textContent.trim()).filter(Boolean),
         inputFont: parseFloat(getComputedStyle(input).fontSize), inputVisible: vis(input), placeholder: input.placeholder,
         focusInInput: document.activeElement === input, small: targets.filter(x => x.w < 44 || x.h < 44),
         inputName: input.labels?.[0]?.textContent,

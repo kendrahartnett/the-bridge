@@ -1,6 +1,6 @@
 "use client"
 
-import { MessageCircle, Send, X } from "lucide-react"
+import { MessageCircle, X } from "lucide-react"
 import { useCallback, useEffect, useId, useRef, useState } from "react"
 
 import { ArchLoader } from "@/components/brand/arch-loader"
@@ -292,7 +292,7 @@ export function AssistantChat() {
         aria-describedby={ids.notice}
         data-assistant-panel
         style={{ bottom: keyboardInset || undefined }}
-        className={`fixed inset-x-0 bottom-0 z-50 flex max-h-[85dvh] flex-col rounded-t-xl text-foreground ${GLASS} animate-in fade-in slide-in-from-bottom-4 motion-reduce:animate-none sm:inset-x-auto sm:right-4 sm:bottom-4 sm:max-h-[min(40rem,calc(100dvh-2rem))] sm:w-[24rem] sm:rounded-xl`}
+        className={`fixed inset-x-0 bottom-0 z-50 flex max-h-[85dvh] flex-col rounded-t-[0.5rem] text-foreground ${GLASS} animate-in fade-in slide-in-from-bottom-4 motion-reduce:animate-none sm:inset-x-auto sm:right-4 sm:bottom-4 sm:max-h-[min(40rem,calc(100dvh-2rem))] sm:w-[24rem] sm:rounded-[0.5rem]`}
       >
         <header className="flex items-center justify-between gap-2 border-b border-border py-1 pr-1 pl-4">
           <h2 id={ids.title} className="font-heading text-base font-bold">
@@ -382,9 +382,24 @@ export function AssistantChat() {
               aria-describedby={`${ids.count}${notice ? ` ${ids.error}` : ""}`}
               className="bg-surface"
             />
-            <Button type="submit" size="icon" aria-label={COPY.send} disabled={pending || atLimit}>
-              <Send aria-hidden="true" className="size-5" />
-            </Button>
+            {/* Send: design from Uiverse.io by EcheverriaJesus (the label and a paper-plane icon;
+                on hover a lighter blue, a wider gap, and a nudge to the right). Near-black text
+                for contrast on both blues (5.3:1, 7.9:1 on hover); 44px tall; a focus ring;
+                dimmed while sending; no movement with reduced motion. */}
+            <button
+              type="submit"
+              disabled={pending || atLimit}
+              className="flex min-h-tap shrink-0 cursor-pointer items-center gap-1 rounded-md bg-blue-500 px-4 py-2 font-semibold tracking-widest text-gray-950 outline-none transition-[translate,gap,background-color] duration-300 hover:translate-x-3 hover:gap-2 hover:bg-blue-400 focus-visible:ring-[3px] focus-visible:ring-ring disabled:cursor-default disabled:opacity-60 disabled:hover:translate-x-0 disabled:hover:gap-1 disabled:hover:bg-blue-500 motion-reduce:duration-0 motion-reduce:hover:translate-x-0"
+            >
+              {COPY.send}
+              <svg aria-hidden="true" className="size-5" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
           </div>
           <p id={ids.count} className="flex justify-between gap-2 text-xs text-muted-foreground">
             <span>{fill(COPY.questionsLeft, MAX_USER_MESSAGES - questionsAsked)}</span>
