@@ -40,10 +40,12 @@ export default function Home() {
           {/* Phones and tablets: text first (headline and both calls to action), then the
               image. Desktop: text and image share the width, the image's top aligned with
               the eyebrow line. */}
-          <div className="mx-auto grid w-full max-w-5xl gap-10 px-4 pt-10 pb-14 sm:px-6 sm:pt-14 lg:grid-cols-12 lg:items-start lg:gap-8 lg:pt-16 lg:pb-20">
+          {/* Top padding: 28px on phones, 36px from 640px (the space under the header). */}
+          <div className="mx-auto grid w-full max-w-5xl gap-10 px-4 pt-7 pb-14 sm:px-6 sm:pt-9 lg:grid-cols-12 lg:items-start lg:gap-8 lg:pb-20">
             <div className="@container lg:col-span-6">
-              <p className="hero-rise eyebrow flex items-center gap-3 text-foreground">
-                <span aria-hidden="true" className="h-px w-6 shrink-0 bg-gold" />
+              {/* Always one line (see hero-eyebrow in globals.css); the gold line shows from 640px. */}
+              <p className="hero-rise hero-eyebrow flex items-center gap-3 text-foreground">
+                <span aria-hidden="true" className="hidden h-px w-6 shrink-0 bg-gold sm:block" />
                 {HERO_BADGE}
               </p>
               <h1 id="hero-title" className="mt-5">
@@ -80,23 +82,23 @@ export default function Home() {
                 {HERO_DESCRIPTION}
               </p>
               <div className="hero-rise mt-8 flex flex-col gap-5 sm:flex-row sm:items-start [animation-delay:360ms]">
-                <CtaLink id="cta-post" href="/sign-in?role=outreach" variant="primary" className="sm:w-64 lg:w-auto lg:min-w-0 lg:flex-1" {...ROLE_CTAS.outreach} />
-                <CtaLink id="cta-respond" href="/sign-in?role=donor" variant="secondary" className="sm:w-64 lg:w-auto lg:min-w-0 lg:flex-1" {...ROLE_CTAS.donor} />
+                <CtaLink href="/sign-in?role=outreach" variant="primary" className="sm:w-64 lg:w-auto lg:min-w-0 lg:flex-1" {...ROLE_CTAS.outreach} />
+                <CtaLink href="/sign-in?role=donor" variant="secondary" className="sm:w-64 lg:w-auto lg:min-w-0 lg:flex-1" {...ROLE_CTAS.donor} />
               </div>
             </div>
 
             {/* Below 1024px the illustration at its own 4:3 shape (nothing cropped). From
-                1024px a 7:6 crop at 95% of its column (left edge fixed, so the gold arch still
-                meets it), close to the text column's height: the widest crop that
+                1024px a 7:6 crop at 78% of its column (left edge fixed, so the gold arch still
+                meets it), no taller than the text from the eyebrow to the buttons: the widest crop that
                 still shows the whole bridge (about 2% to 86% across) and both figures, so it
                 sits just left of center. The fixed-aspect frame keeps the layout still while
                 the image loads. */}
-            <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-border bg-muted lg:col-span-6 lg:aspect-[7/6] lg:w-[95%]">
+            <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-border bg-muted lg:col-span-6 lg:aspect-[7/6] lg:w-[78%]">
               <Image
                 src={heroArt}
                 alt={HERO_IMAGE.alt}
                 fill
-                sizes="(min-width: 1024px) 456px, (min-width: 640px) 90vw, 100vw"
+                sizes="(min-width: 1024px) 368px, (min-width: 640px) 90vw, 100vw"
                 loading="eager"
                 fetchPriority="high"
                 placeholder="blur"

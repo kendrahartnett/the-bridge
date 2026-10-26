@@ -272,6 +272,23 @@
   text-transform: uppercase;
 }
 
+/* The homepage eyebrow ("ROOTED IN CHICAGO · BUILT FOR CHANGE"): the eyebrow style, always on
+   one line. Below 640px (where the gold line before it is hidden) the letter spacing narrows
+   with the screen, from 0.14em down to 0.04em, then the size, down to 10px. The text is
+   20.24em wide at no spacing, plus 36 letter gaps. */
+@utility hero-eyebrow {
+  font-size: 0.75rem;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  @media (width < 40rem) {
+    font-size: clamp(10px, calc((100vw - 2rem) / 23.2), 0.75rem);
+    letter-spacing: clamp(0.04em, calc((100vw - 2rem - 20.6em) / 36), 0.14em);
+  }
+}
+
 /* Homepage entrance, CSS only. Stagger with [animation-delay:…]; set the rise distance with
    [--rise:12px]. Elements stay clickable throughout (motion is cosmetic). Reduced motion:
    everything is shown at once, the arch complete, no transforms. */

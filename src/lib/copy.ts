@@ -14,11 +14,11 @@ export const HERO_IMAGE = {
   alt: "Illustration of two people crossing a golden bridge over the Chicago River, with the city skyline behind them.",
 } as const
 
-// The two ways to use The Bridge. Shared by the landing page buttons and the sign-in
-// role options so the wording always matches.
+// The two ways to use The Bridge: the homepage buttons, the dashboard's Post a Need button,
+// and the Post a Need page title, so the wording always matches.
 export const ROLE_CTAS = {
-  outreach: { label: "Post a Need", help: "Request support for someone you're working with." },
-  donor: { label: "Offer Support", help: "Respond with food, clothing, hygiene supplies, and more." },
+  outreach: { label: "Post a Need" },
+  donor: { label: "Offer Support" },
 } as const
 
 // "How it works" section. Verbatim; do not edit without sign-off.

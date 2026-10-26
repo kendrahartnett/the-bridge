@@ -1,5 +1,6 @@
 // The homepage hero and logo: reading order on phones (headline and both calls to action
-// before the image), no layout shift, the image served as AVIF or WebP and never cropped,
+// before the image), the eyebrow on one line, no CTA helper text, the hero above the fold on
+// laptop screens, no layout shift, the image served as AVIF or WebP and never cropped,
 // its alt text, the desktop layout (image top level with the eyebrow, the gold arch meeting
 // the image's edge, the secondary line on one line), the headline font, text contrast
 // from real pixels, the logo's sizes and accessible name, and reduced motion.
@@ -43,6 +44,16 @@ const LAYOUT = `(() => {
   }
 })()`
 
+// The eyebrow's text, rendered lines (of the text itself), size, spacing and overflow.
+const EYEBROW = `(() => {
+  const eb = document.querySelector("main section p"), cs = getComputedStyle(eb), line = eb.querySelector("span")
+  const text = [...eb.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join("").trim()
+  const r = document.createRange(); r.selectNodeContents([...eb.childNodes].find((n) => n.nodeType === 3 && n.textContent.trim()))
+  const lines = new Set([...r.getClientRects()].map((b) => Math.round(b.top))).size
+  const box = r.getBoundingClientRect()
+  return { text, lines, font: cs.fontSize, tracking: cs.letterSpacing, overflow: eb.scrollWidth > eb.clientWidth + 0.5 || box.right > innerWidth - 15.5, lineShown: !!line && line.getClientRects().length > 0 }
+})()`
+
 const LOGO = `(() => {
   const link = document.querySelector("header a[aria-label]")
   const shown = [...link.querySelectorAll("img")].filter((i) => i.getClientRects().length)
@@ -54,7 +65,7 @@ try {
   for (const theme of ["light", "dark"]) {
     await t.goto("/"); await t.theme(theme)
     const headSizes = []
-    for (const w of [320, 390, 768, 1024, 1280, 1440]) {
+    for (const w of [320, 360, 390, 640, 768, 1024, 1280, 1440]) {
       const tag = `${theme} ${w}px`
       await t.size(w)
       await t.send("Network.setCacheDisabled", { cacheDisabled: true })
@@ -64,6 +75,10 @@ try {
 
       const L = await t.evaluate(LAYOUT)
       headSizes.push([w, L.headSize])
+      const eb = await t.evaluate(EYEBROW)
+      check(`${tag}: eyebrow on one line, no overflow (${eb.font}, letter spacing ${eb.tracking})`, eb.text === "Rooted in Chicago · Built for change" && eb.lines === 1 && !eb.overflow && parseFloat(eb.font) >= 10 && eb.lineShown === w >= 640, eb)
+      check(`${tag}: no CTA helper text under the buttons`, !(await t.evaluate(`/Request support for someone|Respond with food, clothing/.test(document.querySelector("main section").innerText)`)))
+      if (w >= 1024) check(`${tag}: image no taller than the text from the eyebrow to the buttons`, L.frame.height <= L.ctaBottoms.reduce((a, b) => Math.max(a, b), 0) - L.eyebrow.top + 0.5, `image ${Math.round(L.frame.height)}px, text ${Math.round(Math.max(...L.ctaBottoms) - L.eyebrow.top)}px`)
       check(`${tag}: no horizontal overflow`, !L.overflow)
       check(`${tag}: header on one row`, L.headerRow)
       if (w < 1024) check(`${tag}: image shown whole (frame matches the image's 4:3 shape, nothing cropped)`, Math.abs(L.frameRatio - L.imgNatural) < 0.02, `${L.frameRatio.toFixed(3)} vs ${L.imgNatural.toFixed(3)}`)
@@ -95,11 +110,6 @@ try {
         await sleep(600) // let the entrance animation finish before measuring pixels
         const head = await lowestPixelContrast(t, "main h1 > span:first-child")
         check(`${tag}: headline stripes readable against the background (${head.need}:1 needed)`, head.worst >= head.need, `${head.worst}:1 (${head.name})`)
-        for (const id of ["cta-post-help", "cta-respond-help"]) {
-          const size = await t.evaluate(`parseFloat(getComputedStyle(document.getElementById("${id}")).fontSize)`)
-          const help = await lowestPixelContrast(t, `#${id}`)
-          check(`${tag}: CTA help text ${id.split("-")[1]} is 14px and at least 4.5:1`, size === 14 && help.worst >= 4.5, `${size}px, ${help.worst}:1`)
-        }
         const sub = await lowestPixelContrast(t, "main h1 > span:last-child")
         check(`${tag}: secondary line readable (${sub.need}:1 needed at its size)`, sub.worst >= sub.need, `${sub.worst}:1`)
         await t.evaluate("scrollTo(0, 0), true"); await sleep(200)
@@ -109,6 +119,15 @@ try {
     // From 768px the headline never gets smaller as the screen gets wider.
     const fromTablet = headSizes.filter(([w]) => w >= 768)
     check(`${theme}: headline size never shrinks from 768px up`, fromTablet.every(([, px], i) => i === 0 || px >= fromTablet[i - 1][1] - 0.01), fromTablet.map(([w, px]) => `${w}: ${px.toFixed(1)}px`).join(", "))
+  }
+
+  // The whole hero, both buttons included, fits above the fold on common laptop screens.
+  for (const [w, h] of [[1280, 800], [1440, 900]]) {
+    await t.send("Emulation.setDeviceMetricsOverride", { width: w, height: h, deviceScaleFactor: 1, mobile: false })
+    await t.goto("/", 400)
+    const f = await t.evaluate(`(() => { const ctas = [...document.querySelectorAll('main a[href^="/sign-in?role="]')].map((a) => a.getBoundingClientRect().bottom); const img = document.querySelector("main section img").parentElement.getBoundingClientRect().bottom; return { ctaBottom: Math.round(Math.max(...ctas)), imageBottom: Math.round(img), fold: innerHeight } })()`)
+    check(`${w}x${h}: the whole hero, both buttons included, is above the fold`, f.ctaBottom <= f.fold && f.imageBottom <= f.fold, f)
+    await t.shot(`home-dark-fold-${w}x${h}.png`)
   }
 
   // Reduced motion: nothing animates and the arch is already complete.
