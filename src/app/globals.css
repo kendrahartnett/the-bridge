@@ -195,10 +195,6 @@
   --spacing-tap: var(--tap-min);
 
   /* Type scale. Fluid between 320px and 1280px; Raleway sizes pair with font-heading. */
-  /* The line under the headline: clearly smaller than it at every width, and one line at
-     1024px and up (26px). */
-  --text-display-sub: clamp(1.125rem, 2.6vw, 1.625rem);
-  --text-display-sub--line-height: 1.2;
   --text-h1: clamp(1.875rem, 5vw, 2.5rem);
   --text-h1--line-height: 1.1;
   --text-h1--letter-spacing: -0.015em;

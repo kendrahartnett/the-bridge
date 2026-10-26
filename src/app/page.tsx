@@ -38,24 +38,24 @@ export default function Home() {
           {/* A very small gap under the header: 4px on phones, 8px from 640px. */}
           <div className="mx-auto flex w-full max-w-[90rem] flex-col items-center px-4 pt-1 pb-14 text-center sm:px-6 sm:pt-2 lg:pb-16">
             {/* The bridge illustration, the same in both themes. Full container width on phones
-                and tablets; from 1024px its height is capped by the screen (100svh - 13rem),
-                the same height the headline artwork had here. The import's width and height
+                and tablets; from 1024px its height is capped by the screen at
+                (100svh - 13rem) x 1.15, 15% larger than the headline artwork had here. The import's width and height
                 reserve its space, so nothing shifts while it loads. */}
             <Image
               src={bridgeArt}
               alt={BRIDGE_IMAGE.alt}
-              sizes="(min-width: 1024px) 960px, 100vw"
+              sizes="(min-width: 1024px) 1100px, 100vw"
               loading="eager"
               fetchPriority="high"
-              className="hero-photo h-auto w-full lg:w-[min(100%,1448px,calc((100svh-13rem)*1448/1086))]"
+              className="hero-photo h-auto w-full lg:w-[min(100%,1448px,calc((100svh-13rem)*1.15*1448/1086))]"
             />
             <h1
               id="hero-title"
-              className="hero-rise font-heading mt-4 text-display-sub font-semibold text-balance text-primary-text [animation-delay:200ms]"
+              className="hero-rise font-heading mt-4 text-h2 font-semibold text-balance text-primary-text [animation-delay:200ms]"
             >
               {HERO_HEADLINE[1]}
             </h1>
-            <p className="hero-rise mt-3 font-semibold tracking-wide text-foreground [animation-delay:280ms]">
+            <p className="hero-rise mt-3 text-lead font-semibold tracking-wide text-balance text-foreground [animation-delay:280ms]">
               {HERO_LEAD}
             </p>
             <p className="hero-fade mt-2 max-w-[38rem] text-lead text-pretty text-muted-foreground [animation-delay:280ms]">
@@ -102,23 +102,24 @@ export default function Home() {
         {/* The "Bridging the Gap." artwork between How it works and What is The Bridge?: one
             version per theme (hero-landing-image.png in light mode, hero-light-mode.png in
             dark mode; CSS shows the one for the theme and the hidden one is out of the
-            accessibility tree). Full container width up to 1382px, loaded only when it comes
-            near the screen. */}
+            accessibility tree). Full container width on phones and tablets; from 1024px 35%
+            smaller (65% of the container, at most 898px). Loaded only when it comes near the
+            screen. */}
         <div className="border-t border-border">
           <BlurFade inView className="mx-auto max-w-[90rem] px-4 py-12 sm:px-6">
             <Image
               src={heroArt}
               alt={HERO_IMAGE.alt}
-              sizes="(min-width: 1440px) 1382px, 100vw"
+              sizes="(min-width: 1024px) 898px, 100vw"
               loading="lazy"
-              className="mx-auto h-auto w-full max-w-[1382px] dark:hidden"
+              className="mx-auto h-auto w-full max-w-[1382px] lg:w-[65%] lg:max-w-[898px] dark:hidden"
             />
             <Image
               src={heroArtDark}
               alt={HERO_IMAGE.alt}
-              sizes="(min-width: 1440px) 1382px, 100vw"
+              sizes="(min-width: 1024px) 898px, 100vw"
               loading="lazy"
-              className="mx-auto hidden h-auto w-full max-w-[1382px] dark:block"
+              className="mx-auto hidden h-auto w-full max-w-[1382px] lg:w-[65%] lg:max-w-[898px] dark:block"
             />
           </BlurFade>
         </div>

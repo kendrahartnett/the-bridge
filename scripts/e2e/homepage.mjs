@@ -88,7 +88,7 @@ try {
       check(`${tag}: stacked and centered: illustration, h1 line, lead, description, then the buttons; no eyebrow in the hero`, order && centered && !H.hasHeroEyebrow, { order, centered, eyebrowInHero: H.hasHeroEyebrow })
       const ratio = H.art.width / H.art.height
       if (w < 1024) check(`${tag}: illustration full container width at its own shape on phones and tablets`, Math.abs(H.art.width - H.innerWidth) <= 1 && Math.abs(ratio - 1448 / 1086) < 0.02, `${Math.round(H.art.width)} / ${Math.round(H.innerWidth)}, ratio ${ratio.toFixed(3)}`)
-      else check(`${tag}: illustration height capped by the screen (at most 100svh - 13rem), at its own shape`, H.art.height <= H.vh - 208 + 1 && H.art.width <= H.innerWidth + 0.5 && Math.abs(ratio - 1448 / 1086) < 0.02, `${Math.round(H.art.width)}x${Math.round(H.art.height)}px`)
+      else check(`${tag}: illustration height capped by the screen (at most (100svh - 13rem) x 1.15), at its own shape`, H.art.height <= (H.vh - 208) * 1.15 + 1 && H.art.width <= H.innerWidth + 0.5 && Math.abs(ratio - 1448 / 1086) < 0.02, `${Math.round(H.art.width)}x${Math.round(H.art.height)}px`)
       check(`${tag}: no glow or panel behind the illustration`, H.noGlow && H.artPanel === "rgba(0, 0, 0, 0)", H.artPanel)
       const sideBySide = Math.abs(H.ctas[0].top - H.ctas[1].top) < 1
       check(`${tag}: two slim buttons, 40px tall with 8px corners, ${w >= 640 ? "side by side" : "stacked"}`, H.ctaCount === 2 && H.ctas.every((c) => Math.abs(c.height - 40) < 0.5) && H.ctaRadius === "8px" && sideBySide === w >= 640, { heights: H.ctas.map((c) => Math.round(c.height)), radius: H.ctaRadius })
@@ -128,7 +128,7 @@ try {
         return { count: imgs.length, shown: shown.length, src: img.currentSrc.split("url=")[1]?.split("&")[0], loading: imgs.map((i) => i.loading), between: imgs.every((i) => between(journey, whatIs, i)), width: Math.round(r.width), inner: Math.round(inner), centered: Math.abs(r.left + r.width / 2 - document.documentElement.clientWidth / 2) <= 2, nothingBeforeMission }
       })()`)
       const artFile = theme === "dark" ? "hero-light-mode" : "hero-landing-image"
-      check(`${tag}: "Bridging the Gap." artwork between How it works and What is The Bridge?, the ${theme} version (${artFile}.png), lazy, centered, full width up to 1382px`, art.count === 2 && art.shown === 1 && art.between && !!art.src?.includes(artFile) && art.loading.every((l) => l === "lazy") && art.centered && art.width <= 1382.5 && (art.inner > 1382 || Math.abs(art.width - art.inner) <= 1), art)
+      check(`${tag}: "Bridging the Gap." artwork between How it works and What is The Bridge?, the ${theme} version (${artFile}.png), lazy, centered, ${w >= 1024 ? "65% of the container, at most 898px" : "full width"}`, art.count === 2 && art.shown === 1 && art.between && !!art.src?.includes(artFile) && art.loading.every((l) => l === "lazy") && art.centered && (w >= 1024 ? Math.abs(art.width - Math.min(art.inner * 0.65, 898)) <= 1 : Math.abs(art.width - art.inner) <= 1), art)
       check(`${tag}: no image between What is The Bridge? and the Mission Statement`, art.nothingBeforeMission)
     }
   }
