@@ -65,7 +65,7 @@ export function RequestActionButton({
         {kind === "claim" ? (
           <button
             type="button"
-            className="glow-button w-full"
+            className="glow-button glow-button-reflect w-full"
             onClick={() => {
               setError(null)
               setAsking(true)

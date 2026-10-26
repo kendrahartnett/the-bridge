@@ -88,6 +88,8 @@ const en = {
     language: "Language",
     english: "English",
     spanish: "Español",
+    // The language switch's tooltip (the same in both languages).
+    langTooltip: "English / Español",
   },
 
   // Display labels for database values. The stored values never change.
@@ -489,6 +491,7 @@ const es: Copy = {
     language: "Idioma",
     english: "English",
     spanish: "Español",
+    langTooltip: "English / Español",
   },
 
   LABELS: {

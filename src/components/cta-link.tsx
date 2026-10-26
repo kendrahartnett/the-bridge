@@ -11,11 +11,11 @@ const letterDelay = (position: number) => (position === 1 ? 1 : position <= 4 ? 
 /**
  * A homepage call to action (the .cta-letters design from Uiverse.io by barisdogansutcu): a
  * 50px blue button with a 7px base. At rest it shows the label; on hover (and keyboard
- * focus) the label drops away and its letters fall into place one after another. The label
- * ends with an arrow. Screen readers get the plain label (the letters are hidden from them).
+ * focus) the label drops away and its letters fall into place one after another. Screen
+ * readers get the plain label (the letters are hidden from them).
  */
 export function CtaLink({ href, label, className }: { href: string; label: string; className?: string }) {
-  const text = `${label} →`
+  const text = label
   return (
     <Link href={href} aria-label={label} data-label={text} className={cn("cta-letters", className)}>
       {[...text].map((ch, i) => (

@@ -101,9 +101,16 @@ export const MEASURE = (scopeSel) => `(async () => {
     const r = c.getBoundingClientRect()
     if (r.width <= 1 || r.height <= 1 || c.closest("[aria-hidden=true]")) continue
     // A radio inside a 44px label card counts as the label's size
-    const box = c.matches("input[type=radio], input[type=checkbox]") && c.closest("label") ? c.closest("label").getBoundingClientRect() : r
-    // 44px, except controls deliberately marked data-compact-target (the homepage buttons,
-    // 40px by design), which must still meet the 24px WCAG 2.2 AA minimum.
+    let box = c.matches("input[type=radio], input[type=checkbox]") && c.closest("label") ? c.closest("label").getBoundingClientRect() : r
+    // A control that extends its tap area with an invisible ::after (the language switch's
+    // options) counts at that area's size.
+    const after = getComputedStyle(c, "::after")
+    if (after.content !== "none" && after.position === "absolute") {
+      const px = (v) => Math.min(0, v === "auto" ? 0 : parseFloat(v) || 0) // only extensions count
+      box = { width: r.width - px(after.left) - px(after.right), height: r.height - px(after.top) - px(after.bottom) }
+    }
+    // 44px, except controls deliberately marked data-compact-target, which must still meet
+    // the 24px WCAG 2.2 AA minimum.
     const min = c.closest("[data-compact-target]") ? 24 : 44
     if (box.width < min - 0.5 || box.height < min - 0.5) {
       const inline = c.tagName === "A" && getComputedStyle(c).display === "inline" && c.closest("p")

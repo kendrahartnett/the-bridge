@@ -67,7 +67,7 @@ export default async function Home() {
             {/* Side by side and centered from 640px, stacked (full width) below. From 640px
                 two equal columns, each at least 224px and as wide as the longer label, so the
                 Spanish "Publicar una necesidad" stays on one line. */}
-            <div className="hero-rise mt-6 flex w-full flex-col gap-3 sm:grid sm:w-auto sm:auto-cols-fr sm:grid-flow-col [animation-delay:360ms]">
+            <div className="hero-rise mt-6 flex w-full flex-col gap-5 sm:grid sm:w-auto sm:auto-cols-fr sm:grid-flow-col sm:gap-6 [animation-delay:360ms]">
               <CtaLink href="/sign-in?role=outreach" className="sm:min-w-56" label={HOME_CTAS.outreach} />
               <CtaLink href="/sign-in?role=donor" className="sm:min-w-56" label={HOME_CTAS.donor} />
             </div>

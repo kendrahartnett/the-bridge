@@ -342,7 +342,8 @@
 
 /* The glowing button: Sign In, Create my account, Post a Need (dashboard and Needs Board),
    View the Needs Board, and Claim this need. Design from Uiverse.io by ShrinilDhorda:
-   a near-black button with a soft blue glow and a faint reflection below; on hover a
+   a near-black button with a soft blue glow (Claim this need also keeps the design's faint
+   reflection below, .glow-button-reflect); on hover a
    blue-to-cyan gradient with dark text; pressing shrinks it slightly. Added here: a visible
    focus ring, a dimmed disabled state while sending, and no animation with reduced motion.
    The label keeps its own capitalization ("Sign In", "Create my account"). On links, the
@@ -364,7 +365,6 @@
   font-weight: 700;
   transition: 0.6s;
   box-shadow: 0px 0px 60px #1f4c65;
-  -webkit-box-reflect: below 10px linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.4));
   &:active {
     scale: 0.92;
   }
@@ -389,6 +389,11 @@
     }
   }
 }
+
+.glow-button-reflect {
+  -webkit-box-reflect: below 10px linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.4));
+}
+
 }
 
 /* The homepage calls to action (src/components/cta-link.tsx). Design from Uiverse.io by

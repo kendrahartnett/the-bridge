@@ -6,6 +6,7 @@
 import { createAudit } from "./audit.mjs"
 import { launchBrowser, sleep } from "./browser.mjs"
 import { finish, setup } from "./harness.ts"
+import { checkTap, checkTooltip, MEASURE, openMenuIfNeeded } from "./lang-switch-checks.mjs"
 import { copyFor } from "../../src/lib/copy.ts"
 import { COMMUNITY_AREAS, neighborhoodLabel } from "../../src/lib/neighborhoods.ts"
 
@@ -86,7 +87,8 @@ try {
   check("Default: English, EN chosen", s.html === "en" && s.checked === "EN", s)
   const SWITCH = `(() => { const g = [...document.querySelectorAll("[data-lang-switch]")].find(e => e.getClientRects().length); if (!g) return null; const radios = [...g.querySelectorAll("[role=radio]")]; return { label: g.getAttribute("aria-label"), role: g.getAttribute("role"), radios: radios.map(b => ({ name: b.getAttribute("aria-label"), text: b.textContent, checked: b.getAttribute("aria-checked"), tab: b.tabIndex, w: Math.round(b.getBoundingClientRect().width), h: Math.round(b.getBoundingClientRect().height) })), inHeader: !!g.closest("header"), besideTheme: g.nextElementSibling?.querySelector?.("svg") !== undefined } })()`
   const sw = await A.evaluate(SWITCH)
-  check("The switch: a labeled radio group in the header (English, Español), one tab stop, 44px options", sw?.role === "radiogroup" && sw.label === "Language" && sw.inHeader && JSON.stringify(sw.radios.map((x) => x.name)) === '["English","Español"]' && sw.radios.filter((x) => x.tab === 0).length === 1 && sw.radios.every((x) => x.w >= 44 && x.h >= 44), sw)
+  const size = await A.evaluate(MEASURE)
+  check("The switch: a labeled radio group in the header (English, Español), one tab stop; compact options with 44×44 tap targets", sw?.role === "radiogroup" && sw.label === "Language" && sw.inHeader && JSON.stringify(sw.radios.map((x) => x.name)) === '["English","Español"]' && sw.radios.filter((x) => x.tab === 0).length === 1 && size.options.every((o) => o.visible[1] < 44 && o.tap[0] >= 44 && o.tap[1] >= 44), size.options)
   // Arrow key: focus EN, press →, the page reloads in Spanish.
   await A.evaluate(`[...document.querySelectorAll("[data-lang-switch] [aria-checked=true]")].find(b => b.getClientRects().length).focus(), true`)
   await A.evaluate(`window.__beforeSwitch = true`)
@@ -108,6 +110,31 @@ try {
   await A.size(320, 700); await A.goto("/", 800)
   const phone = await A.evaluate(`({ inline: !!document.querySelector("header > div > div > [data-lang-switch]")?.getClientRects().length, inMenu: !!document.querySelector("header nav ul[id] [data-lang-switch]") })`)
   check("At 320px the switch is in the menu, not on the header row", !phone.inline && phone.inMenu, phone)
+
+  // ---- 2b. The switch's tooltip, names and tap, on English and Spanish screens ----
+  for (const lang of ["en", "es"]) {
+    const T = await browser.newTab({ width: 1280, height: 800 })
+    await T.send("Network.setCookie", { name: "lang", value: lang, url: suite.base })
+    await checkTooltip(T, check, `${lang.toUpperCase()} screen`)
+    await checkTap(T, check, lang, lang === "en" ? "es" : "en")
+  }
+
+  // The switch's size, and the header on one row, in both languages and themes.
+  for (const lang of ["en", "es"]) {
+    const T = await browser.newTab({ width: 1280, height: 800 })
+    await T.send("Network.setCookie", { name: "lang", value: lang, url: suite.base })
+    for (const theme of ["light", "dark"]) {
+      await T.goto("/"); await T.theme(theme)
+      for (const w of [320, 390, 640, 1280]) {
+        await T.size(w, 800); await T.goto("/", 900)
+        await openMenuIfNeeded(T)
+        const m = await T.evaluate(MEASURE)
+        const opt = m.options.map((o) => `${o.name} ${o.visible.join("×")} visible, ${o.tap.join("×")} tap`).join("; ")
+        check(`${lang.toUpperCase()} ${theme} ${w}px: switch ${m.group.join("×")} (${m.inMenu ? "in the menu" : "in the header"}), ${opt}; header on one row, no overflow`,
+          m.options.every((o) => o.tap[0] >= 44 && o.tap[1] >= 44 && o.visible[1] < 44) && m.oneRow && !m.overflow && m.inMenu === w < 640, m)
+      }
+    }
+  }
 
   // ---- 3. No English left on the main pages; ¿ ¡ and accents ----
   const anon = await browser.newTab({ width: 1280, height: 900 })

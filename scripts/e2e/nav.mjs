@@ -1,9 +1,11 @@
-// Header navigation for each kind of account: Dashboard, Needs Board and Admin links, current-page
+// Header navigation for each kind of account: Dashboard, Needs Board and Admin links, the
+// language switch (tooltip, names, a tap at 320px), current-page
 // marking, the phone menu (focus, Escape), 44px targets, and the admin's own dashboard.
 //   npm run e2e:nav
 
 import { launchBrowser, sleep } from "./browser.mjs"
 import { finish, setup } from "./harness.ts"
+import { checkTap, checkTooltip } from "./lang-switch-checks.mjs"
 
 const suite = await setup("nav")
 const browser = await launchBrowser(suite)
@@ -15,13 +17,17 @@ const HEADER = `(() => {
   const inline = [...h.querySelectorAll('nav > ul:not([id]) a')].filter(vis).map(a => ({ label: a.textContent.trim(), current: a.getAttribute("aria-current"), h: Math.round(a.getBoundingClientRect().height) }))
   const menu = h.querySelector('button[aria-label="Menu"]')
   const controls = [...h.querySelectorAll("a, button")].filter(vis).map(e => e.getBoundingClientRect())
+  // Tap areas: a control that extends its area with an invisible ::after (the language
+  // switch's options) counts at that area's size.
+  const px = (v) => Math.min(0, v === "auto" ? 0 : parseFloat(v) || 0)
+  const taps = [...h.querySelectorAll("a, button")].filter(vis).map(e => { const r = e.getBoundingClientRect(), a = getComputedStyle(e, "::after"); return a.content !== "none" && a.position === "absolute" ? { width: r.width - px(a.left) - px(a.right), height: r.height - px(a.top) - px(a.bottom) } : r })
   const wm = [...h.querySelectorAll("a[aria-label] img")].find(vis)
   return {
     inline,
     menu: vis(menu) ? { h: Math.round(menu.getBoundingClientRect().height), w: Math.round(menu.getBoundingClientRect().width), expanded: menu.getAttribute("aria-expanded") } : null,
-    oneRow: controls.every(r => Math.abs(r.top - controls[0].top) < 8 || Math.abs(r.bottom - controls[0].bottom) < 8),
+    oneRow: controls.every(r => Math.abs(r.top + r.height / 2 - (controls[0].top + controls[0].height / 2)) < 8),
     rightEdge: Math.round(Math.max(...controls.map(r => r.right))), vw, wordmark: Math.round(wm.getBoundingClientRect().width),
-    small: controls.filter(r => r.width < 44 || r.height < 44).length,
+    small: taps.filter(r => r.width < 44 || r.height < 44).length,
     overflow: document.documentElement.scrollWidth > vw,
   }
 })()`
@@ -86,6 +92,11 @@ try {
   check("Admin account's dashboard is the normal outreach dashboard (Inbox, Your requests, Post a Need)", JSON.stringify(dash.h2) === '["Inbox","Your requests"]' && dash.newRequest === "Post a Need" && dash.offer === 0 && !dash.banner, JSON.stringify(dash))
   await A.goto("/requests/new")
   check("Admin account can open the request form, like any outreach account", await A.evaluate(`location.pathname === "/requests/new" && !!document.querySelector("main form")`))
+
+  // The language switch: its tooltip on hover and focus, the options' names, and a tap at 320px.
+  const L = await browser.newTab({ width: 1280, height: 800 })
+  await checkTooltip(L, check, "Language switch")
+  await checkTap(L, check, "en", "es")
 } catch (e) {
   await finish(suite, browser, e)
 }
