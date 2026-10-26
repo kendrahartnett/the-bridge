@@ -56,7 +56,10 @@ export const ASSISTANT_COPY = {
   },
   // The chat panel. {n} placeholders are filled in by the panel.
   panel: {
+    // The chat button's name, and its tooltip on hover and keyboard focus (the same text).
     openLabel: "Ask The Bridge assistant",
+    // A one-time hint beside the chat button on phones.
+    phoneHint: "Ask a question",
     closeLabel: "Close the assistant",
     title: "The Bridge assistant",
     notice: "You're chatting with an AI assistant. Don't share personal details.",

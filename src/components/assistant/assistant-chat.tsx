@@ -3,6 +3,8 @@
 import { MessageCircle, Send, X } from "lucide-react"
 import { useCallback, useEffect, useId, useRef, useState } from "react"
 
+import { ArchLoader } from "@/components/brand/arch-loader"
+import { Notice } from "@/components/notice"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { MAX_MESSAGE_CHARS, MAX_USER_MESSAGES } from "@/lib/assistant-config"
@@ -20,6 +22,14 @@ const GLASS = "glass border border-border shadow-lg"
 const INTERACTIVE = "a, button, input, select, textarea, label, [role=button], [role=combobox]"
 
 const fill = (template: string, n: number) => template.replace("{n}", String(n))
+
+// Remembers that the phone hint ("Ask a question") was shown, so it appears on the first
+// visit only.
+const HINT_SEEN_KEY = "bridge-chat-hint-seen"
+// The tooltip waits this long after hover or keyboard focus, so passing over the button
+// doesn't flash it.
+const TOOLTIP_DELAY_MS = 300
+const HINT_DURATION_MS = 5000
 
 /**
  * The assistant chat button and panel. The conversation lives only in this component's
@@ -39,6 +49,11 @@ export function AssistantChat() {
   // (and ignores taps) so it never covers a CTA or a card action, and comes back once the
   // page scrolls clear. It still shows when focused from the keyboard.
   const [covering, setCovering] = useState(false)
+  // The launcher's tooltip (hover or keyboard focus, after a short delay) and the one-time
+  // phone hint beside it.
+  const [tooltip, setTooltip] = useState(false)
+  const [hint, setHint] = useState(false)
+  const tooltipTimer = useRef<number | undefined>(undefined)
 
   const launcherRef = useRef<HTMLButtonElement>(null)
   const panelRef = useRef<HTMLElement>(null)
@@ -50,6 +65,50 @@ export function AssistantChat() {
   const atLimit = questionsAsked >= MAX_USER_MESSAGES
   const charsLeft = MAX_MESSAGE_CHARS - draft.length
   const notice = error ?? (atLimit ? ASSISTANT_COPY.errors.sessionLimit : null)
+
+  const showTooltip = useCallback(() => {
+    window.clearTimeout(tooltipTimer.current)
+    tooltipTimer.current = window.setTimeout(() => setTooltip(true), TOOLTIP_DELAY_MS)
+  }, [])
+  const hideTooltip = useCallback(() => {
+    window.clearTimeout(tooltipTimer.current)
+    setTooltip(false)
+  }, [])
+
+  // Escape hides the tooltip without moving focus.
+  useEffect(() => {
+    if (!tooltip) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") hideTooltip()
+    }
+    document.addEventListener("keydown", onKey)
+    return () => document.removeEventListener("keydown", onKey)
+  }, [tooltip, hideTooltip])
+  useEffect(() => () => window.clearTimeout(tooltipTimer.current), [])
+
+  // Phones, first visit only: a small "Ask a question" pill beside the button. It fades
+  // after 5 seconds or at the first tap anywhere. Storage can be unavailable (private
+  // browsing, blocked site data); then the hint may show again on a later visit.
+  useEffect(() => {
+    if (!window.matchMedia("(max-width: 639px)").matches) return
+    let seen = false
+    try {
+      seen = window.localStorage.getItem(HINT_SEEN_KEY) === "1"
+      if (!seen) window.localStorage.setItem(HINT_SEEN_KEY, "1")
+    } catch {
+      // Storage unavailable: show the hint this time anyway.
+    }
+    if (seen) return
+    const dismiss = () => setHint(false)
+    const show = window.setTimeout(() => setHint(true), 0)
+    const hide = window.setTimeout(dismiss, HINT_DURATION_MS)
+    document.addEventListener("pointerdown", dismiss, { once: true })
+    return () => {
+      window.clearTimeout(show)
+      window.clearTimeout(hide)
+      document.removeEventListener("pointerdown", dismiss)
+    }
+  }, [])
 
   const close = useCallback(() => {
     setOpen(false)
@@ -180,18 +239,39 @@ export function AssistantChat() {
 
   if (!open) {
     return (
-      <button
-        ref={launcherRef}
-        type="button"
-        data-assistant-launcher
-        data-covering={covering || undefined}
-        aria-label={COPY.openLabel}
-        aria-haspopup="dialog"
-        onClick={() => setOpen(true)}
-        className="fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 inline-flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground glow-primary transition-[opacity,background-color] duration-150 outline-none hover:bg-primary/90 data-covering:pointer-events-none data-covering:opacity-0 data-covering:focus-visible:pointer-events-auto data-covering:focus-visible:opacity-100 focus-visible:ring-[3px] focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-      >
-        <MessageCircle aria-hidden="true" className="size-6" />
-      </button>
+      // The button sits in the bottom-right corner; the tooltip and the phone hint open to
+      // its left, so they never run off the screen. Both repeat the button's name, so they
+      // are hidden from screen readers (no double announcement).
+      <div className="fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40">
+        <button
+          ref={launcherRef}
+          type="button"
+          data-assistant-launcher
+          data-covering={covering || undefined}
+          aria-label={COPY.openLabel}
+          aria-haspopup="dialog"
+          onClick={() => {
+            hideTooltip()
+            setHint(false)
+            setOpen(true)
+          }}
+          onPointerEnter={(e) => {
+            if (e.pointerType === "mouse") showTooltip()
+          }}
+          onPointerLeave={hideTooltip}
+          onFocus={showTooltip}
+          onBlur={hideTooltip}
+          className="inline-flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground glow-primary transition-[opacity,background-color] duration-150 outline-none hover:bg-primary/90 data-covering:pointer-events-none data-covering:opacity-0 data-covering:focus-visible:pointer-events-auto data-covering:focus-visible:opacity-100 focus-visible:ring-[3px] focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        >
+          <MessageCircle aria-hidden="true" className="size-6" />
+        </button>
+        <LauncherBubble kind="tooltip" shown={tooltip}>
+          {COPY.openLabel}
+        </LauncherBubble>
+        <LauncherBubble kind="hint" shown={hint && !tooltip && !covering}>
+          {COPY.phoneHint}
+        </LauncherBubble>
+      </div>
     )
   }
 
@@ -201,7 +281,7 @@ export function AssistantChat() {
       <div
         aria-hidden="true"
         onClick={close}
-        className="fixed inset-0 z-40 bg-black/40 animate-in fade-in sm:hidden motion-reduce:animate-none"
+        className="fixed inset-0 z-40 bg-scrim animate-in fade-in sm:hidden motion-reduce:animate-none"
       />
       <section
         ref={panelRef}
@@ -237,7 +317,7 @@ export function AssistantChat() {
                   variant="outline"
                   disabled={pending}
                   onClick={() => ask(starter)}
-                  className="h-auto min-h-tap justify-start rounded-lg border-primary/40 bg-background/60 py-2 text-left whitespace-normal text-primary-text hover:bg-primary/10 hover:text-primary-text"
+                  className="h-auto min-h-tap justify-start rounded-xl border-primary/40 bg-surface-raised py-2 text-left whitespace-normal text-primary-text hover:bg-primary/10 hover:text-primary-text"
                 >
                   {starter}
                 </Button>
@@ -249,10 +329,12 @@ export function AssistantChat() {
             {messages.map((m, i) => (
               <li
                 key={i}
+                // Rounded bubbles with a tighter "tail" corner on the sender's side (a corner
+                // radius only, so it never changes the layout). Replies on the raised surface.
                 className={
                   m.role === "user"
-                    ? "ml-8 self-end rounded-lg bg-primary px-3 py-2 text-base text-primary-foreground"
-                    : "mr-4 self-start rounded-lg border border-border bg-surface px-3 py-2 text-base"
+                    ? "ml-8 self-end rounded-2xl rounded-br-sm bg-primary px-3.5 py-2.5 text-base text-primary-foreground"
+                    : "mr-4 self-start rounded-2xl rounded-bl-sm border border-border bg-surface-raised px-3.5 py-2.5 text-base text-foreground"
                 }
               >
                 <span className="sr-only">{m.role === "user" ? COPY.you : COPY.assistant}: </span>
@@ -260,8 +342,11 @@ export function AssistantChat() {
               </li>
             ))}
           </ol>
+          {/* Announced once per reply (the text doesn't change while it waits); the arch is
+              decorative and never announced. */}
           {pending && (
-            <p role="status" className="self-start text-sm text-muted-foreground">
+            <p role="status" className="flex items-center gap-2.5 self-start text-sm text-muted-foreground">
+              <ArchLoader />
               {COPY.thinking}
             </p>
           )}
@@ -274,10 +359,11 @@ export function AssistantChat() {
           }}
           className="flex flex-col gap-1 border-t border-border px-4 pt-3 pb-2"
         >
+          {/* role="alert" is on the Notice only, so the error is announced once. */}
           {notice && (
-            <p id={ids.error} role="alert" className="text-sm font-medium text-foreground">
-              {notice}
-            </p>
+            <Notice tone="error" alert className="mb-1 p-2 text-sm">
+              <p id={ids.error}>{notice}</p>
+            </Notice>
           )}
           <label htmlFor={`${ids.panel}-input`} className="sr-only">
             {COPY.inputLabel}
@@ -313,5 +399,25 @@ export function AssistantChat() {
         </p>
       </section>
     </>
+  )
+}
+
+/**
+ * A small bubble to the left of the chat button, with a pointer toward it: the tooltip, or
+ * (as a pill) the one-time phone hint. Decorative: the button carries the same name.
+ * Reduced motion: it just shows and hides, without the fade.
+ */
+function LauncherBubble({ kind, shown, children }: { kind: "tooltip" | "hint"; shown: boolean; children: React.ReactNode }) {
+  return (
+    <span
+      aria-hidden="true"
+      data-assistant-tooltip={kind === "tooltip" || undefined}
+      data-assistant-hint={kind === "hint" || undefined}
+      data-shown={shown || undefined}
+      className={`pointer-events-none invisible absolute top-1/2 right-full mr-3 -translate-y-1/2 border border-border bg-surface-raised px-3 py-1.5 text-sm font-medium whitespace-nowrap text-foreground opacity-0 shadow-md transition-[opacity,visibility] duration-(--duration-base) motion-reduce:transition-none data-shown:visible data-shown:opacity-100 ${kind === "hint" ? "rounded-full" : "rounded-lg"}`}
+    >
+      {children}
+      <span className="absolute top-1/2 -right-[5px] size-2.5 -translate-y-1/2 rotate-45 border-t border-r border-border bg-surface-raised" />
+    </span>
   )
 }

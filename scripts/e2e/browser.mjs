@@ -204,7 +204,10 @@ export async function launchBrowser(suite) {
     }
 
     await size(width, height)
-    return { send, evaluate, waitFor, goto, reload, size, media, theme, key, shot, setValue, fill, signIn, posts, images }
+    /** Calls fn with every DevTools event from this tab (for example Fetch.requestPaused). */
+    const onEvent = (fn) => listeners.push((m) => { if (m.sessionId === sessionId && m.method) fn(m) })
+
+    return { send, evaluate, waitFor, goto, reload, size, media, theme, key, shot, setValue, fill, signIn, posts, images, onEvent }
   }
 
   const close = () => { ws.close(); chrome.kill() }

@@ -52,14 +52,15 @@ export const TEXT_CONTRAST = `(() => {
   return out
 })()`
 
-// Text elements inside the scope, with their text boxes.
+// Text elements inside the scope, with their text boxes in device pixels (the screenshot's
+// pixels: on a 2x screen each CSS pixel is 2x2 of them).
 const TARGETS = (scope) => `(() => {
   const out = []
   for (const el of [...document.querySelectorAll(${JSON.stringify(scope)}), ...document.querySelectorAll(${JSON.stringify(scope)} + " *")]) {
     const own = [...el.childNodes].filter(n => n.nodeType === 3 && n.textContent.trim())
     if (!own.length || !el.checkVisibility()) continue
     const rects = []
-    for (const n of own) { const r = document.createRange(); r.selectNodeContents(n); for (const b of r.getClientRects()) if (b.width > 1 && b.height > 1) rects.push({ x: b.x, y: b.y, w: b.width, h: b.height }) }
+    for (const n of own) { const r = document.createRange(); r.selectNodeContents(n); for (const b of r.getClientRects()) if (b.width > 1 && b.height > 1) rects.push({ x: b.x * devicePixelRatio, y: b.y * devicePixelRatio, w: b.width * devicePixelRatio, h: b.height * devicePixelRatio }) }
     const cs = getComputedStyle(el)
     out.push({ name: el.tagName.toLowerCase() + ' "' + el.textContent.trim().replace(/\\s+/g, " ").slice(0, 32) + '"', color: cs.color, size: parseFloat(cs.fontSize), bold: parseInt(cs.fontWeight) >= 700, rects })
   }

@@ -316,6 +316,28 @@
     animation: none;
   }
 }
+/* The loading arch: slowly draws in from the left, then clears out to the right, on a
+   loop (2.4s). Purely visual: nothing about it is announced. */
+@keyframes arch-loop {
+  0% {
+    stroke-dashoffset: 1;
+  }
+  50% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -1;
+  }
+}
+@utility arch-loop {
+  stroke-dasharray: 1;
+  animation: arch-loop 2.4s var(--ease-draw) infinite;
+  @media (prefers-reduced-motion: reduce) {
+    stroke-dasharray: none;
+    animation: none;
+  }
+}
+
 /* Draws a path with pathLength="1" from start to end. */
 @utility arch-draw {
   stroke-dasharray: 1;

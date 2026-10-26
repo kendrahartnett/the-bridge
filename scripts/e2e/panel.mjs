@@ -1,11 +1,14 @@
 // The chat panel: the launcher never covers a control while scrolling, and the panel's
 // layout, labels, focus handling, keyboard use, contrast, limits, and reduced motion, on
-// the landing page and signed-in pages, at phone and desktop widths in both themes.
+// the landing page and signed-in pages, at phone and desktop widths in both themes. Also
+// the chat button's tooltip and one-time phone hint, and the "Thinking…" state and reply
+// bubbles (with the chat request intercepted, so no AI call is made).
 //   npm run e2e:panel
 //   npm run e2e:panel -- --live   also sends one real question to the assistant (uses the
 //                                 Anthropic API key in .env.local)
 
 import { launchBrowser, sleep } from "./browser.mjs"
+import { lowestPixelContrast } from "./contrast.mjs"
 import { finish, setup } from "./harness.ts"
 
 const suite = await setup("panel")
@@ -178,6 +181,91 @@ try {
     check("Starters hide once the chat begins; focus back in the input", await evaluate(`![...${P}.querySelectorAll("button")].some(b => b.textContent === "How do I post a need?") && document.activeElement === ${P}.querySelector("input")`))
     await shot("live-reply-390-dark.png")
   }
+
+  // ---- Chat button tooltip (hover and keyboard focus) ----
+  const TIP = `document.querySelector("[data-assistant-tooltip]")`
+  const tipState = `(() => { const t = ${TIP}, b = ${L}; if (!t || !b) return null; const r = t.getBoundingClientRect(), br = b.getBoundingClientRect(); return { shown: t.hasAttribute("data-shown") && getComputedStyle(t).visibility === "visible", text: t.textContent, label: b.getAttribute("aria-label"), hidden: t.getAttribute("aria-hidden"), left: r.left, right: r.right, buttonLeft: br.left, onScreen: r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight } })()`
+  const center = async () => evaluate(`(() => { const r = ${L}.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 } })()`)
+  for (const theme of ["dark", "light"]) {
+    await setViewport(1280, 800); await setTheme(theme)
+    await evaluate(`window.scrollTo(0, document.documentElement.scrollHeight), true`); await sleep(500)
+    const c = await center()
+    await send("Input.dispatchMouseEvent", { type: "mouseMoved", x: c.x, y: c.y })
+    await sleep(100)
+    const early = await evaluate(tipState)
+    await sleep(450)
+    const hover = await evaluate(tipState)
+    check(`${theme} 1280px: tooltip waits ~300ms, then shows on hover with the button's name, left of the button, on screen`, !early.shown && hover.shown && hover.text === "Ask The Bridge assistant" && hover.label === hover.text && hover.hidden === "true" && hover.right <= hover.buttonLeft && hover.onScreen, hover)
+    // Screenshot first: the contrast measurement hides the chat button, so the pointer
+    // "leaves" it and the tooltip (correctly) hides.
+    if (theme === "dark") await shot("tooltip-hover-dark-1280.png")
+    const tipContrast = await lowestPixelContrast(tab, "[data-assistant-tooltip]")
+    check(`${theme} 1280px: tooltip text at least 4.5:1`, tipContrast.worst >= 4.5, `${tipContrast.worst}:1`)
+    await send("Input.dispatchMouseEvent", { type: "mouseMoved", x: 20, y: 20 }); await sleep(350)
+    check(`${theme} 1280px: tooltip hides when the pointer leaves`, !(await evaluate(tipState)).shown)
+    await evaluate(`${L}.focus(), true`); await sleep(450)
+    check(`${theme} 1280px: tooltip shows on keyboard focus`, (await evaluate(tipState)).shown)
+    await key("Escape", "Escape", 27); await sleep(250)
+    const afterEsc = await evaluate(`({ tip: ${tipState}, focused: document.activeElement === ${L} })`)
+    check(`${theme} 1280px: Escape hides the tooltip and keeps focus on the button`, !afterEsc.tip.shown && afterEsc.focused, afterEsc)
+    await evaluate(`${L}.blur(), true`)
+  }
+
+  // ---- Phone hint: "Ask a question", first visit only ----
+  const HINT = `(() => { const h = document.querySelector("[data-assistant-hint]"); return h && { shown: h.hasAttribute("data-shown") && getComputedStyle(h).visibility === "visible", text: h.textContent, hidden: h.getAttribute("aria-hidden") } })()`
+  const fresh = await browser.newTab({ width: 390, height: 844, scale: 2 })
+  await fresh.goto("/", 300); await sleep(400)
+  const firstVisit = await fresh.evaluate(HINT)
+  check("390px first visit: the \"Ask a question\" hint shows beside the chat button", firstVisit?.shown && firstVisit.text === "Ask a question" && firstVisit.hidden === "true", firstVisit)
+  await fresh.shot("hint-first-visit-390.png")
+  await sleep(5200)
+  check("390px: the hint fades out after 5 seconds", !(await fresh.evaluate(HINT)).shown)
+  await fresh.reload(400)
+  check("390px: after a reload the hint does not show again", !(await fresh.evaluate(HINT)).shown)
+  const desk = await browser.newTab({ width: 1280, height: 800 })
+  await desk.goto("/", 400)
+  check("1280px first visit: no phone hint", !(await desk.evaluate(HINT)).shown)
+  // First tap anywhere dismisses it.
+  const tap = await browser.newTab({ width: 390, height: 844, scale: 2 })
+  await tap.goto("/", 300); await sleep(300)
+  await tap.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: 100, y: 300 }] })
+  await tap.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] }); await sleep(400)
+  check("390px: the first tap dismisses the hint", !(await tap.evaluate(HINT)).shown)
+
+  // ---- "Thinking…" and a reply (the chat request is intercepted: no AI call) ----
+  const REPLY = "The Bridge connects Chicago outreach workers with local organizations. Outreach workers post what's needed, like food, clothing, or hygiene supplies, and nearby organizations offer support."
+  let hold = null
+  tab.onEvent((m) => {
+    if (m.method !== "Fetch.requestPaused") return
+    const fulfill = () => send("Fetch.fulfillRequest", { requestId: m.params.requestId, responseCode: 200, responseHeaders: [{ name: "content-type", value: "application/json" }], body: Buffer.from(JSON.stringify({ reply: REPLY })).toString("base64") })
+    if (hold) hold.push(fulfill)
+    else fulfill()
+  })
+  await send("Fetch.enable", { patterns: [{ urlPattern: "*/api/chat*" }] })
+  for (const [w, h] of [[390, 844], [1280, 800], [320, 568]]) {
+    for (const theme of ["dark", "light"]) {
+      await setViewport(w, h); await setTheme(theme)
+      await evaluate(`${L}.click(), true`); await sleep(300)
+      hold = []
+      await evaluate(`[...${P}.querySelectorAll("button")].find(b => b.textContent === "What is The Bridge?").click(), true`)
+      await waitFor(`!!${P}.querySelector("[role=status]")`, "thinking")
+      const think = await evaluate(`(() => { const s = ${P}.querySelector("[role=status]"); const svg = s.querySelector("svg"); return { text: s.textContent.trim(), svgHidden: svg?.getAttribute("aria-hidden"), anim: svg && getComputedStyle(svg.querySelector("path")).animationName } })()`)
+      check(`${theme} ${w}px: "Thinking…" keeps its status role and text; the arch is hidden from screen readers`, think.text === "Thinking…" && think.svgHidden === "true" && think.anim === "arch-loop", think)
+      if (theme === "dark" && w !== 320) await shot(`thinking-dark-${w}.png`)
+      for (const f of hold) await f()
+      hold = null
+      await waitFor(`${P}.querySelectorAll("ol li").length === 2`, "reply")
+      await sleep(300)
+      const lay = await evaluate(`(() => { const p = ${P}.getBoundingClientRect(); return [...${P}.querySelectorAll("ol li")].map(li => { const r = li.getBoundingClientRect(); return { inside: r.left >= p.left - 0.5 && r.right <= p.right + 0.5, radius: getComputedStyle(li).borderRadius } }) })()`)
+      check(`${theme} ${w}px: both bubbles inside the panel (tail is a corner radius only)`, lay.length === 2 && lay.every((b) => b.inside), lay)
+      const replyContrast = await lowestPixelContrast(tab, "[data-assistant-panel] ol li:last-child")
+      check(`${theme} ${w}px: reply text at least 4.5:1 on the raised surface`, replyContrast.worst >= 4.5, `${replyContrast.worst}:1`)
+      if (theme === "dark" && w !== 320) await shot(`reply-dark-${w}.png`)
+      await key("Escape", "Escape", 27); await sleep(300)
+      await goto("/")
+    }
+  }
+  await send("Fetch.disable")
 
   // Signed-in pages.
   for (const [email, role, path] of [["test.donor1@example.com", "donor", "/dashboard"], ["test.outreach1@example.com", "outreach", "/requests/new"], ["test.outreach1@example.com", "outreach", "/dashboard"]]) {
