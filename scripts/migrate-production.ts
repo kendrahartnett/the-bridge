@@ -6,11 +6,14 @@
 // the-bridge-dev. Production's connection string lives only in .env.prod.local (never
 // committed) and in Vercel; this script is the one place that reads it, and only with
 // --confirm. Run it after the same migration has been applied and tested on dev.
+//
+// It always ends with a summary: which migrations it applied (or that none were pending),
+// and how many are recorded in total (see scripts/migrate-summary.ts).
 
-import { spawnSync } from "node:child_process"
 import fs from "node:fs"
 
 import { addSecret, installRedaction } from "../src/lib/redact.ts"
+import { migrateWithSummary } from "./migrate-summary.ts"
 
 // Nothing this script prints (including drizzle-kit's output and errors) may show a
 // connection string or password.
@@ -39,15 +42,5 @@ if (!url) {
 
 addSecret(url)
 console.log("Applying migrations to production (the-bridge)…")
-// drizzle.config.ts loads .env.local, but a variable that's already set wins, so drizzle-kit
-// uses production's URL here.
-const result = spawnSync("npx", ["drizzle-kit", "migrate"], {
-  env: { ...process.env, DATABASE_URL: url },
-  // drizzle-kit's output is captured and printed through the redaction filter.
-  stdio: ["inherit", "pipe", "pipe"],
-  encoding: "utf8",
-  shell: process.platform === "win32",
-})
-if (result.stdout) process.stdout.write(result.stdout)
-if (result.stderr) process.stderr.write(result.stderr)
-process.exit(result.status ?? 1)
+const { status } = await migrateWithSummary(url)
+process.exit(status)
