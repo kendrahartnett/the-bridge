@@ -39,6 +39,8 @@
   --primary-text: #1f4e79; /* text and links on ivory */
   --primary-foreground: #ffffff;
   --card-glow: color-mix(in srgb, var(--primary) 30%, transparent); /* the homepage card glow */
+  /* The soft blue glow behind the not-found illustration: half strength in light mode. */
+  --hero-glow: color-mix(in srgb, var(--primary) 7.5%, transparent);
   --gold: #d4af37; /* metallic gold base */
   --gold-foreground: #19354a; /* navy text on gold */
   --gold-gradient: linear-gradient(135deg, #c9a13b 0%, #f3e3a1 45%, #d4af37 70%, #c9a13b 100%);
@@ -66,6 +68,7 @@
   --primary-text: #8cbbe3;
   --primary-foreground: #0f1f2b;
   --card-glow: color-mix(in srgb, var(--primary) 45%, transparent);
+  --hero-glow: color-mix(in srgb, var(--primary) 15%, transparent);
   --gold: #d4af37;
   --gold-foreground: #19354a;
   --gold-gradient: linear-gradient(135deg, #c9a13b 0%, #f3e3a1 45%, #d4af37 70%, #c9a13b 100%);
@@ -312,10 +315,17 @@
   }
 }
 /* The photo fades in and settles inside its fixed frame (the frame never moves). */
-/* A slight primary-blue glow around a card's border (the homepage cards). A drop-shadow
+/* A slight primary-blue glow around a card's border (the homepage cards and the sign-in card). A drop-shadow
    filter, so it sits outside the border and doesn't fight the card's own box-shadow. */
 @utility card-glow {
   filter: drop-shadow(0 0 6px var(--card-glow));
+}
+
+/* The soft glow behind the not-found illustration (the one the homepage hero used): a radial
+   fade of --hero-glow, blurred further. Static (no animation). */
+@utility hero-glow {
+  background: radial-gradient(closest-side, var(--hero-glow), transparent);
+  filter: blur(40px);
 }
 
 @utility hero-photo {

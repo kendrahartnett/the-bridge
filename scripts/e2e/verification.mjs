@@ -1,6 +1,7 @@
 // Organization verification: /admin is a real 404 for everyone but admins (with no admin
-// data in the HTML), the review page's details and links, approve / revoke and their
-// effect on claiming and contact emails.
+// data in the HTML), the illustrated 404 page (identical for a missing page and a forbidden
+// one, its layout in both themes), the review page's details and links, approve / revoke and
+// their effect on claiming and contact emails.
 //   npm run e2e:verification
 //   npm run e2e:verification -- --signups   also signs up a new poster and organization
 //     through the forms and rejects the organization with a note. This creates two accounts
@@ -55,7 +56,53 @@ try {
   const forbiddenMain = await who.donor1.evaluate(MAIN)
   await anon.goto("/admin")
   const anonAdminMain = await anon.evaluate(MAIN)
-  check("Branded 404: a missing page and a forbidden /admin (signed in or not) look identical, HTTP 404", missing === 404 && missingMain === forbiddenMain && missingMain === anonAdminMain && (await anon.evaluate(NOT_FOUND)), `missing page HTTP ${missing}; identical: ${missingMain === forbiddenMain && missingMain === anonAdminMain}`)
+  await who.outreach1.goto("/admin")
+  const outreachMain = await who.outreach1.evaluate(MAIN)
+  check("Branded 404: a missing page and a forbidden /admin (signed in as an organization or outreach, or signed out) look identical, HTTP 404", missing === 404 && missingMain === forbiddenMain && missingMain === anonAdminMain && missingMain === outreachMain && (await anon.evaluate(NOT_FOUND)), `missing page HTTP ${missing}; identical: ${missingMain === forbiddenMain && missingMain === anonAdminMain && missingMain === outreachMain}`)
+
+  // The 404 page's layout: the illustration, the h1 and the button, nothing else; both themes.
+  const LAYOUT = `(() => {
+    const main = document.querySelector("main"), img = main.querySelector("img"), h1 = main.querySelector("h1"), link = main.querySelector("a")
+    const glow = main.querySelector(".hero-glow"), gcs = glow && getComputedStyle(glow), ir = img.getBoundingClientRect(), mcs = getComputedStyle(main)
+    const inner = main.getBoundingClientRect().width - parseFloat(mcs.paddingLeft) - parseFloat(mcs.paddingRight)
+    const order = ir.bottom <= h1.getBoundingClientRect().top + 0.5 && h1.getBoundingClientRect().bottom <= link.getBoundingClientRect().top + 0.5
+    const centered = [img, h1, link].every((e) => { const r = e.getBoundingClientRect(); return Math.abs(r.left + r.width / 2 - document.documentElement.clientWidth / 2) <= 2 })
+    return {
+      overflow: document.documentElement.scrollWidth > innerWidth, h1s: document.querySelectorAll("h1").length,
+      text: main.innerText.trim().split(/\\n+/).map((l) => l.trim()).filter(Boolean),
+      alt: img.alt, reserved: img.hasAttribute("width") && img.hasAttribute("height"), src: img.currentSrc, loading: img.loading,
+      width: Math.round(ir.width), height: Math.round(ir.height), ratio: ir.width / ir.height, inner: Math.round(inner),
+      h1Font: getComputedStyle(h1).fontFamily, href: link.getAttribute("href"), linkHeight: link.getBoundingClientRect().height, linkBg: getComputedStyle(link).backgroundColor,
+      glow: glow && { hidden: glow.getAttribute("aria-hidden"), anim: gcs.animationName, filter: gcs.filter, events: gcs.pointerEvents },
+      glowToken: getComputedStyle(document.documentElement).getPropertyValue("--hero-glow"), order, centered,
+    }
+  })()`
+  for (const theme of ["light", "dark"]) {
+    await anon.goto("/no-such-page"); await anon.theme(theme)
+    for (const w of [320, 390, 1024, 1280, 1440]) {
+      const tag = `404 ${theme} ${w}px`
+      await anon.size(w); await anon.goto("/no-such-page", 300)
+      const L = await anon.evaluate(LAYOUT)
+      check(`${tag}: no overflow; only the illustration, the h1 "${NOT_FOUND_COPY.title}" and the button, stacked and centered`, !L.overflow && L.h1s === 1 && L.text.join("|") === `${NOT_FOUND_COPY.title}|${NOT_FOUND_COPY.home}` && L.order && L.centered, L)
+      check(`${tag}: illustration (not-found.png) with its alt text, space reserved, at its own shape`, L.src.includes("not-found") && L.alt === NOT_FOUND_COPY.imageAlt && L.reserved && Math.abs(L.ratio - 1447 / 1087) < 0.02, `${L.width}x${L.height}`)
+      if (w < 1024) check(`${tag}: illustration full container width`, Math.abs(L.width - L.inner) <= 1, `${L.width} / ${L.inner}`)
+      else check(`${tag}: illustration about 720px wide at most`, L.width <= 720.5 && L.width >= 600, `${L.width}px`)
+      check(`${tag}: h1 in Raleway; button to / at least 44px (${Math.round(L.linkHeight)}px), primary fill`, /Raleway/.test(L.h1Font) && L.href === "/" && L.linkHeight >= 44 && Math.abs(L.linkHeight - 48) < 1 && L.linkBg !== "rgba(0, 0, 0, 0)", { font: L.h1Font, bg: L.linkBg })
+      check(`${tag}: faint glow behind the illustration: decorative, static, ${theme === "light" ? "half" : "full"} strength`, !!L.glow && L.glow.hidden === "true" && L.glow.anim === "none" && L.glow.events === "none" && L.glow.filter.startsWith("blur") && L.glowToken.includes(theme === "light" ? "7.5%" : "15%"), { glow: L.glow, token: L.glowToken })
+      if (w === 390 || w === 1280) await anon.shot(`404-${theme}-${w}.png`)
+    }
+  }
+  const ring = await anon.evaluate(`(() => { const a = document.querySelector("main a"); a.focus(); return { focused: document.activeElement === a && a.matches(":focus-visible"), ring: getComputedStyle(a).boxShadow } })()`)
+  check("404: the button shows a visible focus ring", ring.focused && ring.ring !== "none", ring)
+  // The heading and the button stay above the fold on laptop screens.
+  for (const [w, h] of [[1280, 800], [1440, 900]]) {
+    await anon.send("Emulation.setDeviceMetricsOverride", { width: w, height: h, deviceScaleFactor: 1, mobile: false })
+    await anon.goto("/no-such-page", 300)
+    const f = await anon.evaluate(`(() => { const q = (s) => document.querySelector(s).getBoundingClientRect(); return { imgWidth: Math.round(q("main img").width), imgBottom: Math.round(q("main img").bottom), h1Bottom: Math.round(q("main h1").bottom), linkBottom: Math.round(q("main a").bottom), fold: innerHeight } })()`)
+    check(`404 ${w}x${h}: illustration (${f.imgWidth}px wide), heading and button all above the fold (button ends at ${f.linkBottom}px)`, f.linkBottom <= f.fold && f.h1Bottom <= f.fold, f)
+    await anon.shot(`404-fold-${w}x${h}.png`)
+  }
+  await anon.size(390)
 
   // A pending organization's dashboard never contains anyone's email but its own.
   const pendingHtml = await who.donor3.evaluate("document.documentElement.outerHTML")

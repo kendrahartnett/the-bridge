@@ -253,10 +253,9 @@ export const REQUEST_ACTIONS = {
 // The 404 page. Exactly the same for a page that doesn't exist and one the visitor isn't
 // allowed to see (it never reads the session), so it reveals nothing about either.
 export const NOT_FOUND_COPY = {
-  eyebrow: "Page not found",
-  title: "We couldn't find that page",
-  body: "The link may be wrong, or the page may have moved.",
-  home: "Go to the home page",
+  title: "Page not found",
+  home: "Back to homepage",
+  imageAlt: "404. Illustration of two people crossing a golden bridge in front of the Chicago skyline.",
 } as const
 
 // Header navigation for signed-in people.

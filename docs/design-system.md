@@ -325,7 +325,7 @@ All sizes are fluid between 320 px and 1280 px.
 | `/dashboard` (organization) | Practical, action-oriented | Verification `Notice`; stats; "Open requests" (Needs Board) as `RequestCard` grid with clear primary action, "Your post" and "Available after approval" states; supporting and posts sections |
 | `/admin` | Professional | `PageHeader`, refined tabs with counts, review cards with a clear field grid, verification aids, confirm pattern |
 | Chat panel | Approachable | Glass surface, refined bubbles and input, arch loader for "Thinking…", same behavior |
-| Not-found | Calm | Optional: a branded not-found page (arch mark, message, link home). Included only if approved (D5). |
+| Not-found | Calm | Optional: a branded not-found page (arch mark, message, link home). Included only if approved (D5). Now illustrated: `not-found.png` (about 720px from 1024px, full width below, height capped at 100svh - 17rem, faint `hero-glow` behind it), the h1 "Page not found", and a 48px primary "Back to homepage" button. |
 
 ---
 
