@@ -110,9 +110,9 @@ try {
     await sleep(300) // let the open animation finish
     const m = await s.evaluate(`(() => { const p = document.querySelector("header nav ul[id]"); const cs = getComputedStyle(p); const cv = document.createElement("canvas").getContext("2d"); cv.fillStyle = cs.backgroundColor; cv.fillRect(0, 0, 1, 1); return { open: !p.hidden, alpha: cv.getImageData(0, 0, 1, 1).data[3], opacity: cs.opacity, current: p.querySelector('[aria-current=page]')?.textContent } })()`)
     const mc = await s.evaluate(TEXT_CONTRAST.replace('document.querySelectorAll("body *")', 'document.querySelectorAll("header nav ul[id] *")'))
-    // Nothing on the page may paint over the menu: at the center of each item, the topmost
-    // element must be that item.
-    const onTop = await s.evaluate(`[...document.querySelectorAll("header nav ul[id] a")].map((a) => { const r = a.getBoundingClientRect(); const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return a.contains(hit) ? "ok" : a.textContent + " covered by " + hit?.tagName + " " + (hit?.textContent ?? "").trim().slice(0, 30) })`)
+    // Nothing on the page may paint over the menu: at the center of each item shown (the
+    // Inbox item only shows below 360px), the topmost element must be that item.
+    const onTop = await s.evaluate(`[...document.querySelectorAll("header nav ul[id] a")].filter((a) => a.getClientRects().length).map((a) => { const r = a.getBoundingClientRect(); const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return a.contains(hit) ? "ok" : a.textContent + " covered by " + hit?.tagName + " " + (hit?.textContent ?? "").trim().slice(0, 30) })`)
     check(`${theme}: phone menu items are on top of the page content`, onTop.every((x) => x === "ok"), onTop.join(" | "))
     check(`${theme}: phone menu opens as an opaque panel with Dashboard marked; text readable`, m.open && m.alpha === 255 && m.opacity === "1" && m.current === "Dashboard" && mc.failures.length === 0, { ...m, failures: mc.failures })
     await s.shot(`menu-open-${theme}-390.png`)

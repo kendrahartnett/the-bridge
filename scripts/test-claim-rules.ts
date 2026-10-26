@@ -4,8 +4,9 @@
 //
 // Calls the same rule functions the server actions call (src/lib/request-rules.ts) with
 // real test users from the database. Creates its own fictional requests (tagged
-// "[claim-test <run>]"), deletes only those afterwards, and checks the 6 seeded
-// requests are unchanged. Writes the results to docs/test-results.md.
+// "[claim-test <run>]"), deletes only those afterwards (their notifications go with them),
+// deletes the other notifications this run caused (the organization reviews), and checks
+// the 6 seeded requests are unchanged. Writes the results to docs/test-results.md.
 
 import { neon } from "@neondatabase/serverless"
 import { and, eq, inArray, like, sql } from "drizzle-orm"
@@ -14,14 +15,19 @@ import fs from "node:fs"
 
 import * as schema from "../src/db/schema.ts"
 import { requireDevDatabase } from "../src/db/dev-guard.ts"
-import { foodRequests, users } from "../src/db/schema.ts"
+import { foodRequests, notifications, users } from "../src/db/schema.ts"
 import { installRedaction } from "../src/lib/redact.ts"
 import {
   cancelRequest,
   claimRequest,
   confirmDelivery,
   createRequest,
+  getRequestForViewer,
+  listBoard,
   listMyPosts,
+  listNotifications,
+  markAllNotificationsRead,
+  openNotification,
   listMySupported,
   listOpen,
   reviewOrganization,
@@ -98,6 +104,34 @@ async function resetPendingOrg(id: string) {
 }
 
 const scaffolding: { adminId?: string; pendingOrgId?: string } = {}
+const RUN_STARTED = new Date()
+const seededReads: { id: string; readAt: Date | null }[] = []
+
+async function restoreSeededReads() {
+  for (const { id, readAt } of seededReads) await db.update(notifications).set({ readAt }).where(eq(notifications.id, id))
+}
+
+/** Notifications about a need, or for a person, of a type (optionally only since a time). */
+async function notes(where: { requestId?: string; userId?: string; type?: string; since?: Date }) {
+  const rows = await db.select().from(notifications)
+  return rows.filter((n) =>
+    (!where.requestId || n.requestId === where.requestId) &&
+    (!where.userId || n.userId === where.userId) &&
+    (!where.type || n.type === where.type) &&
+    (!where.since || n.createdAt >= where.since))
+}
+
+/** Deletes the notifications this run caused for test accounts (seeded ones are kept). */
+async function removeRunNotifications() {
+  return db
+    .delete(notifications)
+    .where(and(
+      sql`${notifications.createdAt} >= ${RUN_STARTED.toISOString()}`,
+      sql`${notifications.id}::text not like '5eed0000-%'`,
+      sql`${notifications.userId} in (select id from ${users} where email like 'test.%@example.com')`
+    ))
+    .returning({ id: notifications.id })
+}
 
 const SEEDED_PREFIX = "5eed0000-"
 const OTHER_ORG_MESSAGE = "Another organization just claimed this need."
@@ -115,6 +149,8 @@ async function main() {
     .where(like(sql`${foodRequests.id}::text`, `${SEEDED_PREFIX}%`))
     .orderBy(foodRequests.id)
   const totalBefore = (await db.select({ n: sql<number>`count(*)::int` }).from(foodRequests))[0].n
+  // The seeded notifications' read state, put back at the end (the inbox checks mark some read).
+  seededReads.push(...(await db.select({ id: notifications.id, readAt: notifications.readAt }).from(notifications).where(like(sql`${notifications.id}::text`, `${SEEDED_PREFIX}%`))))
 
   // 1. An organization can offer support on an open request; it becomes In Progress.
   const r1 = await newRequest(out1, "offer")
@@ -122,12 +158,16 @@ async function main() {
   const s1 = await status(r1)
   record("Organization offers support on an open request → In Progress", offer.ok && s1.status === "claimed" && s1.claimedBy === orgA.id,
     `result ${offer.ok ? "ok" : (offer as { error: string }).error}; status ${s1.status} (shown as "In Progress")`)
+  const n1 = await notes({ requestId: r1 })
+  record("Inbox: a claim creates exactly one need_claimed notification, for the poster", n1.length === 1 && n1[0].type === "need_claimed" && n1[0].userId === out1.id && n1[0].readAt === null,
+    `${n1.length} notification(s): ${n1.map((n) => `${n.type} → ${n.userId === out1.id ? "poster" : n.userId}`).join(", ")}`)
 
   // 2. A second organization cannot offer support on the same request.
   const second = await claimRequest(db, orgB, r1)
   const s2 = await status(r1)
   record("Second organization cannot offer support on the same request", !second.ok && (second as { error: string }).error === OTHER_ORG_MESSAGE && s2.claimedBy === orgA.id,
     `"${(second as { error?: string }).error}"; still supported by ${orgA.label}`)
+  record("Inbox: a failed claim (already claimed) creates no notification", (await notes({ requestId: r1 })).length === 1)
 
   // 3. An outreach user cannot offer support.
   const r3 = await newRequest(out1, "outreach tries to offer")
@@ -135,6 +175,7 @@ async function main() {
   const s3 = await status(r3)
   record("Outreach user cannot offer support", !byOutreach.ok && s3.status === "open" && s3.claimedBy === null,
     `"${(byOutreach as { error?: string }).error}"; status stays ${s3.status}`)
+  record("Inbox: a failed claim (outreach account) creates no notification", (await notes({ requestId: r3 })).length === 0)
 
   // 4. Only the creator can mark Fulfilled, and only when In Progress.
   const r4 = await newRequest(out1, "fulfil rules")
@@ -151,6 +192,10 @@ async function main() {
   record("Fulfil: a different outreach user cannot fulfil", !byOtherOutreach.ok, `"${(byOtherOutreach as { error?: string }).error}"`)
   record("Fulfil: creator fulfils when In Progress → Fulfilled", sBefore.status === "claimed" && byCreator.ok && sAfter.status === "delivered", `status ${sBefore.status} → ${sAfter.status} (shown as "Fulfilled")`)
   record("Fulfil: cannot fulfil twice", !again.ok, `"${(again as { error?: string }).error}"`)
+  const n4 = await notes({ requestId: r4, type: "need_fulfilled" })
+  record("Inbox: fulfilling creates exactly one need_fulfilled notification, for the claiming organization", n4.length === 1 && n4[0].userId === orgA.id,
+    `${n4.length} need_fulfilled; to ${n4.map((n) => (n.userId === orgA.id ? "the claiming organization" : n.userId)).join(", ")}`)
+  record("Inbox: the failed fulfil attempts created nothing else", (await notes({ requestId: r4 })).length === 2, `${(await notes({ requestId: r4 })).length} notifications on that need (1 claim, 1 fulfilled)`)
 
   // 5. Only the creator can cancel, and only while Open.
   const r5 = await newRequest(out1, "cancel rules")
@@ -163,6 +208,7 @@ async function main() {
   const s5b = await status(r5b)
   record("Cancel: an organization cannot cancel", !cancelByOrg.ok, `"${(cancelByOrg as { error?: string }).error}"`)
   record("Cancel: creator cancels while Open → Cancelled", cancelOk.ok && s5.status === "cancelled", `status ${s5.status}`)
+  record("Inbox: cancelling an Open need creates no notification", (await notes({ requestId: r5 })).length === 0)
   record("Cancel: creator cannot cancel once In Progress", !cancelInProgress.ok && s5b.status === "claimed", `"${(cancelInProgress as { error?: string }).error}"; status stays ${s5b.status}`)
 
   // 6. A different outreach user cannot fulfil or cancel someone else's request.
@@ -206,12 +252,14 @@ async function main() {
   const pendingClaim = await claimRequest(db, orgC, r8)
   const pendingPost = await postAs(orgC, "pending org posts")
   record("Pending organization cannot claim a need", !pendingClaim.ok && (await status(r8)).status === "open", `"${err(pendingClaim)}"`)
+  record("Inbox: a failed claim (pending organization) creates no notification", (await notes({ requestId: r8 })).length === 0)
   record("Pending organization cannot post a need", !pendingPost.ok, `"${err(pendingPost)}"`)
 
   // 8b. Reviews: a non-admin can't approve or reject; an admin can.
   const reviewByOrg = await reviewOrganization(db, orgA, { organizationId: orgC.id, decision: "approved" })
   const reviewByOutreach = await reviewOrganization(db, out1, { organizationId: orgC.id, decision: "rejected" })
   const [stillPending] = await db.select({ v: users.verificationStatus }).from(users).where(eq(users.id, orgC.id))
+  record("Inbox: a refused review (not an admin) creates no notification", (await notes({ userId: orgC.id, since: RUN_STARTED })).length === 0)
   record("Non-admin (organization) cannot approve", !reviewByOrg.ok && stillPending.v === "pending", `"${err(reviewByOrg)}"`)
   record("Non-admin (outreach) cannot reject", !reviewByOutreach.ok && stillPending.v === "pending", `"${err(reviewByOutreach)}"; status stays ${stillPending.v}`)
   await setAdmin(out2.id, true)
@@ -219,6 +267,9 @@ async function main() {
   record("Review note over 300 characters is refused", !longNote.ok, `"${err(longNote)}"`)
   const reject = await reviewOrganization(db, out2, { organizationId: orgC.id, decision: "rejected", note: `${TAG} website didn't match` })
   const [rej] = await db.select().from(users).where(eq(users.id, orgC.id))
+  const afterReject = await notes({ userId: orgC.id, since: RUN_STARTED })
+  record("Inbox: rejecting creates exactly one org_rejected notification, with no need attached", afterReject.length === 1 && afterReject[0].type === "org_rejected" && afterReject[0].requestId === null,
+    afterReject.map((n) => n.type).join(", "))
   record("Admin can reject; reviewer, time, and note are recorded", reject.ok && rej.verificationStatus === "rejected" && rej.reviewedBy === out2.id && !!rej.reviewedAt && rej.reviewNote === `${TAG} website didn't match`,
     `status ${rej.verificationStatus}; reviewed by ${rej.reviewedBy === out2.id ? "the admin" : rej.reviewedBy}; note saved`)
 
@@ -232,6 +283,13 @@ async function main() {
   const approve = await reviewOrganization(db, out2, { organizationId: orgC.id, decision: "approved" })
   const [appr] = await db.select().from(users).where(eq(users.id, orgC.id))
   record("Admin can approve", approve.ok && appr.verificationStatus === "approved" && appr.reviewNote === null, `status ${appr.verificationStatus}`)
+  const afterApprove = await notes({ userId: orgC.id, since: RUN_STARTED })
+  record("Inbox: approving creates exactly one org_approved notification", afterApprove.filter((n) => n.type === "org_approved").length === 1 && afterApprove.length === 2,
+    afterApprove.map((n) => n.type).join(", "))
+  // The organization's inbox never carries the internal review note.
+  const cInbox = await listNotifications(db, orgC.id)
+  record("Inbox: the organization's notifications never include the admin's review note", !JSON.stringify(cInbox).includes("website didn't match") && cInbox.every((n) => !("reviewNote" in n)),
+    `${cInbox.length} items, fields: ${Object.keys(cInbox[0] ?? {}).join(", ")}`)
   const approvedClaim = await claimRequest(db, orgC, r8)
   const s8 = await status(r8)
   record("Approved organization can claim a need", approvedClaim.ok && s8.status === "claimed" && s8.claimedBy === orgC.id, `status ${s8.status}`)
@@ -241,12 +299,16 @@ async function main() {
     const own = await claimRequest(db, orgC, approvedPost.id)
     const sOwn = await status(approvedPost.id)
     record("Organization cannot claim its own post", !own.ok && sOwn.status === "open", `"${err(own)}"; status stays ${sOwn.status}`)
+    record("Inbox: a failed claim (own post) creates no notification", (await notes({ requestId: approvedPost.id })).length === 0)
   }
 
   // 8e. Contact visibility follows approval: revoking it hides the poster's email on the
   // organization's existing claims.
   const before = (await listMySupported(db, orgC.id)).find((r) => r.id === r8)
+  const beforeRevoke = (await notes({ userId: orgC.id, type: "org_rejected", since: RUN_STARTED })).length
   const revoke = await reviewOrganization(db, out2, { organizationId: orgC.id, decision: "rejected" })
+  const afterRevoke = (await notes({ userId: orgC.id, type: "org_rejected", since: RUN_STARTED })).length
+  record("Inbox: revoking an approval creates exactly one org_rejected notification", afterRevoke === beforeRevoke + 1, `${beforeRevoke} → ${afterRevoke}`)
   const after = (await listMySupported(db, orgC.id)).find((r) => r.id === r8)
   record("Approved organization sees the poster's email on its claim", before?.contact?.email === "test.outreach1@example.com", `email ${before?.contact?.email ? "shown" : "hidden"}`)
   record("After approval is revoked, the poster's email is hidden on its existing claims", revoke.ok && !!after && after.contact?.email === null,
@@ -278,12 +340,47 @@ async function main() {
     const winners = [a, b].filter((r) => r.ok).length
     const loser = a.ok ? b : a
     const winnerActor = a.ok ? orgA : orgB
-    const pass = winners === 1 && !loser.ok && loser.error === OTHER_ORG_MESSAGE && s.status === "claimed" && s.claimedBy === winnerActor.id
+    const raceNotes = await notes({ requestId: rid })
+    const pass = winners === 1 && !loser.ok && loser.error === OTHER_ORG_MESSAGE && s.status === "claimed" && s.claimedBy === winnerActor.id &&
+      raceNotes.length === 1 && raceNotes[0].userId === out1.id && raceNotes[0].type === "need_claimed"
     raceRows.push({ run, winner: winners === 1 ? winnerActor.label : `${winners} winners`, loserMessage: loser.ok ? "(both succeeded)" : loser.error, pass })
   }
   const racePass = raceRows.every((r) => r.pass)
-  record("Race: exactly one of two simultaneous offers succeeds (10 runs)", racePass, `${raceRows.filter((r) => r.pass).length}/10 runs correct`)
+  record("Race: exactly one of two simultaneous offers succeeds, with exactly one notification (10 runs)", racePass, `${raceRows.filter((r) => r.pass).length}/10 runs correct`)
   for (const r of raceRows) console.log(`      run ${String(r.run).padStart(2)}: winner ${r.winner}; other got "${r.loserMessage}" ${r.pass ? "✓" : "✗"}`)
+
+  // 9b. Each person reads and marks only their own notifications.
+  const mine = await listNotifications(db, out1.id, 50)
+  const ownerOf = async (id: string) => (await db.select({ u: notifications.userId }).from(notifications).where(eq(notifications.id, id)))[0]?.u
+  const owners = await Promise.all(mine.map((n) => ownerOf(n.id)))
+  record("Inbox: listing returns only the viewer's own notifications", mine.length > 0 && owners.every((u) => u === out1.id), `${mine.length} items, all outreach1's: ${owners.every((u) => u === out1.id)}`)
+  const target = (await notes({ requestId: r1 }))[0]
+  const byOther = await openNotification(db, out2, target.id)
+  const allByOther = await markAllNotificationsRead(db, orgB)
+  const untouched = (await db.select({ r: notifications.readAt }).from(notifications).where(eq(notifications.id, target.id)))[0].r
+  record("Inbox: someone else can't open or mark another person's notification", byOther === null && untouched === null, `open by outreach2: ${JSON.stringify(byOther)}; still unread: ${untouched === null}; donor2 marked ${allByOther} of its own`)
+  const opened = await openNotification(db, out1, target.id)
+  const readNow = (await db.select({ r: notifications.readAt }).from(notifications).where(eq(notifications.id, target.id)))[0].r
+  record("Inbox: opening your own need notification marks it read and leads to the need", opened?.href === `/requests/${r1}` && readNow !== null, opened?.href ?? "null")
+  const approval = (await notes({ userId: orgC.id, type: "org_approved", since: RUN_STARTED }))[0]
+  const openedApproval = approval && (await openNotification(db, orgC, approval.id))
+  record("Inbox: opening an approval notification leads to the dashboard", openedApproval?.href === "/dashboard", openedApproval?.href ?? "none")
+  const marked = await markAllNotificationsRead(db, out1)
+  const unreadLeft = (await notes({ userId: out1.id })).filter((n) => n.readAt === null).length
+  const othersUnread = (await notes({ userId: out2.id })).filter((n) => n.readAt === null).length
+  record("Inbox: Mark all as read marks only your own", unreadLeft === 0 && othersUnread > 0, `marked ${marked}; outreach1 unread now ${unreadLeft}; outreach2 still has ${othersUnread} unread`)
+
+  // 9c. Who may see the Needs Board and a need's page.
+  record("Board: organizations (approved, pending) see it; outreach accounts get nothing", !!(await listBoard(db, orgA.id)) && !!(await listBoard(db, orgC.id)) && (await listBoard(db, out1.id)) === null)
+  const rOpen = await newRequest(out1, "detail visibility")
+  record("Need page: another outreach account can't see someone else's need", (await getRequestForViewer(db, out2.id, rOpen)) === null)
+  record("Need page: the poster and any organization can see an Open need, with no contact", (await getRequestForViewer(db, out1.id, rOpen))?.relation === "poster" && (await getRequestForViewer(db, orgB.id, rOpen))?.contact === null)
+  await claimRequest(db, orgA, rOpen)
+  const asClaimer = await getRequestForViewer(db, orgA.id, rOpen), asOther = await getRequestForViewer(db, orgB.id, rOpen)
+  record("Need page: the claiming organization sees the poster's email; another organization sees none", asClaimer?.relation === "claimer" && asClaimer.contact?.email === "test.outreach1@example.com" && asOther?.relation === "organization" && asOther.contact === null)
+  await confirmDelivery(db, out1, rOpen)
+  record("Need page: once Fulfilled, another organization can't see it", (await getRequestForViewer(db, orgB.id, rOpen)) === null && (await getRequestForViewer(db, orgA.id, rOpen))?.relation === "claimer")
+  record("Need page: a need that doesn't exist, or a malformed id, gives nothing", (await getRequestForViewer(db, orgA.id, "5eed0000-0000-4000-8000-0000000000ff")) === null && (await getRequestForViewer(db, orgA.id, "nope")) === null)
 
   // 10. The database itself rejects invalid status / claimed_by combinations.
   const r9 = await newRequest(out1, "db constraint")
@@ -310,6 +407,12 @@ async function main() {
     .where(like(sql`${foodRequests.id}::text`, `${SEEDED_PREFIX}%`))
     .orderBy(foodRequests.id)
   const totalAfter = (await db.select({ n: sql<number>`count(*)::int` }).from(foodRequests))[0].n
+  const removedNotes = await removeRunNotifications()
+  await restoreSeededReads()
+  const seededNow = await db.select({ id: notifications.id, readAt: notifications.readAt }).from(notifications).where(like(sql`${notifications.id}::text`, `${SEEDED_PREFIX}%`))
+  record("Cleanup: seeded notifications are back as they were (read or unread)", JSON.stringify(seededNow.sort((a, b) => a.id.localeCompare(b.id))) === JSON.stringify([...seededReads].sort((a, b) => a.id.localeCompare(b.id))), `${seededNow.length} seeded`)
+  const leftover = (await notes({ since: RUN_STARTED })).filter((n) => !n.id.startsWith(SEEDED_PREFIX))
+  record("Cleanup: removed the notifications this run caused (none left behind)", leftover.length === 0, `removed ${removedNotes.length} more after the requests' own went with them; left: ${leftover.length}`)
   const unchanged = JSON.stringify(seededAfter) === JSON.stringify(seededBefore)
   record(`Cleanup: deleted only this run's ${created.length} test requests; seeded requests unchanged`,
     deleted.length === created.length && unchanged && totalAfter === totalBefore,
@@ -358,6 +461,8 @@ main().catch(async (err) => {
   console.error(err)
   if (scaffolding.adminId) await setAdmin(scaffolding.adminId, false)
   if (scaffolding.pendingOrgId) await resetPendingOrg(scaffolding.pendingOrgId)
+  await removeRunNotifications()
+  await restoreSeededReads()
   // Best-effort cleanup of this run's rows if something threw part-way.
   if (created.length) {
     await db.delete(foodRequests).where(and(inArray(foodRequests.id, created), like(foodRequests.items, `${TAG}%`)))

@@ -61,9 +61,11 @@ const TARGETS = (scope) => `(() => {
   const out = []
   for (const el of [...document.querySelectorAll(${JSON.stringify(scope)}), ...document.querySelectorAll(${JSON.stringify(scope)} + " *")]) {
     const own = [...el.childNodes].filter(n => n.nodeType === 3 && n.textContent.trim())
-    // Hidden from assistive tech (decorative) or only for screen readers: not measured here,
-    // as in TEXT_CONTRAST. (e2e:board measures the "Claimed" stamp on its own.)
-    if (!own.length || !el.checkVisibility() || el.closest(".sr-only, [aria-hidden=true]")) continue
+    // Only for screen readers, or a decorative (aria-hidden) part inside the measured area:
+    // not measured here. (An area that is itself aria-hidden, like the chat button's tooltip,
+    // still is. e2e:board measures the "Claimed" stamp on its own.)
+    const hiddenPart = el.closest("[aria-hidden=true]")
+    if (!own.length || !el.checkVisibility() || el.closest(".sr-only") || (hiddenPart && !hiddenPart.matches(${JSON.stringify(scope)}))) continue
     const rects = []
     for (const n of own) { const r = document.createRange(); r.selectNodeContents(n); for (const b of r.getClientRects()) if (b.width > 1 && b.height > 1) rects.push({ x: b.x * devicePixelRatio, y: b.y * devicePixelRatio, w: b.width * devicePixelRatio, h: b.height * devicePixelRatio }) }
     const cs = getComputedStyle(el)
