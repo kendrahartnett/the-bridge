@@ -252,6 +252,11 @@ export const NAV_COPY = {
 // Admin review page. {org} is replaced with the organization's name.
 export const ADMIN_COPY = {
   backToDashboard: "← Back to dashboard",
+  tabsLabel: "Review status",
+  verificationLabel: "Verification",
+  opensInNewTab: "(opens in a new tab)",
+  notRecorded: "—",
+  pending: "One moment…",
   title: "Organization review",
   intro: "Organizations can claim needs and see contact information only after a person approves them here.",
   tabs: { pending: "Pending", approved: "Approved", rejected: "Rejected" },

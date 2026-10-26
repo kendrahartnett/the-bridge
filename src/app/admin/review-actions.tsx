@@ -3,6 +3,7 @@
 import { useId, useState, useTransition } from "react"
 import { toast } from "sonner"
 
+import { Notice } from "@/components/notice"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -55,9 +56,9 @@ export function ReviewActions({
     return (
       <div className="flex w-full flex-col gap-2">
         {error && (
-          <p role="alert" className="text-sm font-medium text-destructive">
-            {error}
-          </p>
+          <Notice tone="error" alert className="p-3 text-sm">
+            <p>{error}</p>
+          </Notice>
         )}
         <div className="flex flex-col gap-2 sm:flex-row">
           {status === "pending" ? (
@@ -87,8 +88,10 @@ export function ReviewActions({
   const confirm = { approve: ADMIN_COPY.yesApprove, reject: ADMIN_COPY.yesReject, revoke: ADMIN_COPY.yesRevoke }[asking]
   const decision = asking === "approve" ? "approved" : "rejected"
 
+  // The confirmation: the question on a quiet panel, then the confirm and back-out buttons.
+  // The same pattern as the request actions on dashboard cards.
   return (
-    <div role="group" aria-labelledby={questionId} className="flex w-full flex-col gap-3">
+    <div role="group" aria-labelledby={questionId} className="flex w-full flex-col gap-3 rounded-lg bg-muted/60 p-3">
       <p id={questionId} className="text-sm font-medium">
         {fill(question, organizationName)}
       </p>
@@ -111,10 +114,10 @@ export function ReviewActions({
         <Button
           className="w-full sm:flex-1"
           variant={asking === "approve" ? "default" : "destructive"}
-          disabled={isPending}
+          loading={isPending}
           onClick={() => run(decision)}
         >
-          {isPending ? "One moment…" : confirm}
+          {isPending ? ADMIN_COPY.pending : confirm}
         </Button>
         <Button
           className="w-full sm:flex-1"

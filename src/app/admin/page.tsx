@@ -67,7 +67,7 @@ async function AdminContent({ searchParams }: { searchParams: PageProps<"/admin"
 
       {/* Each tab sizes to its label and count, so "Approved 12" never runs into its
           neighbor on a 320px screen. */}
-      <nav aria-label="Review status" className="mt-8 flex border-b border-border">
+      <nav aria-label={ADMIN_COPY.tabsLabel} className="mt-8 flex border-b border-border-strong">
         {TABS.map((t) => {
           const current = t === tab
           return (
@@ -76,14 +76,23 @@ async function AdminContent({ searchParams }: { searchParams: PageProps<"/admin"
               href={t === "pending" ? "/admin" : `/admin?tab=${t}`}
               aria-current={current ? "page" : undefined}
               className={cn(
-                "-mb-px inline-flex min-h-tap flex-auto items-center justify-center gap-1 border-b-2 px-1 text-sm font-semibold outline-none focus-visible:ring-[3px] focus-visible:ring-ring sm:gap-1.5 sm:px-2 sm:text-base",
+                // The same tabs as sign-in: a 3px blue indicator on a firm baseline.
+                "group -mb-px inline-flex min-h-tap flex-auto items-center justify-center gap-1 rounded-t-md border-b-[3px] px-1 text-sm font-semibold transition-colors duration-(--duration-base) outline-none focus-visible:ring-[3px] focus-visible:ring-ring motion-reduce:transition-none sm:gap-1.5 sm:px-2 sm:text-base",
                 current
                   ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
+                  : "border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground"
               )}
             >
               {ADMIN_COPY.tabs[t]}
-              <span className="rounded-full bg-muted px-2 text-sm text-foreground">{byStatus(t).length}</span>
+              {/* The count: tinted blue on the current tab. */}
+              <span
+                className={cn(
+                  "rounded-full px-2 text-sm tabular-nums",
+                  current ? "bg-primary/15 text-primary-text" : "bg-muted text-foreground"
+                )}
+              >
+                {byStatus(t).length}
+              </span>
             </Link>
           )
         })}
@@ -108,9 +117,9 @@ function OrganizationCard({ organization: o }: { organization: OrganizationForRe
   const name = o.organizationName ?? o.email
   const status = o.verificationStatus
   return (
-    <Card className="h-full">
+    <Card className="h-full gap-4">
       <CardHeader>
-        <CardTitle className="text-lg leading-snug [overflow-wrap:anywhere]">{name}</CardTitle>
+        <CardTitle className="font-heading text-h3 leading-snug [overflow-wrap:anywhere]">{name}</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-4 text-base">
         <dl className="grid gap-x-4 gap-y-2 [overflow-wrap:anywhere] sm:grid-cols-[auto_1fr]">
@@ -134,7 +143,7 @@ function OrganizationCard({ organization: o }: { organization: OrganizationForRe
           <Field label={ADMIN_COPY.fields.applied}>{formatDate(o.createdAt)}</Field>
           {status !== "pending" && o.reviewedAt && (
             <>
-              <Field label={ADMIN_COPY.fields.reviewedBy}>{o.reviewerName ?? "—"}</Field>
+              <Field label={ADMIN_COPY.fields.reviewedBy}>{o.reviewerName ?? ADMIN_COPY.notRecorded}</Field>
               <Field label={ADMIN_COPY.fields.reviewed}>{formatDate(o.reviewedAt)}</Field>
             </>
           )}
@@ -144,7 +153,7 @@ function OrganizationCard({ organization: o }: { organization: OrganizationForRe
         </dl>
 
         {status === "pending" && (
-          <section aria-label="Verification" className="flex flex-col gap-2 rounded-lg border border-border bg-muted/50 p-3">
+          <section aria-label={ADMIN_COPY.verificationLabel} className="flex flex-col gap-2 rounded-lg bg-muted/60 p-3">
             <ExternalLinkText href={IRS_SEARCH}>{ADMIN_COPY.irsLink}</ExternalLinkText>
             <p className="text-sm font-medium">{ADMIN_COPY.checklistTitle}</p>
             <ul className="flex flex-col gap-1.5 text-sm">
@@ -159,7 +168,7 @@ function OrganizationCard({ organization: o }: { organization: OrganizationForRe
         )}
       </CardContent>
       {(status === "pending" || status === "approved") && (
-        <CardFooter className="mt-auto">
+        <CardFooter className="mt-auto border-t border-border pt-4">
           <ReviewActions organizationId={o.id} organizationName={name} status={status} />
         </CardFooter>
       )}
@@ -170,7 +179,7 @@ function OrganizationCard({ organization: o }: { organization: OrganizationForRe
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <>
-      <dt className="font-medium text-muted-foreground">{label}</dt>
+      <dt className="text-sm font-medium text-muted-foreground sm:pt-0.5">{label}</dt>
       <dd className="min-w-0">{children}</dd>
     </>
   )
@@ -193,7 +202,7 @@ function ExternalLinkText({ href, url, children }: { href: string; url?: boolean
     >
       {children}
       <ExternalLink aria-hidden="true" className="size-4 shrink-0" />
-      <span className="sr-only"> (opens in a new tab)</span>
+      <span className="sr-only"> {ADMIN_COPY.opensInNewTab}</span>
     </a>
   )
 }
