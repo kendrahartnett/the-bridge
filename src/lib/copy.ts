@@ -244,6 +244,15 @@ export const REQUEST_ACTIONS = {
   pending: "One moment…",
 } as const
 
+// The 404 page. Exactly the same for a page that doesn't exist and one the visitor isn't
+// allowed to see (it never reads the session), so it reveals nothing about either.
+export const NOT_FOUND_COPY = {
+  eyebrow: "Page not found",
+  title: "We couldn't find that page",
+  body: "The link may be wrong, or the page may have moved.",
+  home: "Go to the home page",
+} as const
+
 // Header navigation for signed-in people.
 export const NAV_COPY = {
   label: "Main",
@@ -255,6 +264,7 @@ export const NAV_COPY = {
 // Admin review page. {org} is replaced with the organization's name.
 export const ADMIN_COPY = {
   backToDashboard: "← Back to dashboard",
+  loading: "Loading…",
   tabsLabel: "Review status",
   verificationLabel: "Verification",
   opensInNewTab: "(opens in a new tab)",

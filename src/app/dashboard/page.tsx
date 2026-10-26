@@ -5,6 +5,7 @@ import { Suspense } from "react"
 
 import { EmptyState } from "@/components/empty-state"
 import { ImpactStat } from "@/components/impact-stat"
+import { LoadingState } from "@/components/loading-state"
 import { Notice } from "@/components/notice"
 import { PageHeader } from "@/components/page-header"
 import { RequestCard, RequestCardNote, RequestCardSupporting, type RequestContact } from "@/components/request-card"
@@ -37,7 +38,7 @@ export default function DashboardPage() {
     <>
       <SiteHeader signedIn />
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6 sm:py-14">
-        <Suspense fallback={<p className="text-muted-foreground">{DASHBOARD_COPY.loading}</p>}>
+        <Suspense fallback={<LoadingState>{DASHBOARD_COPY.loading}</LoadingState>}>
           <DashboardContent />
         </Suspense>
       </main>

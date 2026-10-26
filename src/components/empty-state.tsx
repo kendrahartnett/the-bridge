@@ -1,6 +1,9 @@
+import { useId } from "react"
+
+import { ARCH_CENTERLINE, ARCH_CENTERLINE_VIEWBOX, ARCH_STOPS } from "@/components/brand/arch"
 import { cn } from "@/lib/utils"
 
-/** Shown where a list has nothing in it yet: a small gold arch, the message, and an optional action. */
+/** Shown where a list has nothing in it yet: the logo's arch, the message, and an optional action. */
 export function EmptyState({
   children,
   action,
@@ -25,14 +28,37 @@ export function EmptyState({
 }
 
 /**
- * The brand arch as a small static mark (decorative). A single gold rather than the logo's
- * gradient: at this size the gradient doesn't show, and several empty states can share a page
- * without duplicate gradient ids.
+ * The logo's arch as a small mark (decorative), in its gold gradient. It draws itself in
+ * once when shown; with reduced motion it's simply there. Each instance gets its own
+ * gradient id, so several empty states can share a page.
  */
-function ArchMark() {
+export function ArchMark({ className }: { className?: string }) {
+  const id = `arch-mark${useId().replace(/[^\w-]/g, "")}`
   return (
-    <svg viewBox="0 0 64 16" aria-hidden="true" focusable="false" className="h-4 w-16">
-      <path d="M 2 14 Q 32 -2 62 14" fill="none" stroke="var(--arch-3)" strokeWidth="3" strokeLinecap="round" />
+    <svg
+      viewBox={ARCH_CENTERLINE_VIEWBOX}
+      preserveAspectRatio="none"
+      aria-hidden="true"
+      focusable="false"
+      className={cn("h-4 w-16 overflow-visible", className)}
+    >
+      <defs>
+        <linearGradient id={id} gradientUnits="objectBoundingBox" x1="0" y1="0" x2="1" y2="0">
+          {ARCH_STOPS.map((s) => (
+            <stop key={s.offset} offset={s.offset} stopColor={s.color} />
+          ))}
+        </linearGradient>
+      </defs>
+      <path
+        d={ARCH_CENTERLINE}
+        pathLength={1}
+        fill="none"
+        stroke={`url(#${id})`}
+        strokeWidth={3}
+        strokeLinecap="round"
+        vectorEffect="non-scaling-stroke"
+        className="arch-draw [animation-delay:150ms]"
+      />
     </svg>
   )
 }

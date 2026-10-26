@@ -5,6 +5,7 @@ import { notFound } from "next/navigation"
 import { Suspense } from "react"
 
 import { EmptyState } from "@/components/empty-state"
+import { LoadingState } from "@/components/loading-state"
 import { PageHeader } from "@/components/page-header"
 import { SiteHeader } from "@/components/site-header"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -37,7 +38,7 @@ export default function AdminPage({ searchParams }: PageProps<"/admin">) {
     <>
       <SiteHeader signedIn />
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6 sm:py-14">
-        <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
+        <Suspense fallback={<LoadingState>{ADMIN_COPY.loading}</LoadingState>}>
           <AdminContent searchParams={searchParams} />
         </Suspense>
       </main>

@@ -9,6 +9,7 @@
 
 import { launchBrowser, sleep } from "./browser.mjs"
 import { finish, setup } from "./harness.ts"
+import { NOT_FOUND_COPY } from "../../src/lib/copy.ts"
 
 const suite = await setup("verification")
 const browser = await launchBrowser(suite)
@@ -17,7 +18,9 @@ const { check, sql, password: PASSWORD } = suite
 // Things only an admin should ever see.
 const ADMIN_MARKERS = ["Organization review", "IRS Tax Exempt", "00-1234567", "example.org/organization-c", "Test — Contact C", "test.donor3@example.com", "Revoke approval"]
 const markersIn = (html, except = []) => ADMIN_MARKERS.filter((m) => !except.includes(m) && html.includes(m))
-const NOT_FOUND = `document.body.innerText.includes("This page could not be found") && !document.querySelector("main h1")?.textContent.includes("Organization review")`
+const NOT_FOUND = `document.querySelector("main h1")?.textContent === ${JSON.stringify(NOT_FOUND_COPY.title)}`
+// The 404 page's main content, to compare a missing page with a forbidden one.
+const MAIN = `document.querySelector("main").outerHTML`
 const adminStatus = (t) => t.evaluate(`fetch("/admin", { cache: "no-store" }).then(async r => ({ status: r.status, html: await r.text() }))`)
 const card = (name) => `[...document.querySelectorAll("main [data-slot=card]")].find(c => c.querySelector("[data-slot=card-title]")?.textContent.trim() === ${JSON.stringify(name)})`
 const tabCounts = `Object.fromEntries([...document.querySelectorAll('nav[aria-label="Review status"] a')].map(a => [a.childNodes[0].textContent.trim(), +a.querySelector("span").textContent]))`
@@ -43,6 +46,17 @@ try {
     await t.goto("/dashboard")
     check(`Non-admin (${label}): no Admin link in the header`, !(await t.evaluate(`!!document.querySelector('header a[href="/admin"]')`)))
   }
+  // The branded 404 page looks exactly the same for a page that doesn't exist and for
+  // /admin seen by someone who isn't an admin.
+  const missing = await anon.evaluate(`fetch("/no-such-page", { cache: "no-store" }).then((r) => r.status)`)
+  await anon.goto("/no-such-page")
+  const missingMain = await anon.evaluate(MAIN)
+  await who.donor1.goto("/admin")
+  const forbiddenMain = await who.donor1.evaluate(MAIN)
+  await anon.goto("/admin")
+  const anonAdminMain = await anon.evaluate(MAIN)
+  check("Branded 404: a missing page and a forbidden /admin (signed in or not) look identical, HTTP 404", missing === 404 && missingMain === forbiddenMain && missingMain === anonAdminMain && (await anon.evaluate(NOT_FOUND)), `missing page HTTP ${missing}; identical: ${missingMain === forbiddenMain && missingMain === anonAdminMain}`)
+
   // A pending organization's dashboard never contains anyone's email but its own.
   const pendingHtml = await who.donor3.evaluate("document.documentElement.outerHTML")
   const otherEmails = (pendingHtml.match(/[a-z0-9.+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi) || []).filter((e) => e.toLowerCase() !== "test.donor3@example.com")

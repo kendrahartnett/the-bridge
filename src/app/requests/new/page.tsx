@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { Suspense } from "react"
 
+import { LoadingState } from "@/components/loading-state"
 import { Notice } from "@/components/notice"
 import { PageHeader } from "@/components/page-header"
 import { SiteHeader } from "@/components/site-header"
@@ -27,7 +28,7 @@ export default function NewRequestPage() {
         <Notice as="aside" icon={Lock} label={NEW_REQUEST_COPY.privacyLabel} className="mt-6 text-sm">
           <p>{NEW_REQUEST_COPY.privacy}</p>
         </Notice>
-        <Suspense fallback={<p className="mt-8 text-muted-foreground">{NEW_REQUEST_COPY.loading}</p>}>
+        <Suspense fallback={<LoadingState className="mt-8">{NEW_REQUEST_COPY.loading}</LoadingState>}>
           <PosterOnlyForm />
         </Suspense>
       </main>
