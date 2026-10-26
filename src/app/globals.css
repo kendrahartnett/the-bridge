@@ -38,6 +38,7 @@
   --primary: #1f4e79; /* deep blue: buttons, graphics */
   --primary-text: #1f4e79; /* text and links on ivory */
   --primary-foreground: #ffffff;
+  --card-glow: color-mix(in srgb, var(--primary) 30%, transparent); /* the homepage card glow */
   --gold: #d4af37; /* metallic gold base */
   --gold-foreground: #19354a; /* navy text on gold */
   --gold-gradient: linear-gradient(135deg, #c9a13b 0%, #f3e3a1 45%, #d4af37 70%, #c9a13b 100%);
@@ -64,6 +65,7 @@
   --primary: #6fa8d6;
   --primary-text: #8cbbe3;
   --primary-foreground: #0f1f2b;
+  --card-glow: color-mix(in srgb, var(--primary) 45%, transparent);
   --gold: #d4af37;
   --gold-foreground: #19354a;
   --gold-gradient: linear-gradient(135deg, #c9a13b 0%, #f3e3a1 45%, #d4af37 70%, #c9a13b 100%);
@@ -314,6 +316,12 @@
   }
 }
 /* The photo fades in and settles inside its fixed frame (the frame never moves). */
+/* A slight primary-blue glow around a card's border (the homepage cards). A drop-shadow
+   filter, so it sits outside the border and doesn't fight the card's own box-shadow. */
+@utility card-glow {
+  filter: drop-shadow(0 0 6px var(--card-glow));
+}
+
 @utility hero-photo {
   animation: hero-photo 500ms var(--ease-brand) 200ms both;
   @media (prefers-reduced-motion: reduce) {

@@ -9,14 +9,13 @@ export const HERO_LEAD = "Real needs. Real people. Real connections."
 export const HERO_DESCRIPTION =
   "The Bridge brings individuals, outreach teams, and organizations together to turn community needs into meaningful action."
 
-// The hero's headline artwork (public/images/hero-landing-image.png), shown inside the page's
-// h1, so its alt text is the headline itself.
+// The "Bridging the Gap." artwork (public/images/hero-landing-image.png in light mode,
+// hero-light-mode.png in dark mode), between How it works and What is The Bridge?.
 export const HERO_IMAGE = {
   alt: "Bridging the Gap.",
 } as const
 
-// The illustration between "What is The Bridge?" and the Mission Statement
-// (public/images/new-bridge.png).
+// The hero illustration (public/images/new-bridge.png).
 export const BRIDGE_IMAGE = {
   alt: "Illustration of two people crossing a golden bridge over the Chicago River, with the city skyline behind them.",
 } as const

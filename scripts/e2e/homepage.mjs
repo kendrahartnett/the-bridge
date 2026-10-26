@@ -1,15 +1,16 @@
-// The homepage: the stacked, centered hero (the headline artwork as the page's h1, one
-// version per theme with nothing behind it, then the line, description and the two calls to
-// action), no layout shift, the artwork served as AVIF or WebP, its size,
-// the eyebrow moved under the How it works cards (one line), the illustration between "What
-// is The Bridge?" and the Mission Statement, text contrast from real pixels, the logo's
-// sizes, and reduced motion.
+// The homepage: the stacked, centered hero (the bridge illustration, the "Every Connection"
+// line as the page's h1, the lead, description and the two calls to action), no layout
+// shift, the illustration served as AVIF or WebP, its size, the eyebrow under the How it
+// works cards (one line), the "Bridging the Gap." artwork (one version per theme) between How
+// it works and What is The Bridge?, nothing between What is The Bridge? and the Mission
+// Statement, the glowing 8px cards, text contrast from real pixels, the logo's sizes, and
+// reduced motion.
 //   npm run e2e:homepage
 
 import { launchBrowser, sleep } from "./browser.mjs"
 import { lowestPixelContrast } from "./contrast.mjs"
 import { finish, setup } from "./harness.ts"
-import { BRIDGE_IMAGE, HERO_IMAGE } from "../../src/lib/copy.ts"
+import { BRIDGE_IMAGE, HERO_HEADLINE, HERO_IMAGE } from "../../src/lib/copy.ts"
 
 const suite = await setup("homepage")
 const browser = await launchBrowser(suite)
@@ -25,23 +26,20 @@ const CLS = `new Promise((resolve) => {
 const HERO = `(() => {
   const box = (el) => { const r = el.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, left: r.left, right: r.right, width: r.width, height: r.height, center: r.left + r.width / 2 } }
   const section = document.querySelector("main section"), h1 = document.querySelector("main h1")
-  const imgs = [...h1.querySelectorAll("img")], img = imgs.find((i) => i.getClientRects().length) ?? imgs[0]
   // The hero's content container (the h1's parent; the section's first div is the background layer).
-  const container = h1.parentElement, ps = container.querySelectorAll(":scope > p")
+  const container = h1.parentElement, ps = container.querySelectorAll(":scope > p"), img = container.querySelector(":scope > img")
   const ctas = [...section.querySelectorAll('a[href^="/sign-in?role="]')]
   const cs = getComputedStyle(container)
   const inner = { left: container.getBoundingClientRect().left + parseFloat(cs.paddingLeft), right: container.getBoundingClientRect().right - parseFloat(cs.paddingRight) }
   return {
-    h1Count: document.querySelectorAll("h1").length, h1Images: imgs.length, visibleImages: imgs.filter((i) => i.getClientRects().length).length, h1Text: h1.textContent.trim(),
-    alt: img.alt, allAlts: imgs.every((i) => i.alt === img.alt), src: img.currentSrc, loading: img.loading, fetchPriority: img.fetchPriority,
-    reserved: getComputedStyle(h1).aspectRatio !== "auto" && h1.getBoundingClientRect().height > 0, frameRatio: h1.getBoundingClientRect().width / h1.getBoundingClientRect().height,
-    art: box(h1), every: box(ps[0]), lead: box(ps[1]), desc: box(ps[2]), ctas: ctas.map(box), ctaCount: ctas.length,
-    noGlow: !section.querySelector(".hero-glow") && h1.children.length === imgs.length,
+    h1Count: document.querySelectorAll("h1").length, h1Images: h1.querySelectorAll("img").length, h1Text: h1.textContent.trim(), heroImages: section.querySelectorAll("img").length,
+    alt: img.alt, src: img.currentSrc, loading: img.loading, fetchPriority: img.fetchPriority, reserved: img.hasAttribute("width") && img.hasAttribute("height"),
+    art: box(img), every: box(h1), lead: box(ps[0]), desc: box(ps[1]), ctas: ctas.map(box), ctaCount: ctas.length,
+    noGlow: !section.querySelector(".hero-glow"), artPanel: getComputedStyle(img).backgroundColor,
     ctaRadius: getComputedStyle(ctas[0]).borderTopLeftRadius,
-    cardRadii: ["journey", "what-is", "mission"].flatMap((id) => [...document.getElementById(id).closest("section").querySelectorAll("[data-slot=card]")].map((c) => getComputedStyle(c).borderTopLeftRadius)),
+    cards: ["journey", "what-is", "mission"].flatMap((id) => [...document.getElementById(id).closest("section").querySelectorAll("[data-slot=card]")].map((c) => { const cs = getComputedStyle(c); return { radius: cs.borderTopLeftRadius, filter: cs.filter, top: cs.borderTopColor, left: cs.borderLeftColor, id } })),
     hasHeroEyebrow: !!section.querySelector(".hero-eyebrow"),
-    pageCenter: (inner.left + inner.right) / 2, innerWidth: inner.right - inner.left,
-    artPanel: getComputedStyle(h1).backgroundColor,
+    pageCenter: (inner.left + inner.right) / 2, innerWidth: inner.right - inner.left, vh: innerHeight,
     noHelper: !/Request support for someone|Respond with food, clothing/.test(section.innerText),
     noArch: !section.querySelector(".arch-draw"),
     overflow: document.documentElement.scrollWidth > innerWidth,
@@ -82,20 +80,20 @@ try {
 
       const H = await t.evaluate(HERO)
       check(`${tag}: no horizontal overflow; header on one row`, !H.overflow && H.headerRow)
-      check(`${tag}: one h1, holding only the headline artwork (one version shown), alt text "${HERO_IMAGE.alt}", space reserved`, H.h1Count === 1 && H.h1Images === 2 && H.visibleImages === 1 && H.h1Text === "" && H.alt === HERO_IMAGE.alt && H.allAlts && H.reserved, H)
-      const artFile = theme === "dark" ? "hero-light-mode" : "hero-landing-image"
-      check(`${tag}: the ${theme}-mode artwork (${artFile}.png) is the one shown`, H.src.includes(artFile), H.src.split("url=")[1]?.split("&")[0] ?? H.src)
+      check(`${tag}: one h1, the text "${HERO_HEADLINE[1]}", no image inside it`, H.h1Count === 1 && H.h1Images === 0 && H.h1Text === HERO_HEADLINE[1], H)
+      check(`${tag}: the hero shows only the bridge illustration (new-bridge.png), described, space reserved`, H.heroImages === 1 && H.src.includes("new-bridge") && H.alt === BRIDGE_IMAGE.alt && H.reserved, H.src.split("url=")[1]?.split("&")[0] ?? H.src)
       check(`${tag}: no text headline, gold arch connector, or CTA helper text`, H.noArch && H.noHelper)
       const order = [H.art, H.every, H.lead, H.desc].every((b, i, all) => i === 0 || b.top >= all[i - 1].bottom - 0.5) && H.ctas.every((c) => c.top >= H.desc.bottom - 0.5)
       const centered = [H.art, H.every].every((b) => Math.abs(b.center - H.pageCenter) <= 2) && Math.abs((Math.min(...H.ctas.map((c) => c.left)) + Math.max(...H.ctas.map((c) => c.right))) / 2 - H.pageCenter) <= 2
-      check(`${tag}: stacked and centered: artwork, line, lead, description, then the buttons; no eyebrow in the hero`, order && centered && !H.hasHeroEyebrow, { order, centered, eyebrowInHero: H.hasHeroEyebrow })
-      if (w < 1024) check(`${tag}: artwork full container width at its own shape on phones and tablets`, Math.abs(H.art.width - H.innerWidth) <= 1 && Math.abs(H.frameRatio - 1672 / 941) < 0.02, `${Math.round(H.art.width)} / ${Math.round(H.innerWidth)}, ratio ${H.frameRatio.toFixed(3)}`)
-      else check(`${tag}: artwork frame 8% wider than the artwork's shape (1.919), at most 1382px`, H.art.width <= 1382.5 && H.art.width <= H.innerWidth + 0.5 && H.art.width >= 700 && Math.abs(H.frameRatio - 1.919) < 0.02, `${Math.round(H.art.width)}px of ${Math.round(H.innerWidth)}px, ratio ${H.frameRatio.toFixed(3)}`)
-      check(`${tag}: no glow or anything else behind the artwork`, H.noGlow)
+      check(`${tag}: stacked and centered: illustration, h1 line, lead, description, then the buttons; no eyebrow in the hero`, order && centered && !H.hasHeroEyebrow, { order, centered, eyebrowInHero: H.hasHeroEyebrow })
+      const ratio = H.art.width / H.art.height
+      if (w < 1024) check(`${tag}: illustration full container width at its own shape on phones and tablets`, Math.abs(H.art.width - H.innerWidth) <= 1 && Math.abs(ratio - 1448 / 1086) < 0.02, `${Math.round(H.art.width)} / ${Math.round(H.innerWidth)}, ratio ${ratio.toFixed(3)}`)
+      else check(`${tag}: illustration height capped by the screen (at most 100svh - 13rem), at its own shape`, H.art.height <= H.vh - 208 + 1 && H.art.width <= H.innerWidth + 0.5 && Math.abs(ratio - 1448 / 1086) < 0.02, `${Math.round(H.art.width)}x${Math.round(H.art.height)}px`)
+      check(`${tag}: no glow or panel behind the illustration`, H.noGlow && H.artPanel === "rgba(0, 0, 0, 0)", H.artPanel)
       const sideBySide = Math.abs(H.ctas[0].top - H.ctas[1].top) < 1
       check(`${tag}: two slim buttons, 40px tall with 8px corners, ${w >= 640 ? "side by side" : "stacked"}`, H.ctaCount === 2 && H.ctas.every((c) => Math.abs(c.height - 40) < 0.5) && H.ctaRadius === "8px" && sideBySide === w >= 640, { heights: H.ctas.map((c) => Math.round(c.height)), radius: H.ctaRadius })
-      check(`${tag}: How it works, What is The Bridge? and Mission Statement cards have 8px corners`, H.cardRadii.length === 7 && H.cardRadii.every((r) => r === "8px"), H.cardRadii)
-      check(`${tag}: no panel or background behind the headline artwork`, H.artPanel === "rgba(0, 0, 0, 0)", H.artPanel)
+      check(`${tag}: How it works, What is The Bridge? and Mission Statement cards have 8px corners`, H.cards.length === 7 && H.cards.every((c) => c.radius === "8px"), H.cards.map((c) => c.radius))
+      check(`${tag}: all 7 cards glow slightly blue, the Mission card keeps its gold left edge`, H.cards.every((c) => c.filter.startsWith("drop-shadow") && c.top === H.cards[0].top) && H.cards.filter((c) => c.id === "mission").every((c) => c.left !== c.top), H.cards.map((c) => `${c.id}: ${c.filter} ${c.top} / ${c.left}`))
 
       const eb = await t.evaluate(EYEBROW)
       check(`${tag}: eyebrow under the How it works cards, centered, on one line, no overflow (${eb.font}, letter spacing ${eb.tracking})`, eb.text === "Rooted in Chicago · Built for change" && eb.belowCards && eb.centered && eb.lines === 1 && !eb.overflow && parseFloat(eb.font) >= 10 && eb.lineShown === w >= 640, eb)
@@ -105,11 +103,11 @@ try {
       check(`${tag}: logo ${want}px wide, the ${theme} version, decorative, link named "The Bridge, home"`, logo.shown === 1 && logo.width === want && logo.src === theme && logo.alt === "" && logo.label === "The Bridge, home", logo)
 
       if ([320, 390, 1280].includes(w)) {
-        check(`${tag}: headline artwork loaded eagerly at high priority`, H.loading === "eager" && H.fetchPriority === "high", `${H.loading}/${H.fetchPriority}`)
-        const type = t.images.filter((i) => i.url.includes(theme === "dark" ? "hero-light-mode" : "hero-landing-image")).at(-1)?.mimeType ?? "not loaded"
-        check(`${tag}: headline artwork served as AVIF or WebP`, /image\/(avif|webp)/.test(type), type)
+        check(`${tag}: hero illustration loaded eagerly at high priority`, H.loading === "eager" && H.fetchPriority === "high", `${H.loading}/${H.fetchPriority}`)
+        const type = t.images.filter((i) => i.url.includes("new-bridge")).at(-1)?.mimeType ?? "not loaded"
+        check(`${tag}: hero illustration served as AVIF or WebP`, /image\/(avif|webp)/.test(type), type)
         await sleep(600) // let the entrance animation finish before measuring pixels
-        for (const [sel, name] of [["main h1 ~ p:nth-of-type(1)", "Every Connection line"], ["main h1 ~ p:nth-of-type(3)", "description"]]) {
+        for (const [sel, name] of [["main h1", "Every Connection line"], ["main h1 ~ p:nth-of-type(2)", "description"]]) {
           const c = await lowestPixelContrast(t, sel)
           check(`${tag}: ${name} readable (${c.need}:1 needed)`, c.worst >= c.need, `${c.worst}:1`)
         }
@@ -117,16 +115,21 @@ try {
         await t.shot(`home-${theme}-${w}.png`)
       }
 
-      // The illustration between "What is The Bridge?" and the Mission Statement.
+      // The "Bridging the Gap." artwork between How it works and What is The Bridge?; nothing
+      // between What is The Bridge? and the Mission Statement.
       const art = await t.evaluate(`(() => {
-        const img = [...document.querySelectorAll("main img")].find((i) => i.alt === ${JSON.stringify(BRIDGE_IMAGE.alt)})
-        if (!img) return null
-        const whatIs = document.getElementById("what-is").closest("section"), mission = document.getElementById("mission").closest("section")
-        const after = !!(whatIs.compareDocumentPosition(img) & Node.DOCUMENT_POSITION_FOLLOWING), before = !!(img.compareDocumentPosition(mission) & Node.DOCUMENT_POSITION_FOLLOWING)
-        const r = img.getBoundingClientRect(), wrap = img.parentElement.getBoundingClientRect()
-        return { loading: img.loading, between: after && before, width: Math.round(r.width), centered: Math.abs(r.left + r.width / 2 - (wrap.left + wrap.width / 2)) <= 2 }
+        const imgs = [...document.querySelectorAll("main img")].filter((i) => i.alt === ${JSON.stringify(HERO_IMAGE.alt)})
+        const journey = document.getElementById("journey").closest("section"), whatIs = document.getElementById("what-is").closest("section"), mission = document.getElementById("mission").closest("section")
+        const between = (a, b, el) => !!(a.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING) && !!(el.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING)
+        const nothingBeforeMission = ![...document.querySelectorAll("main img")].some((i) => between(whatIs, mission, i))
+        const shown = imgs.filter((i) => i.getClientRects().length), img = shown[0]
+        if (!img) return { count: imgs.length, shown: 0, nothingBeforeMission }
+        const r = img.getBoundingClientRect(), wrap = img.parentElement, cs = getComputedStyle(wrap), inner = wrap.getBoundingClientRect().width - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)
+        return { count: imgs.length, shown: shown.length, src: img.currentSrc.split("url=")[1]?.split("&")[0], loading: imgs.map((i) => i.loading), between: imgs.every((i) => between(journey, whatIs, i)), width: Math.round(r.width), inner: Math.round(inner), centered: Math.abs(r.left + r.width / 2 - document.documentElement.clientWidth / 2) <= 2, nothingBeforeMission }
       })()`)
-      check(`${tag}: bridge illustration between the two sections, lazy, centered, at most 662px`, !!art && art.between && art.loading === "lazy" && art.centered && art.width <= 662, art)
+      const artFile = theme === "dark" ? "hero-light-mode" : "hero-landing-image"
+      check(`${tag}: "Bridging the Gap." artwork between How it works and What is The Bridge?, the ${theme} version (${artFile}.png), lazy, centered, full width up to 1382px`, art.count === 2 && art.shown === 1 && art.between && !!art.src?.includes(artFile) && art.loading.every((l) => l === "lazy") && art.centered && art.width <= 1382.5 && (art.inner > 1382 || Math.abs(art.width - art.inner) <= 1), art)
+      check(`${tag}: no image between What is The Bridge? and the Mission Statement`, art.nothingBeforeMission)
     }
   }
 
@@ -135,8 +138,8 @@ try {
   for (const [w, h] of [[1280, 800], [1440, 900]]) {
     await t.send("Emulation.setDeviceMetricsOverride", { width: w, height: h, deviceScaleFactor: 1, mobile: false })
     await t.goto("/", 400)
-    const f = await t.evaluate(`(() => { const q = (s) => document.querySelector(s).getBoundingClientRect(); const ctas = [...document.querySelectorAll('main a[href^="/sign-in?role="]')].map((a) => a.getBoundingClientRect()); return { artTop: Math.round(q("main h1").top), artBottom: Math.round(q("main h1").bottom), artWidth: Math.round(q("main h1").width), leadBottom: Math.round(q("main h1 ~ p:nth-of-type(2)").bottom), ctaTop: Math.round(Math.min(...ctas.map((c) => c.top))), ctaBottom: Math.round(Math.max(...ctas.map((c) => c.bottom))), fold: innerHeight } })()`)
-    check(`${w}x${h}: the artwork is fully visible; buttons at ${f.ctaTop}–${f.ctaBottom}px (fold ${f.fold}px)`, f.artBottom <= f.fold && f.artTop <= 90, f)
+    const f = await t.evaluate(`(() => { const q = (s) => document.querySelector(s).getBoundingClientRect(); const ctas = [...document.querySelectorAll('main a[href^="/sign-in?role="]')].map((a) => a.getBoundingClientRect()); return { artTop: Math.round(q("main section img").top), artBottom: Math.round(q("main section img").bottom), artWidth: Math.round(q("main section img").width), h1Bottom: Math.round(q("main h1").bottom), ctaTop: Math.round(Math.min(...ctas.map((c) => c.top))), ctaBottom: Math.round(Math.max(...ctas.map((c) => c.bottom))), fold: innerHeight } })()`)
+    check(`${w}x${h}: the bridge illustration is fully visible; buttons at ${f.ctaTop}–${f.ctaBottom}px (fold ${f.fold}px)`, f.artBottom <= f.fold && f.artTop <= 90, f)
     await t.shot(`home-dark-fold-${w}x${h}.png`)
   }
 
