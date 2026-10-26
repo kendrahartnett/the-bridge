@@ -1,4 +1,4 @@
-import { CircleCheck, Clock } from "lucide-react"
+import { Clock } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { Suspense } from "react"
@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/empty-state"
 import { ImpactStat } from "@/components/impact-stat"
 import { Notice } from "@/components/notice"
 import { PageHeader } from "@/components/page-header"
-import { RequestCard, type RequestContact } from "@/components/request-card"
+import { RequestCard, RequestCardNote, RequestCardSupporting, type RequestContact } from "@/components/request-card"
 import { SectionHeader } from "@/components/section-header"
 import { SiteHeader } from "@/components/site-header"
 import { BlurFade } from "@/components/ui/blur-fade"
@@ -120,11 +120,11 @@ async function DonorDashboard({ user }: { user: User }) {
   // organization gets the button (the claim rule checks this again on the server).
   const boardFooter = (r: FoodRequest) =>
     r.createdBy === user.id ? (
-      <CardNote>{VERIFICATION_COPY.yourPost}</CardNote>
+      <RequestCardNote>{VERIFICATION_COPY.yourPost}</RequestCardNote>
     ) : approved ? (
       <RequestActionButton kind="claim" requestId={r.id} />
     ) : (
-      <CardNote>{VERIFICATION_COPY.availableAfterApproval}</CardNote>
+      <RequestCardNote>{VERIFICATION_COPY.availableAfterApproval}</RequestCardNote>
     )
 
   return (
@@ -152,7 +152,10 @@ async function DonorDashboard({ user }: { user: User }) {
       {supporting.length > 0 && (
         <>
           <SectionHeader className="mt-12" title={t.supportingHeading} />
-          <RequestGrid requests={supporting} footer={() => <ClaimedByYou />} />
+          <RequestGrid
+            requests={supporting}
+            footer={() => <RequestCardSupporting>{t.supportingThis}</RequestCardSupporting>}
+          />
         </>
       )}
 
@@ -203,19 +206,6 @@ function VerificationBanner({ status }: { status: User["verificationStatus"] }) 
     >
       <p>{message}</p>
     </Notice>
-  )
-}
-
-function CardNote({ children }: { children: React.ReactNode }) {
-  return <p className="flex min-h-tap items-center font-medium text-muted-foreground">{children}</p>
-}
-
-function ClaimedByYou() {
-  return (
-    <p className="flex min-h-tap items-center gap-2 font-medium text-primary-text">
-      <CircleCheck aria-hidden="true" className="size-5" />
-      {DASHBOARD_COPY.organization.supportingThis}
-    </p>
   )
 }
 

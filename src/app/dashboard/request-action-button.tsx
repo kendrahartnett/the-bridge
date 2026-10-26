@@ -4,7 +4,9 @@ import { useRouter } from "next/navigation"
 import { useId, useState, useTransition } from "react"
 import { toast } from "sonner"
 
+import { Notice } from "@/components/notice"
 import { Button } from "@/components/ui/button"
+import { REQUEST_ACTIONS } from "@/lib/copy"
 
 import {
   cancelRequestAction,
@@ -17,27 +19,9 @@ import {
 // whether the request is still in the right state, so this is only a guard
 // against mis-taps, not a security check.
 const KINDS = {
-  claim: {
-    action: claimRequestAction,
-    label: "Offer support",
-    question: "Offer support for this request? You'll see the poster's contact email so you can arrange the handoff.",
-    confirm: "Yes, offer support",
-    variant: "default",
-  },
-  deliver: {
-    action: confirmDeliveryAction,
-    label: "Mark fulfilled",
-    question: "Did the items arrive? This marks the request as fulfilled.",
-    confirm: "Yes, mark fulfilled",
-    variant: "default",
-  },
-  cancel: {
-    action: cancelRequestAction,
-    label: "Cancel",
-    question: "Cancel this request? Organizations will no longer see it.",
-    confirm: "Yes, cancel it",
-    variant: "destructive",
-  },
+  claim: { action: claimRequestAction, ...REQUEST_ACTIONS.claim, variant: "default" },
+  deliver: { action: confirmDeliveryAction, ...REQUEST_ACTIONS.deliver, variant: "default" },
+  cancel: { action: cancelRequestAction, ...REQUEST_ACTIONS.cancel, variant: "destructive" },
 } as const
 
 export function RequestActionButton({
@@ -72,9 +56,9 @@ export function RequestActionButton({
     return (
       <div className="flex w-full flex-col gap-2">
         {error && (
-          <p role="alert" className="text-sm font-medium text-destructive">
-            {error}
-          </p>
+          <Notice tone="error" alert className="p-3 text-sm">
+            <p>{error}</p>
+          </Notice>
         )}
         <Button
           className="w-full"
@@ -90,14 +74,16 @@ export function RequestActionButton({
     )
   }
 
+  // The confirmation: the question on a quiet panel, then the confirm and back-out buttons.
+  // The same pattern as the admin review actions.
   return (
-    <div role="group" aria-labelledby={questionId} className="flex w-full flex-col gap-3">
+    <div role="group" aria-labelledby={questionId} className="flex w-full flex-col gap-3 rounded-lg bg-muted/60 p-3">
       <p id={questionId} className="text-sm font-medium">
         {k.question}
       </p>
       <div className="flex flex-col gap-2 sm:flex-row">
-        <Button className="w-full sm:w-auto sm:flex-1" variant={k.variant} disabled={isPending} onClick={run}>
-          {isPending ? "One moment…" : k.confirm}
+        <Button className="w-full sm:w-auto sm:flex-1" variant={k.variant} loading={isPending} onClick={run}>
+          {isPending ? REQUEST_ACTIONS.pending : k.confirm}
         </Button>
         <Button
           className="w-full sm:w-auto sm:flex-1"
@@ -105,7 +91,7 @@ export function RequestActionButton({
           disabled={isPending}
           onClick={() => setAsking(false)}
         >
-          Not now
+          {REQUEST_ACTIONS.notNow}
         </Button>
       </div>
     </div>

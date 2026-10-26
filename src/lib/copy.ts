@@ -188,6 +188,59 @@ export const NEW_REQUEST_COPY = {
   loading: "Loading…",
 } as const
 
+// The Post a Need form fields. Wording unchanged from the form; grouped into two sections.
+export const NEW_REQUEST_FORM = {
+  sections: { what: "What's needed", whereWhen: "Where and when" },
+  peopleCount: "How many people?",
+  category: "Type of support",
+  categoryPlaceholder: "Choose a type",
+  items: "What's needed",
+  itemsPlaceholder: "Example: 10 winter coats, sizes M–XL",
+  itemsHelp: "Describe the items needed, not the people. Don't include names, health details, or exact locations.",
+  notes: "Notes (optional)",
+  notesPlaceholder: "Example: sizes, dietary needs, or quantities per person",
+  // {n} is the number of characters typed.
+  notesHelp: "{n}/300. No names or other personal details.",
+  neighborhood: "Neighborhood",
+  neighborhoodPlaceholder: "Choose a neighborhood",
+  window: "When can you receive it? (Chicago time)",
+  windowStart: "From",
+  windowEnd: "Until",
+  submit: "Send request",
+  pending: "Sending…",
+} as const
+
+// Request cards and the request detail layout.
+export const REQUEST_COPY = {
+  person: "person",
+  people: "people",
+  peopleLabel: "People",
+  where: "Where",
+  when: "When",
+  notes: "Notes",
+} as const
+
+// The actions on a request card. Each asks once before it runs.
+export const REQUEST_ACTIONS = {
+  claim: {
+    label: "Offer support",
+    question: "Offer support for this request? You'll see the poster's contact email so you can arrange the handoff.",
+    confirm: "Yes, offer support",
+  },
+  deliver: {
+    label: "Mark fulfilled",
+    question: "Did the items arrive? This marks the request as fulfilled.",
+    confirm: "Yes, mark fulfilled",
+  },
+  cancel: {
+    label: "Cancel",
+    question: "Cancel this request? Organizations will no longer see it.",
+    confirm: "Yes, cancel it",
+  },
+  notNow: "Not now",
+  pending: "One moment…",
+} as const
+
 // Header navigation for signed-in people.
 export const NAV_COPY = {
   label: "Main",
