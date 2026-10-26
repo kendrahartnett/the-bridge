@@ -50,14 +50,15 @@ const en = {
   ROLE_CTAS: { outreach: { label: "Post a Need" }, donor: { label: "Offer Support" } },
 
   // "How it works" section. Verbatim; do not edit without sign-off.
-  HOW_IT_WORKS_HEADING: "How it works",
-  JOURNEY: [
-    { label: "Request", description: "An outreach worker describes a need." },
-    { label: "Connect", description: "An organization offers support." },
-    { label: "Deliver", description: "Resources reach the people who need them." },
-    { label: "Support", description: "The outreach worker and the person connect to care." },
-    { label: "Rebuild", description: "Work toward lasting stability." },
-  ],
+HOW_IT_WORKS_HEADING: "How it works",
+JOURNEY: [
+  { label: "Request", description: "Anyone in the community can share a need." },
+  { label: "Connect", description: "People and organizations come together to help." },
+  { label: "Provide", description: "Help, resources, and information reach those who need them." },
+  { label: "Support", description: "Ongoing connections create pathways to housing and essential services." },
+  { label: "Transform", description: "Communities work together toward ending homelessness." },
+],
+
 
   // "What is The Bridge?" section. Verbatim; do not edit without sign-off.
   WHAT_IS_HEADING: "What is The Bridge?",

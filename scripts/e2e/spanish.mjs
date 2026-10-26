@@ -201,11 +201,11 @@ try {
     }
   }
 
-  // The homepage buttons keep their 40px height (one line) with the longer Spanish labels.
+  // The homepage buttons keep their 50px height (one line) with the longer Spanish labels.
   for (const w of [640, 1024, 1280]) {
     await anon.size(w, 900); await anon.goto("/", 1000)
     const ctas = await anon.evaluate(`[...document.querySelectorAll('main a[href^="/sign-in?role="]')].map(a => ({ text: a.textContent, h: Math.round(a.getBoundingClientRect().height), w: Math.round(a.getBoundingClientRect().width) }))`)
-    check(`ES · homepage ${w}px: both buttons on one line (40px), the same width`, ctas.length === 2 && ctas.every((c) => c.h === 40) && ctas[0].w === ctas[1].w, ctas)
+    check(`ES · homepage ${w}px: both buttons on one line (50px), the same width`, ctas.length === 2 && ctas.every((c) => c.h === 50) && ctas[0].w === ctas[1].w, ctas)
   }
 
   // ---- 5. Screenshots: homepage and Needs Board in Spanish, dark, 390 and 1280px ----

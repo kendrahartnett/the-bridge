@@ -1,49 +1,32 @@
-import { ArrowRight } from "lucide-react"
 import Link from "next/link"
 
 import { cn } from "@/lib/utils"
 
-const VARIANTS = {
-  // Blue fill; hover lifts 2px with the soft blue glow, press drops back without it.
-  primary: "bg-primary text-primary-foreground hover:-translate-y-0.5 hover:glow-primary active:translate-y-0 active:shadow-none",
-  // Blue outline; hover fills with 8% blue.
-  secondary: "border border-primary text-primary-text hover:bg-primary/8",
-} as const
+/**
+ * The transition delay for each letter on hover, as a multiple of 0.045s: the design's own
+ * sequence (1, 3, 4, 5, then the letter's position), carried on for longer labels.
+ */
+const letterDelay = (position: number) => (position === 1 ? 1 : position <= 4 ? position + 1 : position)
 
 /**
- * A homepage call to action: a slim 40px link button with an arrow and 8px corners (below the
- * usual 44px by design; marked data-compact-target so the layout audit holds it to the
- * 24px WCAG 2.2 AA minimum instead). Motion is cosmetic: hover
- * lift and arrow nudge only, and none with reduced motion.
+ * A homepage call to action (the .cta-letters design from Uiverse.io by barisdogansutcu): a
+ * 50px blue button with a 7px base. At rest it shows the label; on hover (and keyboard
+ * focus) the label drops away and its letters fall into place one after another. The label
+ * ends with an arrow. Screen readers get the plain label (the letters are hidden from them).
  */
-export function CtaLink({
-  href,
-  label,
-  variant,
-  className,
-}: {
-  href: string
-  label: string
-  variant: keyof typeof VARIANTS
-  className?: string
-}) {
+export function CtaLink({ href, label, className }: { href: string; label: string; className?: string }) {
+  const text = `${label} →`
   return (
-    <Link
-      href={href}
-      data-compact-target
-      className={cn(
-        "group inline-flex h-10 items-center justify-center gap-2.5 rounded-[0.5rem] px-5 text-base font-semibold whitespace-nowrap outline-none",
-        "transition-[translate,box-shadow,background-color] duration-(--duration-base) ease-(--ease-brand) motion-reduce:transition-none motion-reduce:hover:translate-y-0",
-        "focus-visible:ring-[3px] focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-        VARIANTS[variant],
-        className
-      )}
-    >
-      {label}
-      <ArrowRight
-        aria-hidden="true"
-        className="size-5 transition-transform duration-(--duration-base) ease-(--ease-brand) group-hover:translate-x-1 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0"
-      />
+    <Link href={href} aria-label={label} data-label={text} className={cn("cta-letters", className)}>
+      {[...text].map((ch, i) => (
+        <i
+          key={i}
+          aria-hidden="true"
+          style={{ "--delay": letterDelay(i + 1) } as React.CSSProperties}
+        >
+          {ch === " " ? " " : ch}
+        </i>
+      ))}
     </Link>
   )
 }

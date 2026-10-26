@@ -391,6 +391,89 @@
 }
 }
 
+/* The homepage calls to action (src/components/cta-link.tsx). Design from Uiverse.io by
+   barisdogansutcu: a blue button on a 7px darker base that presses down; at rest it shows the
+   label (data-label); on hover the label drops away and the letters fall in one after
+   another (--delay, in steps of 0.045s). Added here: the same reveal on keyboard focus, a
+   visible focus ring, and no animation with reduced motion. White on this blue: 4.8:1. */
+@layer components {
+  .cta-letters {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 50px;
+    position: relative;
+    padding: 0 20px;
+    font-size: 18px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    text-decoration: none;
+    border: 0;
+    box-shadow: hsl(210deg 87% 36%) 0px 7px 0px 0px;
+    background-color: hsl(210deg 100% 44%);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: 31ms cubic-bezier(0.5, 0.7, 0.4, 1);
+    &::before {
+      content: attr(data-label);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      inset: 0;
+      font-size: 15px;
+      font-weight: bold;
+      color: white;
+      letter-spacing: 4px;
+      opacity: 1;
+    }
+    &:active {
+      box-shadow: none;
+      transform: translateY(7px);
+      transition: 35ms cubic-bezier(0.5, 0.7, 0.4, 1);
+    }
+    &:hover::before,
+    &:focus-visible::before {
+      transition: all 0s;
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    & i {
+      color: white;
+      font-size: 15px;
+      font-weight: bold;
+      letter-spacing: 4px;
+      font-style: normal;
+      transition: all 2s ease;
+      transform: translateY(-20px);
+      opacity: 0;
+    }
+    &:hover i,
+    &:focus-visible i {
+      transition: all 0.2s ease;
+      transition-delay: calc(0.045s * var(--delay));
+      transform: translateY(0px);
+      opacity: 1;
+    }
+    &:focus-visible {
+      outline: 3px solid var(--ring);
+      outline-offset: 3px;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+      &:active {
+        transform: none;
+      }
+      & i,
+      &:hover i,
+      &:focus-visible i {
+        transition: none;
+        transform: none;
+      }
+    }
+  }
+}
+
 @utility hero-photo {
   animation: hero-photo 500ms var(--ease-brand) 200ms both;
   @media (prefers-reduced-motion: reduce) {

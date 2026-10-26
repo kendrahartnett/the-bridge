@@ -61,8 +61,8 @@ There is no separate Offer Support page, request detail page, inbox, search or f
 | Card glow | Yes: duplicated `GLASS` constants in `app/page.tsx` and `assistant-chat.tsx` (blur, translucent fill, blue outer glow). |
 | 16px form inputs | Yes, at every width (commit `f3b7109`). |
 | Light/dark themes | Yes: `next-themes`, dark default, `.dark` class, tokens on `:root` and `.dark`. |
-| 12px radius | Yes: every `--radius-*` maps to 12px; `rounded-full` only on pills, dots and the chat button. Exception: the homepage calls to action and its How it works, What is The Bridge? and Mission cards use 8px (`rounded-[0.5rem]`). |
-| 44px targets | Yes: `--tap-min`, used by buttons, links and controls. Exception: the homepage calls to action (`CtaLink`) are 40px tall by request, above the 24px WCAG 2.2 AA minimum; they carry `data-compact-target`, which the audit holds to 24px. |
+| 12px radius | Yes: every `--radius-*` maps to 12px; `rounded-full` only on pills, dots and the chat button. Exception: the homepage's How it works, What is The Bridge? and Mission cards use 8px (`rounded-[0.5rem]`). |
+| 44px targets | Yes: `--tap-min`, used by buttons, links and controls. The homepage calls to action (`CtaLink`, the Uiverse.io letter-reveal design) are 50px tall. |
 | Reduced motion | Yes: global CSS rule plus `motion-reduce:` classes; `NumberTicker` uses `useReducedMotion`. |
 | Copy in `src/lib/copy.ts` | **Partly.** About 60 user-facing strings still live in components (counts below). |
 
