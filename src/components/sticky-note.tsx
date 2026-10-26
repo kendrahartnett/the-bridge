@@ -8,7 +8,7 @@ import { BOARD_COPY, REQUEST_COPY } from "@/lib/copy"
 import { CATEGORY_LABELS, STATUS_LABELS } from "@/lib/labels"
 import { neighborhoodLabel } from "@/lib/neighborhoods"
 import { cn } from "@/lib/utils"
-import noteArt from "../../public/images/needs-card-post-board.png"
+import noteArt from "../../public/images/sticky-note-card.png"
 
 /**
  * A slight tilt between -1.5° and 1.5°, from the need's id, so a note always sits the same
@@ -23,14 +23,14 @@ export function noteTilt(id: string) {
 const NOTE_SIZES = "(min-width: 1024px) 320px, (min-width: 640px) 50vw, 100vw"
 
 /**
- * A need on the Needs Board, drawn on a sticky note (public/images/needs-card-post-board.png,
+ * A need on the Needs Board, drawn on a sticky note (public/images/sticky-note-card.png,
  * square with a transparent background; the same file for every note, so it loads once).
  * The whole note links to the need's page.
  *
- * The image is square: the paper fills 6–94% across and 9–93% down, the adhesive strip runs
- * to 16.3% down, and the curled corner takes the bottom right from about 70% across and 72%
- * down. Text sits inside 11–90% across and from 19% down; the facts at the bottom stop at
- * 69% across, so the curl never covers them. Sizes are in container units (cqi, the note's
+ * The image is square: the paper fills 6.4–93.9% across and 8.5–92.5% down, the adhesive
+ * strip runs to 17.2% down, and the small curled corner takes the bottom right from about
+ * 85% across and 85% down. Text sits inside 11–90% across and from 20% down; the facts stop
+ * at 84% across, so the curl never covers them. Sizes are in container units (cqi, the note's
  * width), so the layout is the same at every note size; e2e:board checks it.
  *
  * Every color here is fixed (the note is yellow in both themes): navy ink and badges, and a
@@ -67,9 +67,9 @@ export function StickyNote({
       <span
         aria-hidden="true"
         data-note-ring
-        className="pointer-events-none absolute top-[8.9%] right-[6.2%] bottom-[7.3%] left-[6.1%] rounded-[1cqi] opacity-0 shadow-[0_0_0_3px_var(--ring)] outline-3 -outline-offset-3 outline-note-ink group-focus-visible:opacity-100"
+        className="pointer-events-none absolute top-[8.5%] right-[6.1%] bottom-[7.5%] left-[6.4%] rounded-[1cqi] opacity-0 shadow-[0_0_0_3px_var(--ring)] outline-3 -outline-offset-3 outline-note-ink group-focus-visible:opacity-100"
       />
-      <span data-note-body className="absolute top-[19%] right-[10%] bottom-[9%] left-[11%] flex flex-col gap-[2cqi]">
+      <span data-note-body className="absolute top-[20%] right-[10%] bottom-[9%] left-[11%] flex flex-col gap-[2cqi]">
         {/* The badges, and on In Progress notes the "Claimed" stamp at the right end of the
             same row, so the row makes room for it and it never covers the items text. */}
         <span data-note-badges className="flex flex-wrap items-center gap-[1.6cqi]">
@@ -91,7 +91,7 @@ export function StickyNote({
         >
           {request.items}
         </span>
-        <span data-note-facts className="flex flex-col gap-[0.6cqi] pr-[26%] text-[max(4.3cqi,0.875rem)] leading-[1.25]">
+        <span data-note-facts className="flex flex-col gap-[0.6cqi] pr-[8%] text-[max(4.3cqi,0.875rem)] leading-[1.25]">
           <NoteFact Icon={Users} label={REQUEST_COPY.peopleLabel}>{people}</NoteFact>
           <NoteFact Icon={MapPin} label={REQUEST_COPY.where}>{neighborhoodLabel(request.neighborhood)}</NoteFact>
           <NoteFact Icon={Clock} label={REQUEST_COPY.when}>{formatWindow(request.windowStart, request.windowEnd)}</NoteFact>

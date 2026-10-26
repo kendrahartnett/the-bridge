@@ -44,8 +44,8 @@ const R = {
 }
 
 // Where the note's paper, adhesive strip and curled corner are, as fractions of its width
-// (the image is square). Measured from public/images/needs-card-post-board.png.
-const ZONES = { paper: { left: 0.061, top: 0.089, right: 0.938, bottom: 0.927 }, stripBottom: 0.165, curl: { left: 0.70, top: 0.72 } }
+// (the image is square). Measured from public/images/sticky-note-card.png.
+const ZONES = { paper: { left: 0.064, top: 0.085, right: 0.939, bottom: 0.925 }, stripBottom: 0.175, curl: { left: 0.85, top: 0.85 } }
 
 const TAG = "[e2e-board]"
 const LONG = "Warm socks, gloves, and hats in adult sizes, plus a few pairs of waterproof boots, sizes 9 to 12, and rain ponchos for the whole team if anyone has spares to donate"
