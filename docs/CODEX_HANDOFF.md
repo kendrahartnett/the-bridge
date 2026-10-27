@@ -2,6 +2,8 @@
 
 Prepared by Claude Code on 2026-10-27 for the move to OpenAI Codex. Everything here was checked against the repository at commit `8919481` on `main`; where something could not be confirmed from the code, it says so.
 
+**Update, 2026-10-27:** Privacy screening, admin review, and the terminal resubmission lifecycle were subsequently implemented in the working tree. Migrations `0007` and `0008` were applied to development only. See [FEATURE_STATUS.md](FEATURE_STATUS.md) and the code for current behavior. The original handoff sections remain as historical context; production has not been migrated or pushed.
+
 Companion documents:
 
 - [AI_CONTEXT.md](AI_CONTEXT.md): rules that must never be broken (privacy, secrets, brand). **Read first.**
@@ -35,7 +37,7 @@ Browser ──► src/proxy.ts (every page request)
               ▼
           Drizzle ORM ──► Neon Postgres (the-bridge / the-bridge-dev)
           Neon Auth (managed passwords + sessions) ◄── src/lib/auth/server.ts
-          /api/chat ──► Anthropic API (the assistant only)
+          /api/chat and server-side need screening ──► Anthropic API
 ```
 
 Key points:
@@ -112,18 +114,18 @@ The table is still named `food_requests` and the organization role `donor` for h
 | `/api/auth/[...path]` | GET/POST | Neon Auth handler. |
 | Server actions | — | `signInAction`, `signUpAction`, `signOutAction`; `createRequestAction`; `claimRequestAction`, `confirmDeliveryAction`, `cancelRequestAction`; `reviewOrganizationAction`; `openNotificationAction`, `markAllReadAction`. |
 
-External services: **Neon** (Postgres and Auth), **Anthropic** (assistant only), **Vercel** (hosting), **Google Fonts** via `next/font` (Geist, Geist Mono, Raleway; self-hosted at build). No email, SMS, maps, or analytics services.
+External services: **Neon** (Postgres and Auth), **Anthropic** (assistant and privacy screening), **Vercel** (hosting), **Google Fonts** via `next/font` (Geist, Geist Mono, Raleway; self-hosted at build). No email, SMS, maps, or analytics services.
 
 ### AI integration (current uses)
 
-Only one: **the Bridge assistant.**
+The original handoff described only **the Bridge assistant**. Privacy screening is now a separate server-only use of the same SDK and model.
 
 - Route `src/app/api/chat/route.ts`; model `claude-haiku-5-5`, `max_tokens` 600, thinking disabled, 15 s timeout, no retries (`src/lib/assistant-config.ts`).
 - System prompt `src/lib/assistant-prompt.ts` (`server-only`, never sent to the browser). It embeds the mission and the Spanish glossary from `copy.ts`.
 - Order of checks: rate limit (20/hour/IP, in memory) → body validation → turn alternation → 10-question and 500-character limits → API call. Missing key, error, timeout, or refusal → fixed fallback reply. Replies are cleaned by `src/lib/assistant-reply.ts`.
 - Nothing is stored server-side; message text is never logged (failures log only the error kind).
 
-**AI screening of request text is not implemented.** See §10.
+**AI screening of request text is implemented locally.** See `src/lib/privacy-screening.ts`, `src/lib/privacy-screening-prompt.ts`, and `src/lib/privacy-review-rules.ts`.
 
 ## 7. Environment variables (names and purposes only)
 
@@ -132,7 +134,7 @@ Only one: **the Bridge assistant.**
 | `DATABASE_URL` | Neon Postgres connection (server only) | `.env.local` (dev), Vercel (prod), `.env.prod.local` for the owner's production scripts |
 | `NEON_AUTH_BASE_URL` | Neon Auth endpoint | `.env.local`, Vercel |
 | `NEON_AUTH_COOKIE_SECRET` | Signs session cookies (≥32 chars) | `.env.local`, Vercel |
-| `ANTHROPIC_API_KEY` | Assistant (without it the fallback reply is used) | `.env.local`, Vercel |
+| `ANTHROPIC_API_KEY` | Assistant and privacy screening (missing key blocks new need publication) | `.env.local`, Vercel |
 | `ADMIN_CONTACT_EMAIL` | Address shown to organizations about their review | `.env.local` optional, Vercel recommended |
 | `SEED_TEST_PASSWORD` | Password of the seeded test accounts | `.env.local` only (seed and tests) |
 | `E2E_BASE_URL` | Browser tests' server (default `http://localhost:3100`) | optional |
@@ -155,7 +157,7 @@ src/lib/               request-rules, validation, copy, i18n, auth, assistant-*,
                        redact, neighborhoods, chicago-time, labels
 src/db/                schema, connection, seed, dev-guard
 src/proxy.ts           language + access gate
-drizzle/               migrations 0000–0006 and snapshots
+drizzle/               migrations 0000–0008 and snapshots (0007–0008 development only)
 scripts/               test-*.ts, admin-grant, migrate-production, migrate-summary; e2e/ suites
 docs/                  this handoff, design system, test reports, security notes
 public/images/         hero, artwork, not-found, sticky-note-card; public/brand/ logos
@@ -246,7 +248,7 @@ Earlier in the same stretch:
 
 ### AI-powered screening of sensitive information in requests
 
-**Status: not implemented and never started.** The code, the git history, and the full development transcript show no screening code, prompt, test, or design for it. The topic appears in the handoff brief for the first time. This is what exists and what doesn't:
+**Historical note:** This section described the state at commit `8919481`. Screening, the private admin queue, and migration `0007` are now implemented locally; see `FEATURE_STATUS.md` for the current state. This is what the earlier handoff recorded:
 
 | Safeguard | Implemented? | What exists today |
 |---|---|---|
@@ -296,7 +298,7 @@ At the time of writing:
 
 | Risk | Detail |
 |---|---|
-| Sensitive details in free text | No automated screening yet (roadmap §1). |
+| Sensitive details in free text | Screening reduces risk but can miss details; new privacy wording needs owner review before deployment. |
 | Neon Auth beta | `@neondatabase/auth` 0.7.0-beta; a pending upgrade also fixes the bundled zod advisory. |
 | Production sign-in unverified | The trusted domain is set, but no live sign-in check is recorded. |
 | Rate limit per instance | The assistant's limits aren't global on Vercel. |

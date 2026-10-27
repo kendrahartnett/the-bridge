@@ -58,3 +58,13 @@ export function formatDateTime(at: Date, lang: Lang = "en"): string {
     minute: "2-digit",
   }).format(at)
 }
+
+/** A stored time back into a Chicago datetime-local input for a safe draft. */
+export function chicagoDateToLocal(at: Date): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: CHICAGO_TZ, year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+  }).formatToParts(at)
+  const value = (name: string) => parts.find((part) => part.type === name)?.value ?? "00"
+  return `${value("year")}-${value("month")}-${value("day")}T${value("hour")}:${value("minute")}`
+}

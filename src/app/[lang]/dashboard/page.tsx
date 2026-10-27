@@ -14,9 +14,12 @@ import { StickyNote, StickyNoteGrid } from "@/components/sticky-note"
 import { BlurFade } from "@/components/ui/blur-fade"
 import { VerificationBanner } from "@/components/verification-banner"
 import { db } from "@/db"
+import { formatDateTime } from "@/lib/chicago-time"
 import type { FoodRequest, User } from "@/db/schema"
 import { getCopy } from "@/lib/i18n-server"
 import { requireUser } from "@/lib/current-user"
+import { currentLang } from "@/lib/i18n-server"
+import { listMyPrivacyReviews } from "@/lib/privacy-review-rules"
 import {
   canClaimNeeds,
   canPostNeeds,
@@ -64,6 +67,7 @@ async function DashboardContent() {
         />
       </BlurFade>
       <Inbox userId={user.id} />
+      <PrivacyStatuses userId={user.id} />
       {user.role === "outreach" ? (
         <OutreachDashboard userId={user.id} />
       ) : (
@@ -71,6 +75,26 @@ async function DashboardContent() {
       )}
     </>
   )
+}
+
+async function PrivacyStatuses({ userId }: { userId: string }) {
+  const reviews = await listMyPrivacyReviews(db, userId)
+  if (reviews.length === 0) return null
+  const { PRIVACY_COPY: P } = await getCopy()
+  const lang = await currentLang()
+  return <section aria-labelledby="privacy-status-heading" className="mt-10">
+    <SectionHeader id="privacy-status-heading" title={P.myHeading} />
+    <ul className="mt-4 space-y-3">
+      {reviews.map((r) => <li key={r.id} className="rounded-xl border border-border bg-card p-4 text-card-foreground">
+        <p className="font-semibold [overflow-wrap:anywhere]">{r.safeItems}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{P.statusLabels[r.status as keyof typeof P.statusLabels]} · {formatDateTime(r.createdAt, lang)}</p>
+        {r.decisionReason && <p className="mt-2 text-sm">{P.reasons[r.decisionReason as keyof typeof P.reasons]}</p>}
+        {r.status === "pending_review" && <p className="mt-2 text-sm">{P.reviewQueued}</p>}
+        {r.status === "changes_requested" && <Link className="mt-3 inline-flex min-h-tap items-center text-primary-text underline" href={`/requests/new?review=${r.id}`}>{P.revise}</Link>}
+        {(r.status === "approved" || r.status === "superseded") && r.publishedRequestId && <Link className="mt-3 inline-flex min-h-tap items-center text-primary-text underline" href={`/requests/${r.publishedRequestId}`}>{r.safeItems}</Link>}
+      </li>)}
+    </ul>
+  </section>
 }
 
 // Who can see which contact email is decided in the queries (src/lib/request-rules.ts):

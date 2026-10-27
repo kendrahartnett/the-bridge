@@ -33,6 +33,9 @@ import {
   reviewOrganization,
   type Actor,
 } from "../src/lib/request-rules.ts"
+import type { ScreeningDecision } from "../src/lib/privacy-screening-core.ts"
+
+const safeScreen = async (): Promise<ScreeningDecision> => ({ kind: "safe", categories: [] })
 
 // Nothing this script prints (including errors) may show a connection string or password.
 installRedaction()
@@ -83,7 +86,7 @@ async function newRequest(owner: Actor, what: string): Promise<string> {
     neighborhood: "Logan Square",
     windowStart: `${day}T10:00`,
     windowEnd: `${day}T12:00`,
-  })
+  }, safeScreen)
   if (!r.ok) throw new Error(`Could not create test request: ${JSON.stringify(r)}`)
   created.push(r.id)
   return r.id
@@ -227,7 +230,7 @@ async function main() {
   const bad = await createRequest(db, out1, {
     peopleCount: "5", category: "weapons", items: `${TAG} invalid category`, dietaryNotes: "",
     neighborhood: "Logan Square", windowStart: `${day}T10:00`, windowEnd: `${day}T12:00`,
-  })
+  }, safeScreen)
   const countAfter = (await db.select({ n: sql<number>`count(*)::int` }).from(foodRequests))[0].n
   const badRows = await db.select({ id: foodRequests.id }).from(foodRequests).where(eq(foodRequests.items, `${TAG} invalid category`))
   record(`Invalid category "weapons" is rejected and no row is created`, !bad.ok && !!bad.fieldErrors?.category && countAfter === countBefore && badRows.length === 0,
@@ -242,7 +245,7 @@ async function main() {
     const r = await createRequest(db, who, {
       peopleCount: "5", category: "clothing", items: `${TAG} ${what}`, dietaryNotes: "",
       neighborhood: "Logan Square", windowStart: `${day}T10:00`, windowEnd: `${day}T12:00`,
-    })
+    }, safeScreen)
     if (r.ok) created.push(r.id)
     return r
   }

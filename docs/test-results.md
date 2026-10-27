@@ -1,6 +1,6 @@
 # Test results: request and response rules
 
-Run: 10/26/2026, 12:58:39 AM (Chicago time) · tag `[claim-test 20261026055825]`
+Run: 10/27/2026, 3:44:12 PM (Chicago time) · tag `[claim-test 20261027204358]`
 
 Command: `npm run test:claims` (scripts/test-claim-rules.ts), against the dev database.
 The script calls the same rule functions the server actions call (src/lib/request-rules.ts)
@@ -33,7 +33,7 @@ and removes them afterwards (the app has no way to grant admin), and resets test
 | 17 | Cancel: creator cannot cancel once In Progress | PASS | "An organization already claimed this need, so it can't be cancelled here."; status stays claimed |
 | 18 | Different outreach user cannot cancel someone else's request | PASS | "Only the person who posted this request can change it." |
 | 19 | Different outreach user cannot fulfil someone else's request | PASS | "Only the person who posted this request can change it." |
-| 20 | Invalid category "weapons" is rejected and no row is created | PASS | category error "Choose the type of support."; rows 13 → 13 |
+| 20 | Invalid category "weapons" is rejected and no row is created | PASS | category error "Choose the type of support."; rows 14 → 14 |
 | 21 | Pending organization cannot claim a need | PASS | "Your organization is still under review, so you can't do this yet." |
 | 22 | Inbox: a failed claim (pending organization) creates no notification | PASS |  |
 | 23 | Pending organization cannot post a need | PASS | "Your organization is still under review, so you can't do this yet." |
@@ -47,7 +47,7 @@ and removes them afterwards (the app has no way to grant admin), and resets test
 | 31 | Rejected organization cannot post a need | PASS | "Your organization wasn't approved, so you can't do this." |
 | 32 | Admin can approve | PASS | status approved |
 | 33 | Inbox: approving creates exactly one org_approved notification | PASS | org_rejected, org_approved |
-| 34 | Inbox: the organization's notifications never include the admin's review note | PASS | 10 items, fields: id, type, requestId, createdAt, items, claimerName, posterName, read |
+| 34 | Inbox: the organization's notifications never include the admin's review note | PASS | 2 items, fields: id, type, requestId, createdAt, items, claimerName, posterName, read |
 | 35 | Approved organization can claim a need | PASS | status claimed |
 | 36 | Approved organization can post a need | PASS | created |
 | 37 | Organization cannot claim its own post | PASS | "This is your own post, so you can't claim it."; status stays open |
@@ -61,11 +61,11 @@ and removes them afterwards (the app has no way to grant admin), and resets test
 | 45 | Revoked organization still sees that post under Your posts | PASS |  |
 | 46 | Approving it again puts the post back on the Needs Board | PASS |  |
 | 47 | Race: exactly one of two simultaneous offers succeeds, with exactly one notification (10 runs) | PASS | 10/10 runs correct |
-| 48 | Inbox: listing returns only the viewer's own notifications | PASS | 16 items, all outreach1's: true |
+| 48 | Inbox: listing returns only the viewer's own notifications | PASS | 20 items, all outreach1's: true |
 | 49 | Inbox: someone else can't open or mark another person's notification | PASS | open by outreach2: null; still unread: true; donor2 marked 2 of its own |
-| 50 | Inbox: opening your own need notification marks it read and leads to the need | PASS | /requests/a5c774b0-093e-4775-9331-93dd6ec6ba6e |
+| 50 | Inbox: opening your own need notification marks it read and leads to the need | PASS | /requests/d9cb1e16-12cf-4203-a8fa-1710acccc5d5 |
 | 51 | Inbox: opening an approval notification leads to the dashboard | PASS | /dashboard |
-| 52 | Inbox: Mark all as read marks only your own | PASS | marked 14; outreach1 unread now 0; outreach2 still has 1 unread |
+| 52 | Inbox: Mark all as read marks only your own | PASS | marked 18; outreach1 unread now 0; outreach2 still has 1 unread |
 | 53 | Board: organizations (approved, pending) see it; outreach accounts get nothing | PASS |  |
 | 54 | Need page: another outreach account can't see someone else's need | PASS |  |
 | 55 | Need page: the poster and any organization can see an Open need, with no contact | PASS |  |
@@ -77,7 +77,7 @@ and removes them afterwards (the app has no way to grant admin), and resets test
 | 61 | Database rejects status 'delivered' with no claimed_by | PASS | "new row for relation "food_requests" violates check constraint "claim_status_consistency"" |
 | 62 | Cleanup: seeded notifications are back as they were (read or unread) | PASS | 5 seeded |
 | 63 | Cleanup: removed the notifications this run caused (none left behind) | PASS | removed 4 more after the requests' own went with them; left: 0 |
-| 64 | Cleanup: deleted only this run's 21 test requests; seeded requests unchanged | PASS | deleted 21/21; seeded rows identical: true; total rows 6 → 6 |
+| 64 | Cleanup: deleted only this run's 21 test requests; seeded requests unchanged | PASS | deleted 21/21; seeded rows identical: true; total rows 7 → 7 |
 
 ## Race test (10 runs)
 
@@ -89,8 +89,8 @@ Two organizations offer support on the same open request at the same moment (`Pr
 | 2 | Test — Organization A | Another organization just claimed this need. | PASS |
 | 3 | Test — Organization A | Another organization just claimed this need. | PASS |
 | 4 | Test — Organization A | Another organization just claimed this need. | PASS |
-| 5 | Test — Organization B | Another organization just claimed this need. | PASS |
-| 6 | Test — Organization A | Another organization just claimed this need. | PASS |
+| 5 | Test — Organization A | Another organization just claimed this need. | PASS |
+| 6 | Test — Organization B | Another organization just claimed this need. | PASS |
 | 7 | Test — Organization A | Another organization just claimed this need. | PASS |
 | 8 | Test — Organization B | Another organization just claimed this need. | PASS |
 | 9 | Test — Organization A | Another organization just claimed this need. | PASS |

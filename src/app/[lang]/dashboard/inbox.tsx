@@ -26,6 +26,11 @@ export function inboxMessage(item: InboxItem, { INBOX_COPY }: Copy): string {
       const email = process.env.ADMIN_CONTACT_EMAIL?.trim()
       return email ? m.orgRejected.replace("{email}", email) : m.orgRejectedNoEmail
     }
+    case "privacy_pending": return m.privacyPending
+    case "privacy_approved": return m.privacyApproved
+    case "privacy_changes": return m.privacyChanges
+    case "privacy_rejected": return m.privacyRejected
+    case "privacy_new_review": return m.privacyNewReview
   }
 }
 

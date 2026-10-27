@@ -1,7 +1,7 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useTransition } from "react"
+import { useEffect, useState, useTransition } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import { toast } from "sonner"
 
@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { useCopy } from "@/components/providers"
+import { PoweredByAnthropic } from "@/components/powered-by-anthropic"
+import type { PrivacyCategory } from "@/lib/privacy-screening-core"
 import { CATEGORIES } from "@/lib/labels"
 import { COMMUNITY_AREAS, neighborhoodLabel } from "@/lib/neighborhoods"
 import {
@@ -47,9 +49,13 @@ function FormSection({ id, title, children }: { id: string; title: string; child
   )
 }
 
-export function NewRequestForm() {
-  const { NEW_REQUEST_FORM: F, LABELS } = useCopy()
+export function NewRequestForm({ initialValues, revisionOf }: { initialValues?: Partial<NewRequestInput>; revisionOf?: string }) {
+  const { NEW_REQUEST_FORM: F, LABELS, PRIVACY_COPY: P } = useCopy()
   const [isPending, startTransition] = useTransition()
+  const [privacy, setPrivacy] = useState<{ kind: "blocked" | "unavailable"; categories?: PrivacyCategory[]; suggestion?: string } | null>(null)
+  useEffect(() => {
+    if (privacy) document.getElementById("privacy-result")?.focus()
+  }, [privacy])
   const form = useForm<NewRequestInput, unknown, NewRequestOutput>({
     resolver: zodResolver(newRequestSchema),
     defaultValues: {
@@ -60,14 +66,17 @@ export function NewRequestForm() {
       neighborhood: undefined,
       windowStart: "",
       windowEnd: "",
+      ...initialValues,
     },
   })
 
   function onSubmit() {
+    if (isPending) return
+    setPrivacy(null)
     // Send the raw form strings; the server parses them with the same schema.
     const values = form.getValues()
     startTransition(async () => {
-      const result = await createRequestAction(values)
+      const result = await createRequestAction(values, revisionOf)
       // A successful save redirects, so we only get here on failure.
       if (result?.fieldErrors) {
         for (const [name, messages] of Object.entries(result.fieldErrors)) {
@@ -75,6 +84,9 @@ export function NewRequestForm() {
         }
       }
       if (result?.error) toast.error(result.error)
+      if (result?.privacy) {
+        setPrivacy(result.privacy)
+      }
     })
   }
 
@@ -216,10 +228,37 @@ export function NewRequestForm() {
           </fieldset>
         </FormSection>
 
-        {/* The primary action at the end of the form (not sticky): full width on phones. */}
-        <Button type="submit" size="lg" loading={isPending} className="w-full sm:w-auto sm:self-end sm:px-8">
-          {isPending ? F.pending : F.submit}
-        </Button>
+        <p className="text-sm text-muted-foreground">{P.disclosure}</p>
+
+        {privacy && (
+          <div id="privacy-result" tabIndex={-1} role="alert" className="rounded-xl border border-border-strong bg-card p-5 text-card-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring">
+            <h2 className="font-heading text-h3 font-bold">{privacy.kind === "unavailable" ? P.reviewHeading : P.flaggedTitle}</h2>
+            <p className="mt-2">{privacy.kind === "unavailable" ? P.unavailable : P.flaggedIntro}</p>
+            {privacy.categories && privacy.categories.length > 0 && (
+              <ul className="mt-3 list-disc space-y-1 pl-5">
+                {privacy.categories.map((category) => <li key={category}>{P.category[category]}</li>)}
+              </ul>
+            )}
+            {privacy.suggestion && (
+              <div className="mt-4">
+                <p className="text-sm font-semibold">{P.suggested}</p>
+                <p className="mt-1">{privacy.suggestion}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button type="button" variant="outline" onClick={() => form.setFocus("items")}>{P.edit}</Button>
+                  <Button type="button" variant="outline" onClick={() => { form.setValue("items", privacy.suggestion ?? "", { shouldValidate: true }); setPrivacy(null) }}>{P.applySuggestion}</Button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-end">
+          <PoweredByAnthropic copy={P} />
+          <span role="status" className="sr-only">{isPending ? P.checking : ""}</span>
+          <Button type="submit" size="lg" loading={isPending} disabled={isPending} className="w-full sm:w-auto sm:px-8">
+            {isPending ? P.checking : F.submit}
+          </Button>
+        </div>
       </form>
     </Form>
   )

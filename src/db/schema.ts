@@ -8,6 +8,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
   type AnyPgColumn,
 } from "drizzle-orm/pg-core"
@@ -97,6 +98,9 @@ export const foodRequests = pgTable(
     category: requestCategory("category").notNull().default("food"),
     items: text("items").notNull(),
     dietaryNotes: text("dietary_notes"),
+    // Screening metadata only. Never store the model's response or rejected text.
+    privacyFlagged: boolean("privacy_flagged").notNull().default(false),
+    privacyCategories: text("privacy_categories").array().notNull().default(sql`'{}'::text[]`),
     neighborhood: text("neighborhood").notNull(),
     windowStart: timestamp("window_start", { withTimezone: true }).notNull(),
     windowEnd: timestamp("window_end", { withTimezone: true }).notNull(),
@@ -142,7 +146,52 @@ export const notificationType = pgEnum("notification_type", [
   "need_fulfilled",
   "org_approved",
   "org_rejected",
+  "privacy_pending",
+  "privacy_approved",
+  "privacy_changes",
+  "privacy_rejected",
+  "privacy_new_review",
 ])
+
+// The queue stores only a separately screened safe candidate, never the original
+// medium-risk text or an unvalidated model explanation.
+export const privacyReviews = pgTable(
+  "privacy_reviews",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    submittedBy: uuid("submitted_by").notNull().references(() => users.id),
+    status: text("status").notNull().default("pending_review"),
+    riskLevel: text("risk_level").notNull().default("medium"),
+    categories: text("categories").array().notNull().default(sql`'{}'::text[]`),
+    peopleCount: integer("people_count").notNull(),
+    category: requestCategory("category").notNull(),
+    safeItems: text("safe_items").notNull(),
+    safeNotes: text("safe_notes"),
+    neighborhood: text("neighborhood").notNull(),
+    windowStart: timestamp("window_start", { withTimezone: true }).notNull(),
+    windowEnd: timestamp("window_end", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    reviewedBy: uuid("reviewed_by").references(() => users.id, { onDelete: "set null" }),
+    decisionReason: text("decision_reason"),
+    publishedRequestId: uuid("published_request_id").references(() => foodRequests.id),
+    // Set only on a replacement review created from a changes-requested review.
+    // The prior row remains as immutable history and moves to `superseded`.
+    supersedesReviewId: uuid("supersedes_review_id").references((): AnyPgColumn => privacyReviews.id),
+  },
+  (t) => [
+    check("privacy_review_status_valid", sql`${t.status} in ('pending_review', 'changes_requested', 'approved', 'rejected', 'superseded')`),
+    check("privacy_review_risk_valid", sql`${t.riskLevel} = 'medium'`),
+    check("privacy_review_people_count", sql`${t.peopleCount} between 1 and 500`),
+    check("privacy_review_safe_items_length", sql`char_length(${t.safeItems}) between 1 and 200`),
+    check("privacy_review_safe_notes_length", sql`${t.safeNotes} is null or char_length(${t.safeNotes}) <= 300`),
+    check("privacy_review_window_order", sql`${t.windowEnd} > ${t.windowStart}`),
+    check("privacy_review_decision_reason", sql`${t.decisionReason} is null or ${t.decisionReason} in ('privacy_detail', 'insufficient_detail', 'outside_scope')`),
+    index("privacy_reviews_status_created_idx").on(t.status, t.createdAt),
+    index("privacy_reviews_submitter_created_idx").on(t.submittedBy, t.createdAt),
+    uniqueIndex("privacy_reviews_supersedes_review_idx").on(t.supersedesReviewId),
+  ]
+)
 
 export const notifications = pgTable(
   "notifications",
@@ -171,3 +220,4 @@ export const notifications = pgTable(
 export type User = typeof users.$inferSelect
 export type FoodRequest = typeof foodRequests.$inferSelect
 export type NewFoodRequest = typeof foodRequests.$inferInsert
+export type PrivacyReview = typeof privacyReviews.$inferSelect

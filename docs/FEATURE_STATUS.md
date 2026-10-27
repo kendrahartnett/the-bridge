@@ -1,6 +1,6 @@
 # Feature status
 
-Feature-by-feature state of The Bridge, checked against the code at commit `8919481` on 2026-10-27. "Tested" means an automated test in this repo covers it; the test that does is named. Verification results for this handoff are in [CODEX_HANDOFF.md §11](CODEX_HANDOFF.md#11-verification-results-2026-10-27).
+Feature-by-feature state of The Bridge, originally checked at commit `8919481` on 2026-10-27 and updated for the local privacy-screening work. "Tested" means an automated test in this repo covers it; the test that does is named.
 
 **Legend:** ✅ Complete (built and covered by tests) · 🟡 Partial (built, with a known gap) · 📋 Planned (not built) · ⛔ Blocked (waiting on a decision or an outside party)
 
@@ -23,7 +23,7 @@ Feature-by-feature state of The Bridge, checked against the code at commit `8919
 | Accessibility and responsive layout | ✅ |
 | Secret redaction in scripts | ✅ |
 | Production migration script | ✅ |
-| **AI screening of request text for sensitive details** | 📋 **Not started** |
+| **AI screening and admin privacy review** | ✅ (implemented locally; synthetic live Anthropic calls tested) |
 | Email / text alerts | 📋 |
 | Neighborhood map | 📋 |
 | Needs Board filters | 📋 |
@@ -56,7 +56,7 @@ Feature-by-feature state of The Bridge, checked against the code at commit `8919
 - **Who:** outreach accounts and **approved** organizations (`canPostNeeds`).
 - **Where:** `src/app/[lang]/requests/new/` (`page.tsx`, `new-request-form.tsx`, `actions.ts`), `createRequest` in `src/lib/request-rules.ts`, `newRequestSchema` in `src/lib/validation.ts`, `src/lib/neighborhoods.ts`, `src/lib/chicago-time.ts`.
 - **Tests:** `test:claims` (create rules), `e2e:form` (privacy notice, contrast, layout), `e2e:dropdown`, `e2e:responsive`, `e2e:a11y`.
-- **Limitations:** the free-text fields are **not screened** for addresses, unit numbers, coordinates, or descriptions of where people sleep. See "AI screening" below.
+- **Limitations:** automated screening can miss sensitive details or flag harmless text. See "AI screening" below.
 
 ## Needs Board and need pages ✅
 
@@ -129,28 +129,13 @@ Branded illustration, "Page not found", "Back to homepage"; server-rendered with
 
 ---
 
-## AI screening of request text for sensitive details 📋 Not started
+## AI screening and admin privacy review ✅
 
-**Requested outcome:** flag, in a need's free text (`items`, `dietary_notes`), any of:
-
-| Safeguard | Status |
-|---|---|
-| Exact street addresses and building numbers | 📋 Not built |
-| Apartment, suite, floor, or unit numbers | 📋 Not built |
-| GPS coordinates and precise map locations (including map links) | 📋 Not built |
-| Descriptions of where identifiable people are sleeping, sheltering, or gathering in vulnerable circumstances | 📋 Not built |
-
-**What protects these fields today** (all non-automated):
-
-- The schema has no address, location, or GPS fields; location is a dropdown of community areas, enforced by a database constraint.
-- Form guidance: "Please don't include names, addresses, or camp locations" (intro), "Describe the items needed, not the people. Don't include names, health details, or exact locations" (items), "No names or other personal details" (notes).
-- The sign-up pledge: "I'll describe what's needed, not the people. I won't share names, health details, or exact locations."
-- Length limits (200 and 300 characters).
-- The assistant's prompt refuses names and locations in **chat**, but it never sees request text.
-
-**How the existing AI API is involved:** it isn't, yet. The app's only Anthropic call is the chat route. The SDK (`@anthropic-ai/sdk`), the key (`ANTHROPIC_API_KEY`), and the fallback-on-failure pattern already exist and could be reused, so screening would need no new dependency.
-
-**What remains:** everything: design approval, implementation, copy in both languages, tests, and a decision on what happens when the AI call fails. A proposed design is in [DEVELOPMENT_ROADMAP.md, item 1](DEVELOPMENT_ROADMAP.md#1-ai-screening-of-request-text-for-sensitive-details).
+- **Creation path:** `createRequest` validates account standing and form fields, then screens items and notes. Deterministic checks catch clear addresses, units, coordinates, and map links. The server-only Anthropic classifier handles contextual risk and returns validated JSON. High risk is returned for revision; medium risk enters a private queue only after a suggested safe candidate passes a second screening; low risk publishes. A missing key, timeout, invalid response, or API error does not publish.
+- **Admin path:** `/admin/privacy` shows only safe candidates to admins. Approval screens the exact candidate again, then uses one SQL statement to publish, mark the review approved, and notify the submitter. Admins can also request changes or reject; submitters see status and a safe draft on their dashboard.
+- **Storage:** migration `0007` adds `privacy_flagged` and `privacy_categories` to published needs, a `privacy_reviews` table for safe drafts and category names, and content-free notification types. Migration `0008` adds the terminal `superseded` lifecycle state and links a replacement review to its historical predecessor. No original blocked or medium-risk text or model response is persisted in the queue.
+- **Tests:** `test:privacy-rules` (64 mocked and development-database checks), `test:claims` (64 existing checks), `test:assistant-reply` (19 checks), lint, TypeScript, and build passed locally. Targeted local browser checks exercised synthetic low-, medium-, and high-risk submissions, revision, missing-key failure, admin decisions, statuses, notifications, and light/dark phone and desktop layouts. Live Anthropic calls were made only with synthetic form text; the full browser suites were not run.
+- **Limitations:** automated classification can miss details; medium-risk suggestions need a fresh passing screen and may be unavailable. New Spanish privacy wording, including “Revisada y reenviada,” needs native-speaker review before deployment. Production migrations `0007` and `0008` have not been applied.
 
 ---
 

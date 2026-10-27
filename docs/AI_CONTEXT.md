@@ -23,12 +23,12 @@ Mission statement (exact wording lives in `src/lib/copy.ts`, `MISSION`):
 These rules are the reason the product exists in its current shape. Do not weaken them without the owner's explicit, written approval.
 
 1. **Nothing identifying about the people being served is ever stored.** No columns for names, addresses, camp locations, GPS coordinates, or identifying details. Location is the **Chicago community area only** (a fixed list in `src/lib/neighborhoods.ts`, enforced by a database CHECK constraint). The rule is written at the top of `src/db/schema.ts`.
-2. **Free text is the remaining risk.** A need's `items` (≤200 chars) and `dietary_notes` (≤300 chars) are free text written by the poster and shown to organizations. Today they are protected only by on-screen guidance, the sign-up pledge, and length limits. **There is no automated screening of this text yet** (see section 6).
+2. **Free text is the remaining risk.** A need's `items` (≤200 chars) and `dietary_notes` (≤300 chars) are free text. The creation rule now screens them with deterministic checks and Anthropic before publication. High-risk text is blocked; medium-risk text enters review only as a separately screened safe candidate; failures do not publish. Automated screening can miss details, so the on-screen guidance and pledge still matter.
 3. **Contact emails** are shared only between the poster and the organization that claimed the need, only after the claim, and only while that organization is approved. This is decided **in the database queries** (`src/lib/request-rules.ts`), so a hidden email never reaches the browser.
 4. **Restricted pages answer with a real 404.** The Needs Board, need pages, and admin answer anyone not allowed to see them with the same not-found page and HTTP 404, so they don't reveal that they (or a given need) exist. This happens in `src/proxy.ts` and again in each page.
 5. **Notifications store no free text.** The inbox text is built at render time from the need and the accounts; admin review notes are never shown to organizations.
 6. **The assistant has no data access.** It cannot see accounts, requests, or the database, stores nothing on the server, and message text is never logged.
-7. **Privacy notice wording is exact.** The privacy notice on Post a Need (`NEW_REQUEST_COPY.privacy` in `copy.ts`) must match what is actually stored. If the schema changes, the notice must change with it, and the owner must approve the wording.
+7. **Privacy notice wording is exact.** The Post a Need notice (`NEW_REQUEST_COPY.privacy` in `copy.ts`) describes the screening metadata and the text sent to Anthropic. Keep it aligned with the schema and data flow; the new English and Spanish wording needs owner review before deployment.
 
 ## 3. Security and operations rules from the owner
 
@@ -79,9 +79,9 @@ The visual identity is settled. Do not change it unless the owner asks. Full det
 | Use | Status |
 |---|---|
 | **The Bridge assistant** (chat panel on every page) | **Built, tested, live.** `src/app/api/chat/route.ts`, model `claude-haiku-5-5` via `@anthropic-ai/sdk`, prompt in `src/lib/assistant-prompt.ts`. |
-| **AI screening of request text for sensitive details** (addresses, unit numbers, GPS coordinates, descriptions of where people sleep or shelter) | **Not built and not started.** No code, no tests, no prompt exists. Requested in the handoff brief of 2026-10-27; a proposed design is in [DEVELOPMENT_ROADMAP.md](DEVELOPMENT_ROADMAP.md). Needs the owner's approval before any work. |
+| **AI screening of request text for sensitive details** | Implemented in `src/lib/privacy-screening*.ts`; called by `createRequest`. A private, sanitized review queue and admin workflow live in `privacy-review-rules.ts` and `/admin/privacy`. The development database has migrations `0007` and `0008`; production has not been migrated or deployed. |
 
-Never describe the screening as existing, in code comments, copy, the assistant prompt, or docs, until it is built and tested.
+The screening is implemented and covered by mocked rule tests. Targeted local browser checks made live Anthropic calls using synthetic text only. Migration `0008` preserves resubmission history while making the prior review terminal and non-actionable. Production has not received migrations `0007` or `0008`.
 
 ## 7. Architectural constraints
 

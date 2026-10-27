@@ -4,6 +4,8 @@ Status: **Phases 1–7 complete.** This document records the design direction ("
 
 The existing Spanish copy was reviewed and verified by two fluent Spanish speakers.
 
+The post form now uses the existing notice styling for privacy screening results and a scoped Anthropic attribution badge adapted from the supplied Uiverse reference. The admin privacy queue uses the existing cards, page header, and empty state.
+
 ---
 
 ## 1. Design audit

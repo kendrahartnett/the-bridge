@@ -11,7 +11,7 @@ import type { RequestActionResult } from "@/lib/request-rules"
  * language without changing the address), so this names the real routes, for both
  * languages.
  */
-export function revalidatePages(...pages: ("/dashboard" | "/board" | "/requests/[id]" | "/admin")[]) {
+export function revalidatePages(...pages: ("/dashboard" | "/board" | "/requests/[id]" | "/admin" | "/admin/privacy")[]) {
   for (const page of pages) revalidatePath(`/[lang]${page}`, "page")
 }
 

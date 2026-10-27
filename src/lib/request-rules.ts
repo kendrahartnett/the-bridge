@@ -8,11 +8,13 @@ import { alias } from "drizzle-orm/pg-core"
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http"
 import { z } from "zod"
 
-import { foodRequests, notifications, users, type FoodRequest, type User } from "../db/schema.ts"
+import { foodRequests, notifications, privacyReviews, users, type FoodRequest, type User } from "../db/schema.ts"
 import type * as schema from "../db/schema.ts"
 import { chicagoLocalToDate } from "./chicago-time.ts"
 import { STATUS_LABELS } from "./labels.ts"
 import { newRequestSchema, type NewRequestInput } from "./validation.ts"
+import type { NewRequestOutput } from "./validation.ts"
+import { genericRewrite, type PrivacyCategory, type ScreeningDecision } from "./privacy-screening-core.ts"
 
 export type Db = NeonHttpDatabase<typeof schema>
 
@@ -22,8 +24,8 @@ export type Actor = { id: string; role: "outreach" | "donor" | null }
 export type RequestActionResult = { ok: true; message: string } | { ok: false; error: string }
 
 export type CreateRequestResult =
-  | { ok: true; id: string }
-  | { ok: false; error?: string; fieldErrors?: Partial<Record<keyof NewRequestInput, string[]>> }
+  | { ok: true; id: string; queued?: boolean }
+  | { ok: false; error?: string; fieldErrors?: Partial<Record<keyof NewRequestInput, string[]>>; privacy?: { kind: "blocked" | "unavailable"; categories?: PrivacyCategory[]; suggestion?: string } }
 
 const requestId = z.uuid()
 
@@ -211,7 +213,14 @@ async function explainNoChange(
 }
 
 /** Post a need: outreach accounts, and organizations that are currently approved. */
-export async function createRequest(db: Db, actor: Actor, input: unknown): Promise<CreateRequestResult> {
+export async function createRequest(
+  db: Db,
+  actor: Actor,
+  input: unknown,
+  screen: (value: NewRequestOutput) => Promise<ScreeningDecision> = async (value) =>
+    (await import("./privacy-screening.ts")).screenNeed(value),
+  revisionOf?: unknown
+): Promise<CreateRequestResult> {
   const me = await standing(db, actor.id)
   if (!canPost(me)) {
     return { ok: false, error: me?.role === "donor" ? orgBlockedError(me) : ROLE_ERRORS.poster }
@@ -224,23 +233,144 @@ export async function createRequest(db: Db, actor: Actor, input: unknown): Promi
   }
   const v = parsed.data
 
+  const revisionId = revisionOf === undefined ? null : requestId.safeParse(revisionOf)
+  if (revisionId && !revisionId.success) {
+    return { ok: false, error: "This revision is no longer available." }
+  }
+  if (revisionId?.success) {
+    const [available] = await db.select({ id: privacyReviews.id }).from(privacyReviews)
+      .where(and(
+        eq(privacyReviews.id, revisionId.data),
+        eq(privacyReviews.submittedBy, actor.id),
+        eq(privacyReviews.status, "changes_requested")
+      ))
+    if (!available) return { ok: false, error: "This revision is no longer available." }
+  }
+
+  let decision: ScreeningDecision
   try {
-    const [row] = await db
-      .insert(foodRequests)
-      .values({
-        createdBy: actor.id,
-        peopleCount: v.peopleCount,
-        category: v.category,
-        items: v.items,
-        dietaryNotes: v.dietaryNotes,
-        neighborhood: v.neighborhood,
-        windowStart: chicagoLocalToDate(v.windowStart),
-        windowEnd: chicagoLocalToDate(v.windowEnd),
-      })
-      .returning({ id: foodRequests.id })
-    return { ok: true, id: row.id }
-  } catch (err) {
-    console.error("createRequest insert failed", err)
+    decision = await screen(v)
+  } catch {
+    console.error("[privacy-screen] result=none code=unexpected")
+    return { ok: false, privacy: { kind: "unavailable" } }
+  }
+  if (decision.kind === "unavailable") {
+    return { ok: false, privacy: { kind: "unavailable" } }
+  }
+  if (decision.kind === "blocked") {
+    return {
+      ok: false,
+      privacy: {
+        kind: "blocked",
+        categories: decision.categories,
+        suggestion: genericRewrite(v.category, v.neighborhood),
+      },
+    }
+  }
+  if (decision.kind === "review") {
+    try {
+      // One statement creates the private safe candidate and content-free notifications.
+      // The original medium-risk fields are never inserted in this table.
+      const { rows } = revisionId?.success
+        ? await db.execute(sql`
+        with eligible_revision as materialized (
+          select id from ${privacyReviews}
+          where id = ${revisionId.data} and submitted_by = ${actor.id} and status = 'changes_requested'
+          for update
+        ), review as (
+          insert into ${privacyReviews} (
+            submitted_by, status, risk_level, categories, people_count, category,
+            safe_items, safe_notes, neighborhood, window_start, window_end, supersedes_review_id
+          ) select
+            ${actor.id}, 'pending_review', 'medium', ARRAY[${sql.join(decision.categories.map((category) => sql`${category}`), sql`, `)}]::text[],
+            ${v.peopleCount}, ${v.category}, ${decision.safeItems}, null,
+            ${v.neighborhood}, ${chicagoLocalToDate(v.windowStart)}, ${chicagoLocalToDate(v.windowEnd)}, eligible_revision.id
+          from eligible_revision
+          where exists (select 1 from ${users} poster where poster.id = ${actor.id}
+            and (poster.role = 'outreach' or (poster.role = 'donor' and poster.verification_status = 'approved')))
+          returning id, submitted_by, supersedes_review_id
+        ), superseded as (
+          update ${privacyReviews} old set status = 'superseded'
+          where old.id = (select supersedes_review_id from review) and old.status = 'changes_requested'
+          returning old.id
+        ), recipients as (
+          select submitted_by as user_id, 'privacy_pending'::notification_type as type from review
+          union all
+          select ${users.id}, 'privacy_new_review'::notification_type
+          from ${users}, review where ${users.isAdmin} = true and ${users.id} <> ${actor.id}
+        ), notified as (
+          insert into ${notifications} (user_id, type)
+          select user_id, type from recipients returning id
+        )
+        select id from review where exists (select 1 from superseded)`)
+        : await db.execute(sql`
+        with review as (
+          insert into ${privacyReviews} (
+            submitted_by, status, risk_level, categories, people_count, category,
+            safe_items, safe_notes, neighborhood, window_start, window_end
+          ) select
+            ${actor.id}, 'pending_review', 'medium', ARRAY[${sql.join(decision.categories.map((category) => sql`${category}`), sql`, `)}]::text[],
+            ${v.peopleCount}, ${v.category}, ${decision.safeItems}, null,
+            ${v.neighborhood}, ${chicagoLocalToDate(v.windowStart)}, ${chicagoLocalToDate(v.windowEnd)}
+          where exists (select 1 from ${users} poster where poster.id = ${actor.id}
+            and (poster.role = 'outreach' or (poster.role = 'donor' and poster.verification_status = 'approved')))
+          returning id, submitted_by
+        ), recipients as (
+          select submitted_by as user_id, 'privacy_pending'::notification_type as type from review
+          union all
+          select ${users.id}, 'privacy_new_review'::notification_type
+          from ${users}, review where ${users.isAdmin} = true and ${users.id} <> ${actor.id}
+        ), notified as (
+          insert into ${notifications} (user_id, type)
+          select user_id, type from recipients returning id
+        )
+        select id from review`)
+      return rows.length
+        ? { ok: true, id: String(rows[0].id), queued: true }
+        : { ok: false, error: revisionId ? "This revision is no longer available." : "You can't post a need from this account right now." }
+    } catch {
+      return { ok: false, error: "We couldn't save your request. Please try again." }
+    }
+  }
+
+  try {
+    const { rows } = revisionId?.success
+      ? await db.execute(sql`
+      with eligible_revision as materialized (
+        select id from ${privacyReviews}
+        where id = ${revisionId.data} and submitted_by = ${actor.id} and status = 'changes_requested'
+        for update
+      ), published as (
+        insert into ${foodRequests} (created_by, people_count, category, items, dietary_notes,
+          privacy_flagged, privacy_categories, neighborhood, window_start, window_end)
+        select ${actor.id}, ${v.peopleCount}, ${v.category}, ${v.items}, ${v.dietaryNotes},
+          false, '{}'::text[], ${v.neighborhood}, ${chicagoLocalToDate(v.windowStart)}, ${chicagoLocalToDate(v.windowEnd)}
+        from eligible_revision
+        where exists (select 1 from ${users} poster where poster.id = ${actor.id}
+          and (poster.role = 'outreach' or (poster.role = 'donor' and poster.verification_status = 'approved')))
+        returning id
+      ), superseded as (
+        update ${privacyReviews} old set status = 'superseded',
+          published_request_id = (select id from published)
+        where old.id = (select id from eligible_revision) and old.status = 'changes_requested'
+          and exists (select 1 from published)
+        returning old.id
+      )
+      select id from published where exists (select 1 from superseded)`)
+      : await db.execute(sql`
+      insert into ${foodRequests} (created_by, people_count, category, items, dietary_notes,
+        privacy_flagged, privacy_categories, neighborhood, window_start, window_end)
+      select ${actor.id}, ${v.peopleCount}, ${v.category}, ${v.items}, ${v.dietaryNotes},
+        false, '{}'::text[], ${v.neighborhood}, ${chicagoLocalToDate(v.windowStart)}, ${chicagoLocalToDate(v.windowEnd)}
+      where exists (select 1 from ${users} poster where poster.id = ${actor.id}
+        and (poster.role = 'outreach' or (poster.role = 'donor' and poster.verification_status = 'approved')))
+      returning id`)
+    return rows.length
+      ? { ok: true, id: String(rows[0].id) }
+      : { ok: false, error: revisionId ? "This revision is no longer available." : "You can't post a need from this account right now." }
+  } catch {
+    // Database errors may include query parameters. Keep submitted text out of logs.
+    console.error("[request] insert_failed")
     return { ok: false, error: "We couldn't save your request. Please try again." }
   }
 }
@@ -581,9 +711,9 @@ export async function openNotification(db: Db, actor: Actor, id: unknown): Promi
     .update(notifications)
     .set({ readAt: sql`coalesce(${notifications.readAt}, now())` })
     .where(and(eq(notifications.id, parsed.data), eq(notifications.userId, actor.id)))
-    .returning({ requestId: notifications.requestId })
+    .returning({ requestId: notifications.requestId, type: notifications.type })
   if (!row) return null
-  return { href: row.requestId ? `/requests/${row.requestId}` : "/dashboard" }
+  return { href: row.type === "privacy_new_review" ? "/admin/privacy" : row.requestId ? `/requests/${row.requestId}` : "/dashboard" }
 }
 
 /** Marks all of the viewer's own unread notifications read. Returns how many changed. */

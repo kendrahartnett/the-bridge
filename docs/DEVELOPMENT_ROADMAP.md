@@ -2,7 +2,7 @@
 
 Prioritized remaining work for The Bridge, as of commit `8919481` (2026-10-27). Nothing here is approved for implementation yet: each item needs the owner's go-ahead, and items marked **Decision** need the owner to choose first.
 
-Order of work: **0 (housekeeping)** → **1 (privacy screening)** → **2 (production checks)**, then the product items in 4–9 in whatever order the owner prefers. The Spanish review in section 3 is complete.
+The handoff-document and design-system housekeeping is complete. Privacy screening is implemented locally and described in section 1. Production checks remain next; the existing Spanish copy review in section 3 is complete.
 
 Rules that apply to every item are in [AI_CONTEXT.md §3](AI_CONTEXT.md#3-security-and-operations-rules-from-the-owner). In short: small focused changes, no new dependencies or Vercel changes without asking, migrations shown first and applied to development only, tests and a clean build before declaring anything done.
 
@@ -12,54 +12,27 @@ Rules that apply to every item are in [AI_CONTEXT.md §3](AI_CONTEXT.md#3-securi
 
 | Task | Detail | Needs |
 |---|---|---|
-| Decide on two deleted images | `public/images/needs-card-post-board.png` and `public/images/sticky-note.png` are deleted in the working tree but not committed. No code references them (the board uses `sticky-note-card.png`). | **Decision:** commit the deletion or restore them (`git restore public/images/…`). Previous sessions deliberately left them out of every commit. |
-| Commit the handoff docs | `docs/CODEX_HANDOFF.md`, `FEATURE_STATUS.md`, `DEVELOPMENT_ROADMAP.md`, `AI_CONTEXT.md` are new and uncommitted. | Owner approval to commit and push. |
+| Remove two unused images | `public/images/needs-card-post-board.png` and `public/images/sticky-note.png` have no code references; the board uses `sticky-note-card.png`. | Approved for inclusion in the privacy workflow commit. |
+| Handoff docs | Committed locally as `d9c6c86`; not pushed. | Owner approval before pushing. |
 | Point Codex at the docs from `AGENTS.md` | Codex reads `AGENTS.md` automatically. The file holds only the block `next dev` manages (between `<!-- BEGIN:nextjs-agent-rules -->` and `<!-- END:nextjs-agent-rules -->`). Text added **outside** the markers is preserved; inside them it is regenerated. A short section after the END marker linking to `docs/AI_CONTEXT.md` would make the rules load in every Codex session. | Owner approval (it changes an instruction file). |
-| Refresh stale notes in `docs/design-system.md` | §9 says `RequestDetailLayout` is "not routed yet"; it is now used by `/requests/[id]`. Phase 8 ("application-wide QA") has no recorded completion, although the e2e suites now cover that ground. | Documentation only. |
+| Refresh stale notes in `docs/design-system.md` | The phase status and `RequestDetailLayout` route were corrected in `e26c235`. | Complete. |
 
-## 1. AI screening of request text for sensitive details
+## 1. AI screening and admin privacy review — implemented locally
 
-**Status:** not started (no code, prompt, or tests exist). **Priority:** highest, because the two free-text fields are the one place identifying location details can still enter the database and reach organizations.
+The server now blocks high-risk submissions, sends medium-risk submissions to a private admin queue as separately screened safe drafts, and publishes low-risk submissions. A screening outage does not publish or queue. Admin approval screens the exact safe candidate again. Successful resubmissions preserve the prior review as non-actionable history and link replacement reviews. Migrations `0007` and `0008` were applied to the development database only; production is unchanged.
 
-**Goal:** when someone posts a need, detect and stop (or flag) text in `items` and `dietary_notes` that contains:
-
-1. exact street addresses and building numbers;
-2. apartment, suite, floor, or unit numbers;
-3. GPS coordinates and precise map locations (including map links and plus codes);
-4. descriptions of where identifiable people sleep, shelter, or gather in vulnerable circumstances ("the tent behind the blue dumpster at …", "under the viaduct at 47th and …").
-
-**Proposed design (for the owner to approve or change):**
-
-- **Where it runs:** on the server, inside `createRequest` in `src/lib/request-rules.ts`, after zod validation and before the INSERT. Nothing in the browser decides it (rule: permission and policy checks live in the rules file).
-- **Two layers:**
-  1. **Deterministic check first** (no network, instant, testable): patterns for coordinates (`41.88, -87.63`, degrees/minutes), map links (`maps.google`, `goo.gl/maps`, `maps.apple`, plus codes), unit markers (`apt`, `unit`, `suite`, `#4B`, `floor`, `piso`, `depto`), and house-number-plus-street-suffix (`1234 N Clark St`, `Ave`, `Blvd`, `calle`). Catches the clear cases, including when the AI is unavailable.
-  2. **AI check second**, for what patterns can't judge (category 4, intersections, landmarks). Reuse the existing `@anthropic-ai/sdk` client and key; a short server-only classification prompt; structured JSON output (`{ flagged: boolean, categories: [...] }`); the same timeout and no-retry pattern as the chat route; thinking disabled; never log the text.
-- **What the person sees:** the form stays filled in, the field is marked, and a message in their language explains which kind of detail to remove ("Remove the street address. Only the neighborhood is shared."). Nothing is saved until the text passes.
-- **Decisions the owner must make:**
-  - **AI unavailable or times out:** *fail closed* (block posting and say "try again") or *fail open* (save with only the deterministic check). Recommendation: fail open after the deterministic check, so outreach workers are never blocked from getting help to people, and log only that the check was skipped (no text).
-  - **Block or warn:** hard block, or "post anyway" for false positives. Recommendation: block for categories 1–3 (clear-cut), allow an explicit override for category 4 only if false positives turn out to be common.
-  - **Model:** `claude-haiku-5-5` (as the assistant) is the cheap, fast default.
-  - **Existing data:** whether to scan needs already in production (read-only report first).
-  - **Privacy notice:** sending need text to Anthropic for screening is a new data flow. The privacy notice wording (exact, owner-approved) may need to mention it.
-- **Copy:** new strings in `copy.ts` in English and Spanish.
-- **Tests to add:**
-  - A unit script (`scripts/test-sensitive-screen.ts`, `npm run test:screen`) for the deterministic layer: positive and negative cases in English and Spanish, including tricky negatives ("2 boxes of size 10 shoes", "500 calories", "twin-size blankets for 4") and Chicago address shapes.
-  - A labelled set of example texts for the AI layer, run on demand only (it costs money; get approval first), reporting precision and recall per category.
-  - `test:claims`: a flagged post is not inserted; a clean one is.
-  - `e2e:form`: the error appears on the right field, in both languages, with contrast and focus handled.
-- **No schema change** is needed unless the owner wants to store a "screened" flag. **No new dependency** is needed.
-
+**Before deployment:** review the new English and Spanish privacy notice and plan the production migration with the owner. Targeted synthetic live Anthropic checks passed locally; the full browser suites have not run. Automated classification can miss or over-flag details; monitor safe diagnostic codes without logging submitted text. The generated Drizzle snapshot and mocked rule tests are in the repository.
 ## 2. Production checks
 
 | Task | Detail |
 |---|---|
 | Confirm live sign-in works | Production sign-in and sign-up failed with `INVALID_ORIGIN` because Neon Auth's trusted-domain list was empty. As of 2026-10-27 the production branch lists `https://the-bridge-one.vercel.app`, but no record shows a live sign-in test after that. The owner (or an agent with approval) should sign in on the live site with a real account. If the site gets a custom domain, it must be added to the list too. |
 | zod advisory in `@neondatabase/auth` | High severity, deferred on 2026-10-24 "together with the production sign-in fix". Needs a newer `@neondatabase/auth` (semver-major). **Ask before upgrading**, run the full suite after, and update `docs/security-notes.md`. |
-| Confirm production migrations are current | Production should have all 7 migrations (`0000`–`0006`). Only the owner runs `npm run db:migrate:prod -- --confirm`; its summary line says how many are recorded. |
+| Confirm production migrations are current | Production has not received migrations `0007` and `0008` for privacy review and resubmission history. Only the owner runs `npm run db:migrate:prod -- --confirm` after reviewing the final SQL and deployment plan. |
 
 ## 3. Spanish review — complete
 
-The existing Spanish copy, including privacy and handoff wording, was reviewed and verified by two fluent Spanish speakers. No translation changes are planned.
+The existing Spanish copy was reviewed and verified by two fluent Spanish speakers. The new screening and admin review strings were added afterward and need owner review before deployment.
 
 ## 4. Notifications beyond the app
 

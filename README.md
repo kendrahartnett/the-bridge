@@ -13,11 +13,13 @@ Bridging the gap between people experiencing homelessness and the community orga
 | Feature | What it does |
 |---|---|
 | Post a Need | Outreach workers and community members describe what's needed: the type of support, the items, how many people, the neighborhood, notes, and a time window. |
+| Privacy screening | A server-side deterministic check and Claude Haiku classify request text before posting. Clear risks are returned for revision; uncertain requests wait in a private admin queue. Screening outages do not publish. |
 | Organization accounts | Organizations sign up with their name, website, an optional EIN, and a contact. A person reviews each one before it can claim needs or see contact information. |
 | Needs Board and need pages | Organizations browse open and in-progress needs as sticky notes (`/board`); each need has its own page with a status timeline (`/requests/[id]`). |
 | Claim, fulfil, cancel | An approved organization claims a need; the poster marks it fulfilled or cancels it while it's open. The rules are enforced on the server and in the database, including when two organizations claim at the same moment. |
 | Inbox | Notifications for claims, completed needs, and account approvals, on the dashboard and behind a bell in the header. |
 | Admin review | Admins review organization applications, approve, reject, or revoke, with an internal note (`/admin`). |
+| Admin privacy review | Admins review separately screened safe drafts at `/admin/privacy`; approval screens the exact candidate again. Submitters see the review status on their dashboard. |
 | AI assistant | A chat assistant that explains how The Bridge works, with guardrails (see below). |
 | English and Spanish | An EN / ES switch in the header; the choice is saved in a `lang` cookie and the page renders on the server in that language. |
 | Light and dark themes | A theme toggle in the header (dark by default). |
@@ -37,7 +39,9 @@ The existing Spanish copy was reviewed and verified by two fluent Spanish speake
 ## Privacy and safety design
 
 - **What's stored about a need:** the Chicago community area (a neighborhood, not an address), the number of people, the type of support, the items needed, optional notes, and a time window.
-- **What's never stored:** names, addresses, or exact locations of the people being served. The forms ask for none of these, and the database schema has no fields for them.
+- **Before publication:** items and notes receive deterministic checks and server-side Anthropic screening. Medium-risk original text is not stored in the review queue; only a separately screened safe candidate and category labels are kept. High-risk text and failed screenings are not saved as needs. Published needs carry a boolean screening flag and category names, not model output.
+- **Anthropic data flow:** the screening request sends items, notes, and community area, without account details. [Anthropic's API retention policy](https://privacy.anthropic.com/en/articles/7996866-how-long-do-you-store-my-organization-s-data) says inputs and outputs are ordinarily deleted within 30 days, with stated exceptions. The app does not retain the screening prompt or response.
+- **Identifying details are not requested:** the schema has no dedicated fields for names, addresses, or exact locations of people being served. Screening checks free text before publication, but automated classification cannot guarantee that every sensitive detail is caught.
 - **Contact information** (account emails) is shared only between the person who posted a need and the organization that claimed it, only after the claim, and only while that organization is approved. Which emails a page may show is decided in the database queries, so a hidden email is never sent to the browser.
 - **Pages only some accounts may see** (the Needs Board, need pages, admin) answer everyone else with the same not-found page and a real 404, so they don't reveal that they exist.
 - **Passwords** are handled by the managed auth service (Neon Auth), which stores them hashed; the app never stores or logs them.
@@ -106,6 +110,7 @@ Then open http://localhost:3000.
 | `db:migrate` | Applies pending migrations | Writes to the database in `.env.local` |
 | `db:seed` | Creates or resets the test accounts, needs, and notifications | Development only |
 | `test:claims` | Tests the request, verification, and inbox rules (see Testing) | Development only; deletes only the rows it created |
+| `test:privacy-rules` | Tests privacy classification and admin review rules with synthetic data and mocked AI responses | Development only; cleans up its own rows |
 | `test:assistant-reply` | Tests how assistant replies are cleaned up | None |
 | `test:redact` | Tests that scripts never print secrets | None |
 | `test:migrate-summary` | Tests the production migration script's summary, against development | Development only |
@@ -121,6 +126,7 @@ Then open http://localhost:3000.
 
 ```sh
 npm run test:claims            # request, verification and inbox rules (development database)
+npm run test:privacy-rules      # privacy screening and admin review rules (development database)
 npm run test:assistant-reply   # assistant reply clean-up
 npm run test:redact            # secrets never appear in script output
 npm run test:migrate-summary   # the production migration script's summary (development database)
@@ -209,6 +215,7 @@ design/source/  The original logo artwork
 - **The theme needs JavaScript:** without it, pages show the light theme.
 - **No text messages or email alerts yet.**
 - **Organization verification is manual,** so approval depends on an admin reviewing applications.
+- **Privacy screening can miss details or flag harmless text.** The admin queue only receives a separately screened safe candidate; admins re-screen it before approval.
 - **No maps or location-based features yet.**
 - **The illustrations are AI-generated** and illustrative; they don't show real people or events.
 

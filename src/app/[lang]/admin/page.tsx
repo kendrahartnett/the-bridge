@@ -49,7 +49,7 @@ export default async function AdminPage({ searchParams }: PageProps<"/[lang]/adm
 }
 
 async function AdminContent({ searchParams }: { searchParams: PageProps<"/[lang]/admin">["searchParams"] }) {
-  const { ADMIN_COPY } = await getCopy()
+  const { ADMIN_COPY, PRIVACY_COPY } = await getCopy()
   const { user, sessionError } = await lookUpUser()
   if (sessionError) logAdminLookupFailure("session", sessionError)
   if (!user) notFound()
@@ -68,6 +68,10 @@ async function AdminContent({ searchParams }: { searchParams: PageProps<"/[lang]
         title={ADMIN_COPY.title}
         intro={ADMIN_COPY.intro}
       />
+
+      <Link href="/admin/privacy" className="mt-6 inline-flex min-h-tap items-center font-semibold text-primary-text underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring">
+        {PRIVACY_COPY.reviewHeading}
+      </Link>
 
       {/* Each tab sizes to its label and count, so "Approved 12" never runs into its
           neighbor on a 320px screen. Below 640px the count sits under the label, so the
