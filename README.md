@@ -1,8 +1,14 @@
 # The Bridge
 
-A Chicago platform that connects outreach workers and community members who need essential resources (food, clothing, hygiene supplies, and other items) with local organizations ready to help, with privacy and dignity at the center.
+<p align="center">
+  <img src="public/images/the-bridge-one-hero.png" alt="The Bridge — illustrated Chicago skyline with a golden bridge connecting two people" width="850" />
+</p>
 
-**Live site:** https://the-bridge-one.vercel.app
+**Bridging the gap. Ending homelessness.**
+
+**Live site:** https://the-bridge-one.vercel.app/
+
+The Bridge is a Chicago-focused platform where outreach workers and community members share needs and approved organizations coordinate help. Needs can include housing resources, identification and vital documents, employment, education, healthcare, transportation, essential supplies, legal assistance, reentry support, and community services. The Bridge connects people and organizations; it does not provide these services itself. Privacy and dignity guide the way requests are shared.
 
 ## Mission
 
@@ -17,15 +23,37 @@ Bridging the gap between people experiencing homelessness and the community orga
 | Organization accounts | Organizations sign up with their name, website, an optional EIN, and a contact. A person reviews each one before it can claim needs or see contact information. |
 | Needs Board and need pages | Organizations browse open and in-progress needs as sticky notes (`/board`); each need has its own page with a status timeline (`/requests/[id]`). |
 | Claim, fulfil, cancel | An approved organization claims a need; the poster marks it fulfilled or cancels it while it's open. The rules are enforced on the server and in the database, including when two organizations claim at the same moment. |
-| Inbox | Notifications for claims, completed needs, and account approvals, on the dashboard and behind a bell in the header. |
+| Dashboard and Inbox | Role-specific dashboard actions and impact counts, plus a dedicated `/inbox` for claim, fulfillment, account, and review notifications. The header shows unread notifications. |
 | Admin review | Admins review organization applications, approve, reject, or revoke, with an internal note (`/admin`). |
 | Admin privacy review | Admins review separately screened safe drafts at `/admin/privacy`; approval screens the exact candidate again. Submitters see the review status on their dashboard. |
-| AI assistant | A chat assistant that explains how The Bridge works, with guardrails (see below). |
+| AI assistant | A chat assistant that explains The Bridge and helps people think through resources and next steps, with guardrails (see below). |
 | English and Spanish | An EN / ES switch in the header; the choice is saved in a `lang` cookie and the page renders on the server in that language. |
 | Light and dark themes | A theme toggle in the header (dark by default). |
 | Accessibility | Responsive down to 320px, keyboard and screen-reader support, 44px tap targets, contrast checked from real pixels, reduced motion respected. |
 
-The existing Spanish copy was reviewed and verified by two fluent Spanish speakers.
+The previously released Spanish copy was reviewed and verified by two fluent Spanish speakers. New Inbox, dashboard, and assistant wording added in this sprint still needs native-speaker review before release.
+
+## How It Works
+
+**1. Request**
+
+Anyone in the community can share a need.
+
+**2. Connect**
+
+People and organizations come together to help.
+
+**3. Provide**
+
+Help, resources, and information reach those who need them.
+
+**4. Support**
+
+Ongoing connections create pathways to housing and essential services.
+
+**5. Transform**
+
+Communities work together toward ending homelessness.
 
 ## Tech stack
 
@@ -33,13 +61,15 @@ The existing Spanish copy was reviewed and verified by two fluent Spanish speake
 - **Tailwind CSS**, **shadcn/ui** (Radix UI), **Motion**
 - **PostgreSQL on Neon**, with **Drizzle ORM** and Drizzle Kit migrations
 - **Neon Auth** for sign-in
-- **Anthropic API** (Claude Haiku) for the assistant
+- **Anthropic API** (Claude Haiku) for the assistant and privacy screening
 - **Vercel** for hosting
 
 ## Privacy and safety design
 
 - **What's stored about a need:** the Chicago community area (a neighborhood, not an address), the number of people, the type of support, the items needed, optional notes, and a time window.
 - **Before publication:** items and notes receive deterministic checks and server-side Anthropic screening. Medium-risk original text is not stored in the review queue; only a separately screened safe candidate and category labels are kept. High-risk text and failed screenings are not saved as needs. Published needs carry a boolean screening flag and category names, not model output.
+- **Risk levels:** low-risk requests follow the normal publication flow; medium-risk requests wait privately for admin review of a safe draft; high-risk requests are blocked with guidance and may be revised. A suggested rewrite can fill the description for the poster to review and submit again. Admin approval screens the exact final draft again. Revised submissions keep their prior review history.
+- **Location policy:** screening checks exact addresses, unit identifiers, GPS coordinates, and details that identify vulnerable people or precise sheltering locations. General neighborhood and geographic descriptions are permitted.
 - **Anthropic data flow:** the screening request sends items, notes, and community area, without account details. [Anthropic's API retention policy](https://privacy.anthropic.com/en/articles/7996866-how-long-do-you-store-my-organization-s-data) says inputs and outputs are ordinarily deleted within 30 days, with stated exceptions. The app does not retain the screening prompt or response.
 - **Identifying details are not requested:** the schema has no dedicated fields for names, addresses, or exact locations of people being served. Screening checks free text before publication, but automated classification cannot guarantee that every sensitive detail is caught.
 - **Contact information** (account emails) is shared only between the person who posted a need and the organization that claimed it, only after the claim, and only while that organization is approved. Which emails a page may show is decided in the database queries, so a hidden email is never sent to the browser.
@@ -54,7 +84,7 @@ The existing Spanish copy was reviewed and verified by two fluent Spanish speake
 
 - **Node.js 22.18 or later** (the repo's scripts run TypeScript files directly with Node; development uses Node 24). The repo doesn't pin a version in `package.json` or `.nvmrc`.
 - **npm**
-- **A Neon account**, with a development project (this repo's is named `the-bridge-dev`) that has Neon Auth enabled.
+- **A Neon account**, with a separate development database and Neon Auth enabled. Do not point local development or test scripts at production.
 
 ### Install
 
@@ -71,7 +101,7 @@ Copy `.env.example` to `.env.local` and fill in the values. Never commit `.env.l
 | `DATABASE_URL` | Postgres connection string for the Neon database | Required (the development project) | Required (set in Vercel) |
 | `NEON_AUTH_BASE_URL` | The Neon Auth endpoint for sign-in | Required | Required |
 | `NEON_AUTH_COOKIE_SECRET` | Signs the session cookies (at least 32 characters) | Required | Required |
-| `ANTHROPIC_API_KEY` | The assistant's API key; without it, the assistant answers with a fixed fallback message | Optional | Required for the assistant |
+| `ANTHROPIC_API_KEY` | Server-side assistant and privacy screening key; without it, the assistant uses a fixed fallback and new requests cannot pass screening | Required to post needs | Required to post needs |
 | `ADMIN_CONTACT_EMAIL` | The address shown to organizations under review or not approved (banners, inbox, assistant) | Optional | Recommended |
 | `SEED_TEST_PASSWORD` | The password for the seeded test accounts, used by `db:seed` and the browser tests | Required for seeding and tests | Not used |
 | `E2E_BASE_URL` | The local server the browser tests use (default `http://localhost:3100`) | Optional | Not used |
@@ -86,7 +116,7 @@ npm run db:migrate   # apply the migrations in drizzle/ to the database in .env.
 npm run db:seed      # create or reset the test accounts and test needs (development only)
 ```
 
-The seed creates fictional accounts (for example `test.outreach1@example.com`, `test.donor1@example.com`, and the admin `test.admin@example.com`), all with the password in `SEED_TEST_PASSWORD`. It refuses to run against anything but the development project (`src/db/dev-guard.ts`).
+The seed creates fictional accounts (for example `test.outreach1@example.com`, `test.donor1@example.com`, and the admin `test.admin@example.com`), all with the password in `SEED_TEST_PASSWORD`. It checks the development database target before running (`src/db/dev-guard.ts`).
 
 ### Run
 
@@ -112,6 +142,7 @@ Then open http://localhost:3000.
 | `test:claims` | Tests the request, verification, and inbox rules (see Testing) | Development only; deletes only the rows it created |
 | `test:privacy-rules` | Tests privacy classification and admin review rules with synthetic data and mocked AI responses | Development only; cleans up its own rows |
 | `test:assistant-reply` | Tests how assistant replies are cleaned up | None |
+| `test:assistant-scope` | Checks assistant topic coverage without calling Anthropic | None |
 | `test:redact` | Tests that scripts never print secrets | None |
 | `test:migrate-summary` | Tests the production migration script's summary, against development | Development only |
 | `admin:grant` | Makes an existing account an admin: `npm run admin:grant -- <email>` | Writes to the database in `.env.local` |
@@ -128,11 +159,12 @@ Then open http://localhost:3000.
 npm run test:claims            # request, verification and inbox rules (development database)
 npm run test:privacy-rules      # privacy screening and admin review rules (development database)
 npm run test:assistant-reply   # assistant reply clean-up
+npm run test:assistant-scope   # assistant topics (offline)
 npm run test:redact            # secrets never appear in script output
 npm run test:migrate-summary   # the production migration script's summary (development database)
 ```
 
-`test:claims` calls the same rule functions as the app (`src/lib/request-rules.ts`) with the seeded accounts. It covers claiming, fulfilling, and cancelling; organization approval, rejection, and revocation; which emails each side can see; the Needs Board and need-page visibility; that each change creates exactly one notification (including a race of two organizations claiming at once, 10 times); and that people can read only their own notifications. It deletes only the rows it created and writes its results to [docs/test-results.md](docs/test-results.md).
+`test:claims` calls the same rule functions as the app (`src/lib/request-rules.ts`) with the seeded accounts. It covers claiming, fulfilling, and cancelling; organization approval, rejection, and revocation; which emails each side can see; the Needs Board and need-page visibility; that each change creates exactly one notification (including a race of two organizations claiming at once, 10 times); and that people can read only their own notifications. It deletes only the rows it created and writes its results to [docs/test-results.md](docs/test-results.md). `test:assistant-scope` checks the assistant's supported topics without calling Anthropic.
 
 ### Browser tests
 
@@ -196,15 +228,18 @@ design/source/  The original logo artwork
 ## Deployment
 
 - **Hosting:** pushes to the `main` branch deploy to Vercel.
+- **Source:** [GitHub repository](https://github.com/kendrahartnett/the-bridge). The production deployment follows GitHub `main`; pushing code does not run database migrations.
 - **Environment variables in production** (names only): `DATABASE_URL`, `NEON_AUTH_BASE_URL`, `NEON_AUTH_COOKIE_SECRET`, `ANTHROPIC_API_KEY`, `ADMIN_CONTACT_EMAIL`.
-- **Separate databases:** production and development are separate Neon projects (`the-bridge` and `the-bridge-dev`), each with its own Neon Auth, so accounts and sessions never cross between them.
+- **Separate databases:** use a dedicated development Neon database and Neon Auth configuration for local work and tests. The former development branch was removed; provision and verify a new development target before running database-writing development commands.
 - **Migrations:** test a migration on development first (`npm run db:migrate`), then apply it to production:
 
   ```sh
   npm run db:migrate:prod -- --confirm
   ```
 
-  It reads production's database URL from `.env.prod.local`, refuses to run without `--confirm`, and ends with a summary, for example `Applied 2 migrations: 0005_request_status_times, 0006_notifications.` or `Applied 0 migrations; 7 already recorded.`, followed by the total number recorded.
+  It reads production's database URL from `.env.prod.local`, refuses to run without `--confirm`, and reports which migrations were applied and how many are recorded.
+
+  Before pushing code that depends on a new schema, verify a production recovery point, apply and verify the migrations on the active production database, then confirm the Vercel deployment and public pages load. Keep development commands pointed at a separate development database.
 
 ## Known limitations
 
@@ -244,7 +279,10 @@ The Bridge is used by real people. Any change must keep the privacy rules above 
 
 To be added by the author.
 
-## Authors
+## Author & AI Development
 
-- **Kendra Anne Hartnett**
-- **Claude** (Anthropic), an AI coding assistant, which contributed code, design, and documentation under Kendra Anne Hartnett's direction.
+**Created and developed by:** Kendra Anne Hartnett
+
+**AI-assisted development tools:** Anthropic Claude Code and OpenAI Codex.
+
+AI coding tools supported implementation, debugging, testing, and iteration. Project direction, requirements, design decisions, and verification remained human-led.
