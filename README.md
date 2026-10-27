@@ -23,6 +23,8 @@ Bridging the gap between people experiencing homelessness and the community orga
 | Light and dark themes | A theme toggle in the header (dark by default). |
 | Accessibility | Responsive down to 320px, keyboard and screen-reader support, 44px tap targets, contrast checked from real pixels, reduced motion respected. |
 
+The existing Spanish copy was reviewed and verified by two fluent Spanish speakers.
+
 ## Tech stack
 
 - **Next.js** (App Router, Cache Components), **React**, **TypeScript**

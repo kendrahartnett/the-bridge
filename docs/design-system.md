@@ -2,6 +2,8 @@
 
 Status: **Phases 1–7 complete.** This document records the design direction ("Editorial & Bold × Connection & Movement"), the tokens and components that carry it, and the implementation history. Earlier audit and proposal sections are retained for context; section 9 records the completed phases.
 
+The existing Spanish copy was reviewed and verified by two fluent Spanish speakers.
+
 ---
 
 ## 1. Design audit

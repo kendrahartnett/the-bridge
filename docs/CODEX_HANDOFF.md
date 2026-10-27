@@ -303,7 +303,7 @@ At the time of writing:
 | Next.js 16 differences | APIs differ from older versions; read `node_modules/next/dist/docs/` first. |
 | Stale build cache | Can hide type errors locally; always clean-build before committing. |
 | Port 3100 | A server left running from an earlier session served an old build during this handoff. Check that nothing else holds the port before running browser tests. |
-| Unreviewed Spanish | 19 Spanish strings await review, including legal and privacy wording. |
+| Spanish copy | The existing Spanish copy was reviewed and verified by two fluent Spanish speakers. |
 | Tests mutate dev data | e2e and `test:claims` reseed or write to `the-bridge-dev` (guarded; never production). |
 
 ## 14. Development rules for Codex

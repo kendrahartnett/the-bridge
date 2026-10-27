@@ -2,7 +2,7 @@
 
 Prioritized remaining work for The Bridge, as of commit `8919481` (2026-10-27). Nothing here is approved for implementation yet: each item needs the owner's go-ahead, and items marked **Decision** need the owner to choose first.
 
-Order of work: **0 (housekeeping)** → **1 (privacy screening)** → **2 (production checks)** → **3 (Spanish review)**, then the product items in 4–9 in whatever order the owner prefers.
+Order of work: **0 (housekeeping)** → **1 (privacy screening)** → **2 (production checks)**, then the product items in 4–9 in whatever order the owner prefers. The Spanish review in section 3 is complete.
 
 Rules that apply to every item are in [AI_CONTEXT.md §3](AI_CONTEXT.md#3-security-and-operations-rules-from-the-owner). In short: small focused changes, no new dependencies or Vercel changes without asking, migrations shown first and applied to development only, tests and a clean build before declaring anything done.
 
@@ -41,7 +41,7 @@ Rules that apply to every item are in [AI_CONTEXT.md §3](AI_CONTEXT.md#3-securi
   - **Model:** `claude-haiku-5-5` (as the assistant) is the cheap, fast default.
   - **Existing data:** whether to scan needs already in production (read-only report first).
   - **Privacy notice:** sending need text to Anthropic for screening is a new data flow. The privacy notice wording (exact, owner-approved) may need to mention it.
-- **Copy:** new strings in `copy.ts` in English and Spanish (Spanish marked `// needs review`).
+- **Copy:** new strings in `copy.ts` in English and Spanish.
 - **Tests to add:**
   - A unit script (`scripts/test-sensitive-screen.ts`, `npm run test:screen`) for the deterministic layer: positive and negative cases in English and Spanish, including tricky negatives ("2 boxes of size 10 shoes", "500 calories", "twin-size blankets for 4") and Chicago address shapes.
   - A labelled set of example texts for the AI layer, run on demand only (it costs money; get approval first), reporting precision and recall per category.
@@ -57,9 +57,9 @@ Rules that apply to every item are in [AI_CONTEXT.md §3](AI_CONTEXT.md#3-securi
 | zod advisory in `@neondatabase/auth` | High severity, deferred on 2026-10-24 "together with the production sign-in fix". Needs a newer `@neondatabase/auth` (semver-major). **Ask before upgrading**, run the full suite after, and update `docs/security-notes.md`. |
 | Confirm production migrations are current | Production should have all 7 migrations (`0000`–`0006`). Only the owner runs `npm run db:migrate:prod -- --confirm`; its summary line says how many are recorded. |
 
-## 3. Spanish review
+## 3. Spanish review — complete
 
-19 strings in `src/lib/copy.ts` are marked `// needs review`: the AI disclosure, sign-up pledge, privacy notice, contact and handoff guidance, and other legal or sensitive wording. A native Spanish speaker should review them; then remove the markers. Run `npm run e2e:spanish` after any change.
+The existing Spanish copy, including privacy and handoff wording, was reviewed and verified by two fluent Spanish speakers. No translation changes are planned.
 
 ## 4. Notifications beyond the app
 

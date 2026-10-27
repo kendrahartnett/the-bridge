@@ -17,7 +17,7 @@ Feature-by-feature state of The Bridge, checked against the code at commit `8919
 | Inbox notifications | ✅ (in-app only) |
 | Dashboards | ✅ |
 | AI assistant (chat) | ✅ |
-| English / Spanish | 🟡 (19 Spanish strings await native-speaker review) |
+| English / Spanish | ✅ (existing Spanish copy verified by two fluent speakers) |
 | Light / dark themes | ✅ |
 | Not-found page (branded, real 404, works without JS) | ✅ |
 | Accessibility and responsive layout | ✅ |
@@ -101,12 +101,12 @@ Feature-by-feature state of The Bridge, checked against the code at commit `8919
 - **Limitations:** the rate limit lives in each server instance's memory, so on Vercel it is per instance, not global; the 10-question limit resets on refresh; the assistant is told about privacy but can't stop someone from typing personal details into the chat (they go to Anthropic with the request, and are neither stored nor logged by the app).
 - **Most recent change:** `8919481` gave the panel 8px corners and a new "Send" button (see CODEX_HANDOFF §8).
 
-## English / Spanish 🟡
+## English / Spanish ✅
 
 - **What:** EN / ES switch in the header (compact radio group with a tooltip, 44px tap areas); choice saved in a `lang` cookie for a year; first visit follows the browser's language. Pages render on the server in the chosen language; addresses don't change. Validation and rule messages are translated (`translateMessage`). The not-found page follows the cookie too.
 - **Where:** `src/lib/copy.ts` (all strings, both languages), `src/lib/i18n.ts`, `src/lib/i18n-server.ts`, `src/proxy.ts`, `src/components/lang-switch.tsx`, `src/app/[lang]/`.
 - **Tests:** `e2e:spanish` (168), `e2e:nav`, any suite with `-- --lang=es`.
-- **Gap:** 19 Spanish strings are marked `// needs review` in `copy.ts` (AI disclosure, pledge, privacy notice, handoff guidance and similar legal or sensitive wording). They need a native Spanish speaker's review.
+- **Review:** the existing Spanish copy, including privacy and handoff wording, was reviewed and verified by two fluent Spanish speakers.
 
 ## Themes ✅
 

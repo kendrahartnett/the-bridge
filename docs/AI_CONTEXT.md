@@ -72,7 +72,7 @@ The visual identity is settled. Do not change it unless the owner asks. Full det
 - **Buttons:** `.glow-button` (Sign In, Create my account, Post a Need, View the Needs Board, Claim this need; reflection only on Claim via `.glow-button-reflect`) and `.cta-letters` letter-reveal for the two homepage CTAs. Both are adapted from Uiverse.io and credited in the README.
 - **Needs Board:** sticky-note cards (`sticky-note-card.png`), slight tilt, a "Claimed" stamp.
 - **Accessibility is part of the brand:** 44px tap targets (`min-h-tap`), text contrast of at least 4.5:1 measured from real pixels, visible focus rings, `prefers-reduced-motion` respected everywhere, responsive down to 320px, everything usable by keyboard and screen reader.
-- **Bilingual:** every visible string lives in `src/lib/copy.ts` in English and Spanish. A new string needs both. Spanish strings that need a native speaker's review are marked `// needs review`.
+- **Bilingual:** every visible string lives in `src/lib/copy.ts` in English and Spanish. A new string needs both. The existing Spanish copy was reviewed and verified by two fluent Spanish speakers.
 
 ## 6. AI usage in the app (current truth)
 
