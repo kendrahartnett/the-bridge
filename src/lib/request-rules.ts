@@ -665,9 +665,9 @@ export type InboxItem = {
   posterName: string | null
 }
 
-/** The viewer's own notifications, newest first (10 by default). Never anyone else's. */
-export async function listNotifications(db: Db, viewerId: string, limit = 10): Promise<InboxItem[]> {
-  const rows = await db
+/** The viewer's own notifications, newest first. Never anyone else's. */
+export async function listNotifications(db: Db, viewerId: string, limit?: number): Promise<InboxItem[]> {
+  const query = db
     .select({
       id: notifications.id,
       type: notifications.type,
@@ -684,7 +684,7 @@ export async function listNotifications(db: Db, viewerId: string, limit = 10): P
     .leftJoin(poster, eq(poster.id, foodRequests.createdBy))
     .where(eq(notifications.userId, viewerId))
     .orderBy(desc(notifications.createdAt), desc(notifications.id))
-    .limit(limit)
+  const rows = limit === undefined ? await query : await query.limit(limit)
   return rows.map(({ readAt, ...r }) => ({ ...r, read: readAt !== null }))
 }
 

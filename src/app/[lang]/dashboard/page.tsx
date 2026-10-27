@@ -3,6 +3,7 @@ import Link from "next/link"
 import { Suspense } from "react"
 
 import { EmptyState } from "@/components/empty-state"
+import { Card } from "@/components/ui/card"
 import { ImpactStat } from "@/components/impact-stat"
 import { LoadingState } from "@/components/loading-state"
 import { PageHeader } from "@/components/page-header"
@@ -23,6 +24,7 @@ import { listMyPrivacyReviews } from "@/lib/privacy-review-rules"
 import {
   canClaimNeeds,
   canPostNeeds,
+  countUnread,
   listLatestOpen,
   listMyPosts,
   listMySupported,
@@ -30,7 +32,6 @@ import {
   type RequestWithContact,
 } from "@/lib/request-rules"
 
-import { Inbox } from "./inbox"
 import { RequestActionButton } from "./request-action-button"
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -66,13 +67,13 @@ async function DashboardContent() {
           title={DASHBOARD_COPY.greeting.replace("{name}", greeting)}
         />
       </BlurFade>
-      <Inbox userId={user.id} />
-      <PrivacyStatuses userId={user.id} />
       {user.role === "outreach" ? (
         <OutreachDashboard userId={user.id} />
       ) : (
         <DonorDashboard user={user} />
       )}
+      <PrivacyStatuses userId={user.id} />
+      <InboxReminder userId={user.id} />
     </>
   )
 }
@@ -85,7 +86,7 @@ async function PrivacyStatuses({ userId }: { userId: string }) {
   return <section aria-labelledby="privacy-status-heading" className="mt-10">
     <SectionHeader id="privacy-status-heading" title={P.myHeading} />
     <ul className="mt-4 space-y-3">
-      {reviews.map((r) => <li key={r.id} className="rounded-xl border border-border bg-card p-4 text-card-foreground">
+      {reviews.map((r) => <li key={r.id} className="rounded-[0.5rem] border border-border bg-card p-4 text-card-foreground">
         <p className="font-semibold [overflow-wrap:anywhere]">{r.safeItems}</p>
         <p className="mt-1 text-sm text-muted-foreground">{P.statusLabels[r.status as keyof typeof P.statusLabels]} · {formatDateTime(r.createdAt, lang)}</p>
         {r.decisionReason && <p className="mt-2 text-sm">{P.reasons[r.decisionReason as keyof typeof P.reasons]}</p>}
@@ -109,22 +110,24 @@ async function OutreachDashboard({ userId }: { userId: string }) {
   const requests = (await listMyPosts(db, userId)).map((r) => withLabel(r, CONTACT_COPY.supportedBy))
 
   const delivered = requests.filter((r) => r.status === "delivered")
-  const peopleFed = delivered.reduce((n, r) => n + r.peopleCount, 0)
-  const open = requests.filter((r) => r.status === "open").length
+  const openRequests = requests.filter((r) => r.status === "open")
+  const waiting = openRequests.reduce((n, r) => n + r.peopleCount, 0)
   const t = DASHBOARD_COPY.outreach
 
   return (
     <>
       <section aria-label={t.statsLabel} className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <ImpactStat value={peopleFed} label={t.peopleHelped} />
+        <ImpactStat value={openRequests.length} label={t.waiting} />
+        <ImpactStat value={waiting} label={t.peopleWaiting} />
         <ImpactStat value={delivered.length} label={t.fulfilled} />
-        <ImpactStat value={open} label={t.waiting} />
       </section>
 
-      <SectionHeader className="mt-12" title={t.heading} actions={<PostNeedButton />} />
+      <QuickActions canPost isOrganization={false} />
+
+      <SectionHeader id="my-requests" className="mt-12 scroll-mt-6" title={t.heading} actions={<PostNeedButton />} />
 
       {requests.length === 0 ? (
-        <EmptyState className="mt-6">{t.empty}</EmptyState>
+        <EmptyState className="mt-6 rounded-[0.5rem]">{t.empty}</EmptyState>
       ) : (
         <RequestGrid requests={requests} footer={outreachFooter} />
       )}
@@ -152,12 +155,14 @@ async function DonorDashboard({ user }: { user: User }) {
 
   return (
     <>
-      {!approved && <VerificationBanner status={user.verificationStatus} />}
-
       <section aria-label={t.statsLabel} className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
         <ImpactStat value={open.length} label={t.openCount} />
         <ImpactStat value={waiting} label={t.peopleWaiting} />
       </section>
+
+      {!approved && <VerificationBanner status={user.verificationStatus} className="rounded-[0.5rem]" />}
+
+      <QuickActions canPost={canPostNeeds(user)} isOrganization showRequests={approved || posts.length > 0} />
 
       {/* A short preview of the Needs Board: the 3 newest open needs, each linking to its
           page, where an approved organization can claim it. */}
@@ -168,7 +173,7 @@ async function DonorDashboard({ user }: { user: User }) {
         actions={canPostNeeds(user) && <PostNeedButton />}
       />
       {!latest || latest.length === 0 ? (
-        <EmptyState className="mt-6">{BOARD_COPY.empty}</EmptyState>
+        <EmptyState className="mt-6 rounded-[0.5rem]">{BOARD_COPY.empty}</EmptyState>
       ) : (
         <StickyNoteGrid className="mt-6">
           {latest.map((r) => (
@@ -197,9 +202,9 @@ async function DonorDashboard({ user }: { user: User }) {
           organization whose approval was revoked still sees what it posted (read-only). */}
       {(approved || posts.length > 0) && (
         <>
-          <SectionHeader className="mt-12" title={t.postsHeading} />
+          <SectionHeader id="my-requests" className="mt-12 scroll-mt-6" title={t.postsHeading} />
           {posts.length === 0 ? (
-            <EmptyState className="mt-6">{t.postsEmpty}</EmptyState>
+            <EmptyState className="mt-6 rounded-[0.5rem]">{t.postsEmpty}</EmptyState>
           ) : (
             <RequestGrid requests={posts} footer={approved ? outreachFooter : undefined} />
           )}
@@ -223,9 +228,44 @@ function RequestGrid({
       {requests.map((r) => (
         // min-w-0: a grid item otherwise grows to fit long unbroken text.
         <li key={r.id} className="min-w-0">
-          <RequestCard request={r} contact={r.contact} footer={footer?.(r)} />
+          <RequestCard request={r} contact={r.contact} footer={footer?.(r)} className="rounded-[0.5rem]" />
         </li>
       ))}
     </ul>
   )
+}
+
+function QuickActions({ canPost, isOrganization, showRequests = true }: { canPost: boolean; isOrganization: boolean; showRequests?: boolean }) {
+  const actions = [
+    ...(canPost ? [{ href: "/requests/new", key: "post" as const }] : []),
+    ...(isOrganization ? [{ href: "/board", key: "board" as const }] : []),
+    ...(showRequests ? [{ href: "#my-requests", key: "requests" as const }] : []),
+    { href: "/inbox", key: "inbox" as const },
+  ]
+  return <QuickActionsContent actions={actions} />
+}
+
+async function QuickActionsContent({ actions }: { actions: { href: string; key: "post" | "board" | "requests" | "inbox" }[] }) {
+  const { DASHBOARD_COPY } = await getCopy()
+  return <section aria-label={DASHBOARD_COPY.quickActions.heading} className="mt-8">
+    <SectionHeader title={DASHBOARD_COPY.quickActions.heading} />
+    <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {actions.map(({ href, key }) => <li key={key}>
+        <Link href={href} className="block h-full rounded-[0.5rem] outline-none focus-visible:ring-[3px] focus-visible:ring-ring">
+          <Card variant="interactive" className="h-full rounded-[0.5rem] px-5 py-4 font-semibold">{DASHBOARD_COPY.quickActions[key]}</Card>
+        </Link>
+      </li>)}
+    </ul>
+  </section>
+}
+
+async function InboxReminder({ userId }: { userId: string }) {
+  const unread = await countUnread(db, userId)
+  if (!unread) return null
+  const { DASHBOARD_COPY } = await getCopy()
+  return <aside className="mt-10 rounded-[0.5rem] border border-border bg-card p-5">
+    <p className="font-heading font-bold">{DASHBOARD_COPY.inboxReminder.heading}</p>
+    <p className="mt-1 text-sm text-muted-foreground">{DASHBOARD_COPY.inboxReminder.description}</p>
+    <Link className="mt-3 inline-flex min-h-tap items-center font-semibold text-primary-text underline-offset-4 hover:underline focus-visible:ring-[3px] focus-visible:ring-ring" href="/inbox">{DASHBOARD_COPY.quickActions.inbox}</Link>
+  </aside>
 }

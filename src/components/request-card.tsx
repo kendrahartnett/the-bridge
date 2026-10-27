@@ -146,14 +146,16 @@ export async function RequestCard({
   request,
   contact,
   footer,
+  className,
 }: {
   request: FoodRequest
   /** Shown on In Progress and Fulfilled requests to the two people involved. */
   contact?: RequestContact
   footer?: React.ReactNode
+  className?: string
 }) {
   return (
-    <Card className="h-full gap-4">
+    <Card className={cn("h-full gap-4", className)}>
       <CardHeader className="gap-3">
         <RequestBadges request={request} />
         <CardTitle className="font-heading text-h3 leading-snug [overflow-wrap:anywhere]">{requestTitle(request, await getCopy())}</CardTitle>

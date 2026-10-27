@@ -18,7 +18,7 @@ import { countUnread } from "@/lib/request-rules"
 // assistant chat button. It renders beside the header, not inside it: the header's
 // backdrop blur would otherwise become the containing block for the fixed-position button.
 //
-// The language switch sits beside the theme toggle from 640px; on phones it's in the menu
+// The language switch sits beside the theme toggle from 1024px; on smaller screens it's in the menu
 // (signed-out visitors get a menu holding just the switch), so the header fits on one row
 // at 320px in both languages.
 export async function SiteHeader({ signedIn = false }: { signedIn?: boolean }) {
@@ -48,7 +48,7 @@ export async function SiteHeader({ signedIn = false }: { signedIn?: boolean }) {
             ) : (
               <HeaderNavPlaceholder signedIn={false} isAdmin={false} isOrganization={false} unread={null} />
             )}
-            <LangSwitch className="hidden sm:inline-flex" />
+            <LangSwitch className="hidden lg:inline-flex" />
             <ThemeToggle />
             {signedIn ? (
               <form action={signOutAction}>
@@ -76,7 +76,7 @@ export async function SiteHeader({ signedIn = false }: { signedIn?: boolean }) {
 
 /**
  * Dashboard for everyone signed in; the Needs Board for organization accounts and Admin for
- * admins (checked again at /board and /admin); the inbox bell with the unread count, read
+ * admins (checked again at /board and /admin); the Inbox link with the unread count, read
  * on each page load.
  */
 async function SignedInNav() {

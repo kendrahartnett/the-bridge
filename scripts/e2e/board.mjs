@@ -19,7 +19,7 @@ import { createAudit } from "./audit.mjs"
 import { launchBrowser, sleep } from "./browser.mjs"
 import { lowestPixelContrast, TEXT_CONTRAST } from "./contrast.mjs"
 import { finish, setup } from "./harness.ts"
-import { BOARD_COPY, DETAIL_COPY, INBOX_COPY, NOT_FOUND_COPY, VERIFICATION_COPY } from "../../src/lib/copy.ts"
+import { BOARD_COPY, DETAIL_COPY, NOT_FOUND_COPY, VERIFICATION_COPY } from "../../src/lib/copy.ts"
 
 const suite = await setup("board")
 const browser = await launchBrowser(suite)
@@ -283,96 +283,57 @@ try {
   }
   await D.media("dark")
 
-  // ---- 7. Inbox and bell ----
-  const INBOX = `(() => {
-    const items = [...document.querySelectorAll("[data-inbox-item]")].map(li => ({ state: li.dataset.inboxItem, text: li.querySelector("button span.flex-col > span:not(.sr-only)")?.textContent, bold: parseInt(getComputedStyle(li.querySelector("button span.flex-col > span:not(.sr-only)")).fontWeight) >= 600, dot: getComputedStyle(li.querySelector("button > span[aria-hidden]")).backgroundColor, h: Math.round(li.querySelector("button").getBoundingClientRect().height) }))
-    const bell = document.querySelector("[data-inbox-bell]")
-    return {
-      first: document.querySelector("main section")?.id, items, markAll: [...document.querySelectorAll("#inbox button")].some(b => b.textContent.trim() === ${JSON.stringify(INBOX_COPY.markAllRead)}),
-      empty: document.querySelector("#inbox")?.innerText.includes(${JSON.stringify(INBOX_COPY.empty)}),
-      bell: bell && { label: bell.getAttribute("aria-label"), count: bell.querySelector("[data-inbox-count]")?.textContent ?? null, shown: !!bell.getClientRects().length, href: bell.getAttribute("href"), w: Math.round(bell.getBoundingClientRect().width), h: Math.round(bell.getBoundingClientRect().height) },
-    }
-  })()`
+  // ---- 7. Dedicated Inbox ----
   const O1 = tabs.outreach1, O2 = tabs.outreach2, D2 = tabs.donor2, AD = tabs.admin
   for (const t of [O1, O2, D2, AD, tabs.anon]) { await t.size(1280, 900); await t.media("light"); await t.goto("/"); await t.theme("light") }
 
   await D2.goto("/dashboard", 1200)
+  check("Dashboard has no full inbox list", await D2.evaluate('!document.querySelector("[data-inbox-item]")'))
+  const nav = await D2.evaluate('(() => { const a = document.querySelector("header nav a[href=\\"/inbox\\"]"); return a && { label: a.getAttribute("aria-label"), text: a.textContent.trim() } })()')
+  check("Authenticated navigation links to Inbox with unread count", nav?.label === "Inbox, 2 unread" && nav.text.includes("Inbox"))
+
+  await D2.goto("/inbox", 1200)
+  const INBOX = '(() => ({ items: [...document.querySelectorAll("[data-inbox-item]")].map(li => ({ state: li.dataset.inboxItem, text: li.textContent.trim() })), markAll: !![...document.querySelectorAll("main button")].find(b => b.textContent.trim() === "Mark all as read"), current: document.querySelector("header nav a[href=\\"/inbox\\"]")?.getAttribute("aria-current") }))()'
   let inbox = await D2.evaluate(INBOX)
-  check("Inbox is the first section on the dashboard", inbox.first === "inbox", inbox.first)
-  check("Unread notifications have a dot and bold text; newest first", inbox.items.length === 2 && inbox.items.every((i) => i.state === "unread" && i.bold && i.dot !== "rgba(0, 0, 0, 0)") && inbox.items[0].text.includes("marked a need you supported as fulfilled"), inbox.items)
-  check("Each notification is a 44px target", inbox.items.every((i) => i.h >= 44))
-  check(`Bell: "${INBOX_COPY.bellLabel.replace("{n}", "2")}", count 2, links to the inbox, 44px`, inbox.bell?.label === "Inbox, 2 unread" && inbox.bell.count === "2" && inbox.bell.href === "/dashboard#inbox" && inbox.bell.w >= 44 && inbox.bell.h >= 44, inbox.bell)
-  check("Notification text carries no review note and no email", !inbox.items.some((i) => /@|didn't match/.test(i.text)))
+  check("Dedicated Inbox shows the user’s two unread updates and active navigation", inbox.items.length === 2 && inbox.items.every(i => i.state === "unread") && inbox.current === "page")
+  check("Inbox messages contain no review note or email", !inbox.items.some(i => /@|didn't match/.test(i.text)))
 
-  // Opening an approval notification goes to the dashboard and marks it read.
-  const clickItem = (t, text) => t.evaluate(`[...document.querySelectorAll("[data-inbox-item] button")].find(b => b.innerText.includes(${JSON.stringify(text)})).click(), true`)
-  await clickItem(D2, "Your organization was approved"); await sleep(300)
-  await D2.waitFor(`location.pathname === "/dashboard" && [...document.querySelectorAll("[data-inbox-item]")].some(li => li.dataset.inboxItem === "read" && li.innerText.includes("approved"))`, "approval notification read")
+  await D2.evaluate('document.querySelector("[data-inbox-item] button").click()')
+  await D2.waitFor('location.pathname !== "/inbox"', "notification target")
+  await D2.goto("/inbox", 1200)
   inbox = await D2.evaluate(INBOX)
-  check("Opening an approval notification stays on the dashboard and marks it read; the bell counts 1", inbox.items.find((i) => i.text.includes("approved"))?.state === "read" && inbox.bell.label === "Inbox, 1 unread", inbox.bell)
-
-  // Opening a need notification goes to the need's page and marks it read.
-  await clickItem(D2, "marked a need you supported as fulfilled")
-  await D2.waitFor(`location.pathname === "/requests/${R.R5}"`, "need page from the inbox"); await sleep(600)
-  const bellAfter = await D2.evaluate(`document.querySelector("[data-inbox-bell]").getAttribute("aria-label")`)
-  const [readRow] = await sql`select read_at from notifications where id = '5eed0000-0000-4000-8000-000000000103'`
-  check("Opening a need notification opens the need's page and marks it read", !!readRow.read_at && bellAfter === INBOX_COPY.bellLabelNone, bellAfter)
-  await D2.goto("/dashboard", 1000)
+  check("Opening an update marks only that update read", inbox.items.filter(i => i.state === "read").length === 1 && inbox.items.filter(i => i.state === "unread").length === 1)
+  await D2.evaluate('[...document.querySelectorAll("main button")].find(b => b.textContent.trim() === "Mark all as read").click()')
+  await D2.waitFor('![...document.querySelectorAll("[data-inbox-item]")].some(li => li.dataset.inboxItem === "unread")', "all inbox updates read")
   inbox = await D2.evaluate(INBOX)
-  check("With nothing unread: no Mark all as read, the bell shows no count", !inbox.markAll && inbox.bell.count === null && inbox.bell.label === INBOX_COPY.bellLabelNone, inbox.bell)
+  check("Mark all as read clears the unread state", inbox.items.every(i => i.state === "read") && !inbox.markAll)
+  await D2.goto("/dashboard", 800)
+  check("Navigation unread indicator updates after marking read", await D2.evaluate('document.querySelector("header nav a[href=\\"/inbox\\"]")?.getAttribute("aria-label") === "Inbox, no unread"'))
 
-  // A claim shows up in the poster's inbox on their next page load.
-  await O1.goto("/dashboard", 1000)
-  const before = await O1.evaluate(INBOX)
-  await tabs.donor1.goto(`/requests/${R.R1}?from=board`, 1000)
-  await clickButtonByText(tabs.donor1, "Claim this need"); await sleep(200); await clickButtonByText(tabs.donor1, "Yes, claim it")
-  await tabs.donor1.waitFor(`!!document.querySelector('main a[href^="mailto:"]')`, "claimed")
-  await O1.goto("/dashboard", 1000)
-  inbox = await O1.evaluate(INBOX)
-  check("After an organization claims a need, the poster sees it in the inbox on the next page load (unread, first)", inbox.items[0]?.state === "unread" && inbox.items[0].text === "Test — Corner Bakery Co-op claimed your need: Hot meals" && inbox.items.length === before.items.length + 1, inbox.items[0])
-  check("…and the bell counts it", inbox.bell.label === `Inbox, ${inbox.items.filter((i) => i.state === "unread").length} unread`, inbox.bell.label)
-
-  // Mark all as read.
-  await O1.evaluate(`[...document.querySelectorAll("#inbox button")].find(b => b.textContent.trim() === ${JSON.stringify(INBOX_COPY.markAllRead)}).click(), true`)
-  await O1.waitFor(`![...document.querySelectorAll("[data-inbox-item]")].some(li => li.dataset.inboxItem === "unread")`, "all read")
-  inbox = await O1.evaluate(INBOX)
-  check("Mark all as read: every item read (no dot, regular weight), the button goes, the bell clears", inbox.items.every((i) => i.state === "read" && !i.bold && i.dot === "rgba(0, 0, 0, 0)") && !inbox.markAll && inbox.bell.count === null, inbox.bell)
-
-  // More than 9 unread shows "9+".
   const [d1] = await sql`select id from users where email = ${EMAIL.donor1}`
   for (let i = 0; i < 11; i++) await sql`insert into notifications (user_id, type) values (${d1.id}, 'org_approved')`
-  await tabs.donor1.goto("/dashboard", 1000)
-  inbox = await tabs.donor1.evaluate(INBOX)
-  check("More than 9 unread: the bell shows 9+ and says the real number", inbox.bell.count === "9+" && /^Inbox, 1[1-9] unread$/.test(inbox.bell.label), inbox.bell)
-  check("The inbox lists the 10 newest", inbox.items.length === 10)
+  await tabs.donor1.goto("/inbox", 1000)
+  check("Inbox shows all updates beyond the old 10-item limit", await tabs.donor1.evaluate('[...document.querySelectorAll("[data-inbox-item]")].length >= 11'))
 
-  // Empty state, and no bell when signed out.
-  await AD.goto("/dashboard", 1000)
-  inbox = await AD.evaluate(INBOX)
-  check("Empty inbox: the EmptyState message", inbox.empty && inbox.items.length === 0 && inbox.bell.label === INBOX_COPY.bellLabelNone)
-  await tabs.anon.goto("/", 800)
-  check("Signed out: no bell", !(await tabs.anon.evaluate(`!!document.querySelector("[data-inbox-bell]")`)))
+  await AD.goto("/inbox", 1000)
+  check("Empty inbox displays its empty state", await AD.evaluate('document.querySelector("main")?.textContent.includes("all caught up")'))
+  await tabs.anon.goto("/inbox", 800)
+  check("Signed-out visitor is redirected to sign-in", await tabs.anon.evaluate('location.pathname === "/sign-in"'))
 
-  // Below 360px the bell is in the phone menu.
-  await D2.size(320, 700); await D2.goto("/dashboard", 1000)
-  const small = await D2.evaluate(`(() => { const b = document.querySelector("[data-inbox-bell]"); const i = [...document.querySelectorAll("header nav ul[id] a")].find(a => a.getAttribute("href") === "/dashboard#inbox"); return { bell: !!b.getClientRects().length, item: i && { label: i.getAttribute("aria-label"), text: i.textContent.trim() } } })()`)
-  check("At 320px the bell moves into the phone menu as Inbox", !small.bell && small.item?.text === INBOX_COPY.menuItem && small.item.label === INBOX_COPY.bellLabelNone, small)
-  await D2.size(360, 700); await D2.goto("/dashboard", 1000)
-  check("From 360px the bell is in the header", await D2.evaluate(`!!document.querySelector("[data-inbox-bell]").getClientRects().length`))
+  await D2.size(320, 700); await D2.goto("/inbox", 800)
+  check("Mobile menu includes the active Inbox link", await D2.evaluate('document.querySelector("header nav ul[id] a[href=\\"/inbox\\"]")?.getAttribute("aria-current") === "page"'))
 
-  // The inbox in both themes at each width (outreach2 has an unread claim).
   for (const theme of ["light", "dark"]) {
     await O2.goto("/"); await O2.theme(theme)
     for (const w of [320, 390, 1024, 1280]) {
       await O2.size(w, w < 640 ? 844 : 900)
-      await O2.goto("/dashboard", 1200)
-      await audit(O2, "dashboard with inbox", w, theme)
+      await O2.goto("/inbox", 1200)
+      await audit(O2, "inbox", w, theme)
       const c = await O2.evaluate(TEXT_CONTRAST)
-      check(`${theme} ${w}px: inbox page text readable (${c.checked} elements)`, c.failures.length === 0, c.failures.slice(0, 3).join(" | "))
-      if (w === 390 || w === 1280) await O2.shot(`inbox-${theme}-${w}.png`)
+      check(theme + " " + w + "px: inbox text readable (" + c.checked + " elements)", c.failures.length === 0, c.failures.slice(0, 3).join(" | "))
+      if (w === 390 || w === 1280) await O2.shot("inbox-" + theme + "-" + w + ".png")
     }
   }
-
   // Reduced motion: nothing on the board, a need's page, or the dashboard animates.
   const MOVING = `[...document.querySelectorAll("body *")].filter(e => { const cs = getComputedStyle(e); return cs.animationName !== "none" && parseFloat(cs.animationDuration) > 0.001 || cs.transitionProperty !== "none" && cs.transitionDuration.split(",").some(d => parseFloat(d) > 0.001) }).map(e => e.tagName.toLowerCase() + "." + [...e.classList].slice(0, 2).join(".")).slice(0, 5)`
   await O2.media("dark", "reduce"); await O2.size(1280, 900)
@@ -412,11 +373,6 @@ async function stampContrast(t, selector) {
     for (let i = 0; i < d.length; i += 4) { const lb = lum(d[i], d[i + 1], d[i + 2]); const [a, b] = [lf, lb].sort((m, n) => n - m); worst = Math.min(worst, (a + 0.05) / (b + 0.05)) }
     return +worst.toFixed(2)
   })()`)
-}
-
-/** Clicks the button in main with this text. */
-function clickButtonByText(t, label) {
-  return t.evaluate(`(() => { const b = [...document.querySelectorAll("main button")].find(b => b.textContent.trim() === ${JSON.stringify(label)}); if (!b) throw new Error("no button ${label}"); b.click(); return true })()`)
 }
 
 /** Deletes exactly the needs this run added (the harness then reseeds the rest). */

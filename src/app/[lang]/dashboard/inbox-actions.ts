@@ -15,13 +15,13 @@ export async function openNotificationAction(formData: FormData) {
   const user = await getCurrentUser()
   if (!user) redirect("/sign-in")
   const target = await openNotification(db, { id: user.id, role: user.role }, formData.get("id"))
-  revalidatePages("/dashboard")
-  redirect(target?.href ?? "/dashboard")
+  revalidatePages("/dashboard", "/inbox")
+  redirect(target?.href ?? "/inbox")
 }
 
 export async function markAllReadAction() {
   const user = await getCurrentUser()
   if (!user) redirect("/sign-in")
   await markAllNotificationsRead(db, { id: user.id, role: user.role })
-  revalidatePages("/dashboard")
+  revalidatePages("/dashboard", "/inbox")
 }

@@ -118,7 +118,7 @@ const en = {
       title: "The Bridge assistant",
       notice: "You're chatting with an AI assistant. Don't share personal details.",
       crisis: "In crisis? Call or text 988.",
-      starters: ["What is The Bridge?", "How do I post a need?", "How do organizations offer support?"],
+      starters: ["What is The Bridge?", "How do I post a need?", "Can you help me look for housing resources?"],
       inputLabel: "Your question",
       placeholder: "Ask a question about The Bridge",
       send: "Send",
@@ -131,7 +131,7 @@ const en = {
     },
     // Used when the AI service is unavailable, slow (15s), or declines to answer.
     fallback:
-      'Sorry, I can\'t answer right now. The "How it works" section on the home page explains how The Bridge works, step by step. If you need help today with something The Bridge doesn\'t cover yet, you can call or text 211.',
+      'Sorry, I can\'t answer right now. The "How it works" section on the home page explains how The Bridge works. For local services that need verification, you can call or text 211.',
   },
 
   // Sign-in and sign-up errors, in plain language. The technical reason is logged on the server.
@@ -206,13 +206,14 @@ const en = {
       peopleHelped: "People helped through your requests",
       fulfilled: "Requests fulfilled",
       waiting: "Requests waiting for support",
+      peopleWaiting: "People represented by your open requests",
       heading: "Your requests",
       empty: "You haven't posted a need yet. Start a request and organizations nearby will see it.",
     },
     organization: {
       statsLabel: "Right now",
       openCount: "Open requests",
-      peopleWaiting: "People who need support",
+      peopleWaiting: "People represented by open requests",
       latestHeading: "Latest needs",
       latestIntro: "The newest needs on the Needs Board. Open one to see the details and claim it.",
       viewBoard: "View the Needs Board",
@@ -222,6 +223,8 @@ const en = {
       postsEmpty: "You haven't posted a need yet. Use Post a Need to ask for support from other organizations.",
       accountStatusLabel: "Account status",
     },
+    quickActions: { heading: "Quick actions", post: "Post a Need", board: "View Needs Board", requests: "View My Requests", inbox: "View Inbox" },
+    inboxReminder: { heading: "You have updates waiting", description: "View your inbox to see the latest activity." },
   },
 
   // The Post a Need page around the form. The privacy notice is exact wording; do not edit
@@ -320,13 +323,16 @@ const en = {
     youClaimed: "Your organization claimed this need.",
   },
 
-  // The inbox on the dashboard, and the bell in the header. Messages are built when shown,
+  // The dedicated inbox and navigation indicator. Messages are built when shown,
   // from the need and the people involved: {org}, {items}, {poster}, {email}.
   INBOX_COPY: {
     heading: "Inbox",
+    intro: "Updates about your requests, connections, and account.",
+    loading: "Loading your inbox…",
     markAllRead: "Mark all as read",
-    empty: "No updates yet. You'll see claims, completed needs, and account updates here.",
+    empty: "You're all caught up. When there's an update about your requests or connections, you'll see it here.",
     unread: "Unread",
+    titles: { need_claimed: "Need claimed", need_fulfilled: "Need fulfilled", org_approved: "Organization approved", org_rejected: "Organization not approved", privacy_pending: "Privacy review pending", privacy_approved: "Privacy review approved", privacy_changes: "Changes requested", privacy_rejected: "Privacy review not approved", privacy_new_review: "New privacy review" },
     messages: {
       needClaimed: "{org} claimed your need: {items}",
       needFulfilled: "{poster} marked a need you supported as fulfilled.",
@@ -458,8 +464,8 @@ const en = {
     myHeading: "Requests under privacy review",
     revise: "Revise safe draft",
     poweredBy: "Powered By",
-    provider: "Anthropic",
-    providerLabel: "Anthropic powers the AI privacy screening (opens in a new tab)",
+    provider: "Haiku 5.5",
+    providerLabel: "Powered by Anthropic, Haiku 5.5 (opens in a new tab)",
   },
 }
 
@@ -566,7 +572,7 @@ const es: Copy = {
       notice: "Está hablando con un asistente de IA. No comparta datos personales.",
       // needs review: crisis line (safety).
       crisis: "¿En crisis? Llame o envíe un mensaje de texto al 988.",
-      starters: ["¿Qué es The Bridge?", "¿Cómo publico una necesidad?", "¿Cómo ofrecen apoyo las organizaciones?"],
+      starters: ["¿Qué es The Bridge?", "¿Cómo publico una necesidad?", "¿Cómo busco recursos de vivienda?"],
       inputLabel: "Su pregunta",
       placeholder: "Haga una pregunta sobre The Bridge",
       send: "Enviar",
@@ -579,7 +585,7 @@ const es: Copy = {
     },
     // needs review: points people to 211 (safety).
     fallback:
-      "Lo siento, no puedo responder en este momento. La sección «Cómo funciona» de la página de inicio explica paso a paso cómo funciona The Bridge. Si necesita ayuda hoy con algo que The Bridge todavía no cubre, puede llamar o enviar un mensaje de texto al 211.",
+      "Lo siento, no puedo responder en este momento. La sección «Cómo funciona» de la página de inicio explica cómo funciona The Bridge. Para encontrar servicios locales que necesitan verificación, puede llamar o enviar un mensaje de texto al 211.",
   },
 
   AUTH_ERRORS: {
@@ -650,13 +656,14 @@ const es: Copy = {
       peopleHelped: "Personas ayudadas con sus solicitudes",
       fulfilled: "Solicitudes completadas",
       waiting: "Solicitudes que esperan apoyo",
+      peopleWaiting: "Personas incluidas en sus solicitudes abiertas",
       heading: "Sus solicitudes",
       empty: "Todavía no ha publicado ninguna necesidad. Cree una solicitud y las organizaciones cercanas la verán.",
     },
     organization: {
       statsLabel: "En este momento",
       openCount: "Solicitudes abiertas",
-      peopleWaiting: "Personas que necesitan apoyo",
+      peopleWaiting: "Personas incluidas en las solicitudes abiertas",
       latestHeading: "Necesidades recientes",
       latestIntro: "Las necesidades más nuevas del Tablero de necesidades. Abra una para ver los detalles y reclamarla.",
       viewBoard: "Ver el Tablero de necesidades",
@@ -666,6 +673,8 @@ const es: Copy = {
       postsEmpty: "Todavía no ha publicado ninguna necesidad. Use Publicar una necesidad para pedir apoyo a otras organizaciones.",
       accountStatusLabel: "Estado de la cuenta",
     },
+    quickActions: { heading: "Acciones rápidas", post: "Publicar una necesidad", board: "Ver el Tablero de necesidades", requests: "Ver mis solicitudes", inbox: "Ver la bandeja de entrada" },
+    inboxReminder: { heading: "Tiene novedades pendientes", description: "Consulte su bandeja de entrada para ver la actividad reciente." },
   },
 
   NEW_REQUEST_COPY: {
@@ -758,9 +767,12 @@ const es: Copy = {
 
   INBOX_COPY: {
     heading: "Bandeja de entrada",
+    intro: "Novedades sobre sus solicitudes, conexiones y cuenta.",
+    loading: "Cargando su bandeja de entrada…",
     markAllRead: "Marcar todo como leído",
-    empty: "Todavía no hay novedades. Aquí verá las necesidades reclamadas, las completadas y las novedades de su cuenta.",
+    empty: "Está al día. Cuando haya novedades sobre sus solicitudes o conexiones, aparecerán aquí.",
     unread: "No leído",
+    titles: { need_claimed: "Necesidad reclamada", need_fulfilled: "Necesidad completada", org_approved: "Organización aprobada", org_rejected: "Organización no aprobada", privacy_pending: "Revisión de privacidad pendiente", privacy_approved: "Revisión de privacidad aprobada", privacy_changes: "Cambios solicitados", privacy_rejected: "Revisión de privacidad no aprobada", privacy_new_review: "Nueva revisión de privacidad" },
     messages: {
       needClaimed: "{org} reclamó su necesidad: {items}",
       needFulfilled: "{poster} marcó como completada una necesidad que usted apoyó.",
@@ -885,8 +897,8 @@ const es: Copy = {
     myHeading: "Solicitudes en revisión de privacidad",
     revise: "Editar borrador seguro",
     poweredBy: "Con tecnología de",
-    provider: "Anthropic",
-    providerLabel: "Anthropic proporciona la revisión de privacidad con IA (se abre en una pestaña nueva)",
+    provider: "Haiku 5.5",
+    providerLabel: "Con tecnología de Anthropic, Haiku 5.5 (se abre en una pestaña nueva)",
   },
 }
 

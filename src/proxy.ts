@@ -21,7 +21,7 @@ const requireSignIn = auth.middleware({ loginUrl: "/sign-in" })
 // A need's own page: /requests/<id> (not /requests/new).
 const REQUEST_PAGE = /^\/requests\/(?!new\/?$)([^/]+)\/?$/
 // Every page there is. Any other address gets the not-found page with a 404.
-const PAGES = /^\/(|sign-in|dashboard|board|admin|admin\/privacy|requests\/new|requests\/[^/]+)\/?$/
+const PAGES = /^\/(|sign-in|dashboard|inbox|board|admin|admin\/privacy|requests\/new|requests\/[^/]+)\/?$/
 
 export default async function proxy(request: NextRequest) {
   const cookieLang = request.cookies.get(LANG_COOKIE)?.value
@@ -51,7 +51,7 @@ async function route(request: NextRequest, lang: Lang): Promise<NextResponse> {
     const ok = await allowed("request", async (id) => !!(await getRequestForViewer(db, id, need[1])))
     return ok ? inLang(request, lang) : notFound(request, lang)
   }
-  if (pathname === "/dashboard" || pathname.startsWith("/dashboard/") || pathname.startsWith("/requests/")) {
+  if (pathname === "/dashboard" || pathname.startsWith("/dashboard/") || pathname === "/inbox" || pathname === "/inbox/" || pathname.startsWith("/requests/")) {
     const signedIn = await requireSignIn(request)
     // A redirect to /sign-in goes out as it is; otherwise keep what the auth check added
     // (a refreshed session cookie, request headers) on the rewrite.

@@ -262,9 +262,9 @@ export function NewRequestForm({ initialValues, revisionOf }: { initialValues?: 
         <div className="flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-end">
           <PoweredByAnthropic copy={P} />
           <span role="status" className="sr-only">{isPending ? P.checking : ""}</span>
-          <Button type="submit" size="lg" loading={isPending} disabled={isPending} className="w-full sm:w-auto sm:px-8">
+          <button type="submit" aria-busy={isPending} disabled={isPending} className="glow-button w-full sm:w-auto">
             {isPending ? P.checking : F.submit}
-          </Button>
+          </button>
         </div>
       </form>
     </Form>

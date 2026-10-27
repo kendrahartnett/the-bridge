@@ -3,12 +3,13 @@ import { Clock } from "lucide-react"
 import { Notice } from "@/components/notice"
 import type { User } from "@/db/schema"
 import { getCopy } from "@/lib/i18n-server"
+import { cn } from "@/lib/utils"
 
 /**
  * Shown to organizations that aren't approved (yet), on the dashboard and the Needs Board.
  * Both versions end with ADMIN_CONTACT_EMAIL when it's set.
  */
-export async function VerificationBanner({ status }: { status: User["verificationStatus"] }) {
+export async function VerificationBanner({ status, className }: { status: User["verificationStatus"]; className?: string }) {
   const { DASHBOARD_COPY, VERIFICATION_COPY } = await getCopy()
   const rejected = status === "rejected"
   const adminEmail = process.env.ADMIN_CONTACT_EMAIL
@@ -48,7 +49,7 @@ export async function VerificationBanner({ status }: { status: User["verificatio
       tone={rejected ? "error" : "info"}
       icon={rejected ? undefined : Clock}
       label={DASHBOARD_COPY.organization.accountStatusLabel}
-      className="mt-6"
+      className={cn("mt-6", className)}
     >
       <p>{message}</p>
     </Notice>

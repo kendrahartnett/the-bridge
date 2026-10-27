@@ -1,5 +1,4 @@
 import { EmptyState } from "@/components/empty-state"
-import { SectionHeader } from "@/components/section-header"
 import { Button } from "@/components/ui/button"
 import { db } from "@/db"
 import { formatDateTime } from "@/lib/chicago-time"
@@ -34,11 +33,7 @@ export function inboxMessage(item: InboxItem, { INBOX_COPY }: Copy): string {
   }
 }
 
-/**
- * The dashboard's inbox, for every signed-in account: the 10 newest notifications, newest
- * first. Unread ones have a dot and bold text. Opening one marks it read and goes to the
- * need's page (or the dashboard, for account updates). Updated on each page load.
- */
+/** The signed-in reader's full inbox, newest first. */
 export async function Inbox({ userId }: { userId: string }) {
   const lang = await currentLang()
   const c = await getCopy()
@@ -46,24 +41,14 @@ export async function Inbox({ userId }: { userId: string }) {
   const items = await listNotifications(db, userId)
   const unread = items.some((i) => !i.read)
   return (
-    <section id="inbox" aria-labelledby="inbox-heading" className="mt-8 scroll-mt-6">
-      <SectionHeader
-        id="inbox-heading"
-        title={INBOX_COPY.heading}
-        actions={
-          unread && (
-            <form action={markAllReadAction}>
-              <Button type="submit" variant="outline">
-                {INBOX_COPY.markAllRead}
-              </Button>
-            </form>
-          )
-        }
-      />
+    <section aria-label={INBOX_COPY.heading} className="mt-8">
+      {unread && <form action={markAllReadAction} className="flex justify-end">
+        <Button type="submit" variant="outline">{INBOX_COPY.markAllRead}</Button>
+      </form>}
       {items.length === 0 ? (
         <EmptyState className="mt-4">{INBOX_COPY.empty}</EmptyState>
       ) : (
-        <ul className="mt-4 divide-y divide-border overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm">
+        <ul className="mt-4 divide-y divide-border overflow-hidden rounded-[0.5rem] border border-border bg-card text-card-foreground shadow-sm">
           {items.map((item) => (
             <li key={item.id} data-inbox-item={item.read ? "read" : "unread"}>
               <form action={openNotificationAction}>
@@ -76,9 +61,10 @@ export async function Inbox({ userId }: { userId: string }) {
                     aria-hidden="true"
                     className={cn("mt-2 size-2.5 shrink-0 rounded-full", item.read ? "bg-transparent" : "bg-primary")}
                   />
-                  <span className="flex min-w-0 flex-col gap-0.5">
+                  <span className="flex min-w-0 flex-col gap-1">
                     {!item.read && <span className="sr-only">{INBOX_COPY.unread}: </span>}
-                    <span className={cn("[overflow-wrap:anywhere]", !item.read && "font-semibold")}>{inboxMessage(item, c)}</span>
+                    <span className={cn("font-heading [overflow-wrap:anywhere]", !item.read && "font-bold")}>{INBOX_COPY.titles[item.type]}</span>
+                    <span className="text-sm [overflow-wrap:anywhere]">{inboxMessage(item, c)}</span>
                     <time dateTime={item.createdAt.toISOString()} className="text-sm text-muted-foreground">
                       {formatDateTime(item.createdAt, lang)}
                     </time>
