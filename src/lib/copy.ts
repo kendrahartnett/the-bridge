@@ -423,6 +423,7 @@ const en = {
     unavailable: "Privacy screening is temporarily unavailable. Your request has not been posted. Please try again.",
     flaggedTitle: "Privacy check — please review your request",
     flaggedIntro: "Your request may contain details that could identify someone or reveal an exact location. Please edit and try again.",
+    appliedIntro: "Suggested wording was added to Notes. Check What's needed and any other text for sensitive details, then submit again for a new privacy check.",
     suggested: "Safer example wording",
     category: {
       exact_address: "This looks like a street address or building number.",
@@ -849,6 +850,7 @@ const es: Copy = {
     unavailable: "La revisión de privacidad no está disponible en este momento. Su solicitud no se publicó. Vuelva a intentarlo.",
     flaggedTitle: "Revisión de privacidad: revise su solicitud",
     flaggedIntro: "Su solicitud podría contener datos que identifiquen a alguien o revelen una ubicación exacta. Edítela y vuelva a intentarlo.",
+    appliedIntro: "La redacción sugerida se añadió a Notas. Revise Qué se necesita y los demás textos por si contienen datos sensibles. Después, vuelva a enviar la solicitud para una nueva revisión de privacidad.",
     suggested: "Ejemplo de redacción más segura",
     category: {
       exact_address: "Esto parece una dirección o un número de edificio.",

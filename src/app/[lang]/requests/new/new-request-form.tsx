@@ -53,6 +53,7 @@ export function NewRequestForm({ initialValues, revisionOf }: { initialValues?: 
   const { NEW_REQUEST_FORM: F, LABELS, PRIVACY_COPY: P } = useCopy()
   const [isPending, startTransition] = useTransition()
   const [privacy, setPrivacy] = useState<{ kind: "blocked" | "unavailable"; categories?: PrivacyCategory[]; suggestion?: string } | null>(null)
+  const [suggestionApplied, setSuggestionApplied] = useState(false)
   useEffect(() => {
     if (privacy) document.getElementById("privacy-result")?.focus()
   }, [privacy])
@@ -73,6 +74,7 @@ export function NewRequestForm({ initialValues, revisionOf }: { initialValues?: 
   function onSubmit() {
     if (isPending) return
     setPrivacy(null)
+    setSuggestionApplied(false)
     // Send the raw form strings; the server parses them with the same schema.
     const values = form.getValues()
     startTransition(async () => {
@@ -85,6 +87,7 @@ export function NewRequestForm({ initialValues, revisionOf }: { initialValues?: 
       }
       if (result?.error) toast.error(result.error)
       if (result?.privacy) {
+        setSuggestionApplied(false)
         setPrivacy(result.privacy)
       }
     })
@@ -233,19 +236,23 @@ export function NewRequestForm({ initialValues, revisionOf }: { initialValues?: 
         {privacy && (
           <div id="privacy-result" tabIndex={-1} role="alert" className="rounded-xl border border-border-strong bg-card p-5 text-card-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring">
             <h2 className="font-heading text-h3 font-bold">{privacy.kind === "unavailable" ? P.reviewHeading : P.flaggedTitle}</h2>
-            <p className="mt-2">{privacy.kind === "unavailable" ? P.unavailable : P.flaggedIntro}</p>
-            {privacy.categories && privacy.categories.length > 0 && (
+            <p className="mt-2">{privacy.kind === "unavailable" ? P.unavailable : suggestionApplied ? P.appliedIntro : P.flaggedIntro}</p>
+            {!suggestionApplied && privacy.categories && privacy.categories.length > 0 && (
               <ul className="mt-3 list-disc space-y-1 pl-5">
                 {privacy.categories.map((category) => <li key={category}>{P.category[category]}</li>)}
               </ul>
             )}
-            {privacy.suggestion && (
+            {!suggestionApplied && privacy.suggestion && (
               <div className="mt-4">
                 <p className="text-sm font-semibold">{P.suggested}</p>
                 <p className="mt-1">{privacy.suggestion}</p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button type="button" variant="outline" onClick={() => form.setFocus("items")}>{P.edit}</Button>
-                  <Button type="button" variant="outline" onClick={() => { form.setValue("items", privacy.suggestion ?? "", { shouldValidate: true }); setPrivacy(null) }}>{P.applySuggestion}</Button>
+                  <Button type="button" variant="outline" onClick={() => {
+                    form.setValue("dietaryNotes", privacy.suggestion!, { shouldDirty: true, shouldTouch: true, shouldValidate: true })
+                    setSuggestionApplied(true)
+                    form.setFocus("dietaryNotes")
+                  }}>{P.applySuggestion}</Button>
                 </div>
               </div>
             )}
