@@ -61,6 +61,7 @@ export function TextField({
   errors,
   help,
   className,
+  showPasswordToggle,
   ...props
 }: React.ComponentProps<typeof Input> & {
   /** Keeps ids unique when several forms are on the page. */
@@ -69,20 +70,45 @@ export function TextField({
   label: string
   errors?: string[]
   help?: string
+  showPasswordToggle?: { show: string; hide: string }
 }) {
+  const [passwordVisible, setPasswordVisible] = useState(false)
   const id = `${prefix}-${name}`
   const describedBy = [help && `${id}-help`, errors?.length && `${id}-error`].filter(Boolean).join(" ")
   return (
     <div className="flex flex-col gap-2">
       <Label htmlFor={id}>{label}</Label>
-      <Input
-        id={id}
-        name={name}
-        aria-invalid={errors?.length ? true : undefined}
-        aria-describedby={describedBy || undefined}
-        className={className}
-        {...props}
-      />
+      {showPasswordToggle ? (
+        <div className="relative">
+          <Input
+            id={id}
+            name={name}
+            aria-invalid={errors?.length ? true : undefined}
+            aria-describedby={describedBy || undefined}
+            className={`${className ?? ""} pr-36`}
+            type={passwordVisible ? "text" : "password"}
+            {...props}
+          />
+          <button
+            type="button"
+            aria-controls={id}
+            aria-label={passwordVisible ? showPasswordToggle.hide : showPasswordToggle.show}
+            onClick={() => setPasswordVisible((visible) => !visible)}
+            className="absolute inset-y-0 right-1 my-1 min-h-9 rounded px-2 text-sm font-medium text-primary-text hover:bg-muted focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring"
+          >
+            {passwordVisible ? showPasswordToggle.hide : showPasswordToggle.show}
+          </button>
+        </div>
+      ) : (
+        <Input
+          id={id}
+          name={name}
+          aria-invalid={errors?.length ? true : undefined}
+          aria-describedby={describedBy || undefined}
+          className={className}
+          {...props}
+        />
+      )}
       {help && (
         <p id={`${id}-help`} className="text-sm text-muted-foreground">
           {help}

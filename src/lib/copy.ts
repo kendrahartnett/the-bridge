@@ -185,6 +185,8 @@ const en = {
       contactName: "Contact name",
     },
     passwordHelp: "At least 8 characters.",
+    showPassword: "Show password",
+    hidePassword: "Hide password",
     posterPledge:
       "I'll describe what's needed, not the people. I won't share names, health details, or exact locations.",
     organizationPledge:
@@ -649,6 +651,8 @@ const es: Copy = {
       contactName: "Nombre de contacto",
     },
     passwordHelp: "Al menos 8 caracteres.",
+    showPassword: "Mostrar contraseña",
+    hidePassword: "Ocultar contraseña",
     // needs review: pledge (legal-sounding, privacy).
     posterPledge:
       "Describiré lo que se necesita, no a las personas. No compartiré nombres, datos de salud ni ubicaciones exactas.",

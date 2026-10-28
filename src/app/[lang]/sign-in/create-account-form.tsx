@@ -112,8 +112,8 @@ function PosterForm() {
       <input type="hidden" name="accountType" value="poster" />
       <TextField prefix={p} name="displayName" label={AUTH_COPY.fields.yourName} autoComplete="name" defaultValue={v?.displayName} errors={errors.displayName} />
       <TextField prefix={p} name="email" label={AUTH_COPY.fields.email} type="email" autoComplete="email" defaultValue={v?.email} errors={errors.email} />
-      <TextField prefix={p} name="password" label={AUTH_COPY.fields.password} type="password" autoComplete="new-password" help={AUTH_COPY.passwordHelp} errors={errors.password} />
-      <TextField prefix={p} name="confirmPassword" label={AUTH_COPY.fields.confirmPassword} type="password" autoComplete="new-password" errors={errors.confirmPassword} />
+      <TextField prefix={p} name="password" label={AUTH_COPY.fields.password} type="password" autoComplete="new-password" help={AUTH_COPY.passwordHelp} errors={errors.password} showPasswordToggle={{ show: AUTH_COPY.showPassword, hide: AUTH_COPY.hidePassword }} />
+      <TextField prefix={p} name="confirmPassword" label={AUTH_COPY.fields.confirmPassword} type="password" autoComplete="new-password" errors={errors.confirmPassword} showPasswordToggle={{ show: AUTH_COPY.showPassword, hide: AUTH_COPY.hidePassword }} />
       <TextField prefix={p} name="organizationName" label={AUTH_COPY.fields.team} autoComplete="organization" defaultValue={v?.organizationName} errors={errors.organizationName} />
       <PledgeField prefix={p} name="pledge" label={AUTH_COPY.posterPledge} defaultChecked={v?.pledge === "on"} errors={errors.pledge} />
       <FormError message={state?.error} />
@@ -143,8 +143,8 @@ function OrganizationForm() {
       <TextField prefix={p} name="ein" label={AUTH_COPY.fields.ein} inputMode="numeric" placeholder={AUTH_COPY.fields.einPlaceholder} help={AUTH_COPY.fields.einHelp} defaultValue={v?.ein} errors={errors.ein} />
       <TextField prefix={p} name="contactName" label={AUTH_COPY.fields.contactName} autoComplete="name" defaultValue={v?.contactName} errors={errors.contactName} />
       <TextField prefix={p} name="email" label={AUTH_COPY.fields.email} type="email" autoComplete="email" defaultValue={v?.email} errors={errors.email} />
-      <TextField prefix={p} name="password" label={AUTH_COPY.fields.password} type="password" autoComplete="new-password" help={AUTH_COPY.passwordHelp} errors={errors.password} />
-      <TextField prefix={p} name="confirmPassword" label={AUTH_COPY.fields.confirmPassword} type="password" autoComplete="new-password" errors={errors.confirmPassword} />
+      <TextField prefix={p} name="password" label={AUTH_COPY.fields.password} type="password" autoComplete="new-password" help={AUTH_COPY.passwordHelp} errors={errors.password} showPasswordToggle={{ show: AUTH_COPY.showPassword, hide: AUTH_COPY.hidePassword }} />
+      <TextField prefix={p} name="confirmPassword" label={AUTH_COPY.fields.confirmPassword} type="password" autoComplete="new-password" errors={errors.confirmPassword} showPasswordToggle={{ show: AUTH_COPY.showPassword, hide: AUTH_COPY.hidePassword }} />
       <PledgeField prefix={p} name="pledge" label={AUTH_COPY.organizationPledge} defaultChecked={v?.pledge === "on"} errors={errors.pledge} />
       <FormError message={state?.error} />
       <button type="submit" className="glow-button" disabled={isPending} aria-busy={isPending}>
