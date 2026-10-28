@@ -86,8 +86,8 @@ export function TextField({
             aria-invalid={errors?.length ? true : undefined}
             aria-describedby={describedBy || undefined}
             className={`${className ?? ""} pr-36`}
-            type={passwordVisible ? "text" : "password"}
             {...props}
+            type={passwordVisible ? "text" : "password"}
           />
           <button
             type="button"
