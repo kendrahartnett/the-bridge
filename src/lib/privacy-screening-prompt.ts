@@ -9,6 +9,9 @@ Categories:
 - unit_identifier: apartment, suite, room, floor, or unit number that identifies a place.
 - precise_location: GPS coordinates, map pin, plus code, or an exact landmark that locates people.
 - vulnerable_person_identification: names, identifying combinations of details, or descriptions of where identifiable people sleep, shelter, or gather in vulnerable circumstances.
+- personal_identifier: a person's name or other identifying personal detail.
+- contact_information: an email address or phone number.
+- government_identifier: a Social Security number, government ID, passport, or driver's license number.
 
 Use high risk for clear identifying or precise-location details. Use medium risk for uncertain context that needs human judgment. Use low risk only when no prohibited category applies. General neighborhoods, city areas, major crossroads without a person's whereabouts, resource types, quantities, and approximate time windows are allowed. A number of blankets is not a building number. A general street name alone is not an exact address.
 

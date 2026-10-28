@@ -12,6 +12,7 @@
     "db:seed": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/db/seed.ts",
     "test:claims": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-claim-rules.ts",
     "test:privacy-rules": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-privacy-rules.ts",
+    "test:privacy-screening-boundary": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-privacy-screening-boundary.ts",
     "test:assistant-reply": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-assistant-reply.ts",
     "test:assistant-scope": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-assistant-scope.ts",
     "test:community-impact": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-community-impact.ts",

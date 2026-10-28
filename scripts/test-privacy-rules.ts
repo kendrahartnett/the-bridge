@@ -33,6 +33,8 @@ const low: PrivacyClassification = { approved: true, riskLevel: "low", categorie
 const screenSafe = async (): Promise<ScreeningDecision> => ({ kind: "safe", categories: [] })
 const screenBlocked = async (): Promise<ScreeningDecision> => ({ kind: "blocked", categories: ["exact_address"] })
 const screenUnavailable = async (): Promise<ScreeningDecision> => ({ kind: "unavailable", code: "timeout" })
+const localScreen = async (value: { items: string; dietaryNotes: string | null; neighborhood: string }) =>
+  evaluateScreening(value, async () => low, () => {})
 
 async function run() {
   const examples = [
@@ -74,7 +76,7 @@ async function run() {
       async () => ({ kind: "unavailable", code }), (category, errorCode) => failureOnly.push(`${category}:${errorCode ?? ""}`))
     check(`${code} fails closed with code-only log`, result.kind === "unavailable" && result.code === code && failureOnly.join() === `none:${code}`)
   }
-  const medium = await evaluateScreening({ items: "A situation requiring review", dietaryNotes: null, neighborhood: "Logan Square" }, async (items) => items.startsWith("A situation")
+  const medium = await evaluateScreening({ items: "A situation requiring review", dietaryNotes: null, neighborhood: "Logan Square" }, async (need) => need.items.startsWith("A situation")
     ? { approved: false, riskLevel: "medium", categories: ["vulnerable_person_identification"], reason: "Potential concern.", suggestedRewrite: "Winter coats for outreach in Logan Square" }
     : low, () => {})
   check("medium risk keeps separately screened safe candidate", medium.kind === "review" && medium.safeItems === "Winter coats for outreach in Logan Square")
@@ -95,6 +97,8 @@ async function run() {
   if (safePost.ok) createdRequests.push(safePost.id)
   const blockedPost = await createRequest(db, actor, request(`${tag} blocked`), screenBlocked)
   check("high-risk post is blocked", !blockedPost.ok && blockedPost.privacy?.kind === "blocked")
+  const directSensitivePost = await createRequest(db, actor, request(`${tag} contact jordan.synthetic@example.test`), localScreen)
+  check("direct create-rule call cannot bypass local screening", !directSensitivePost.ok && directSensitivePost.privacy?.kind === "blocked")
   const failedPost = await createRequest(db, actor, request(`${tag} unavailable`), screenUnavailable)
   check("screening failure does not publish", !failedPost.ok && failedPost.privacy?.kind === "unavailable")
   for (const code of ["missing_key", "api_error", "invalid_response"] as const) {
@@ -168,7 +172,7 @@ async function run() {
 
   const highChangesId = await queueAgain("high changes")
   check("admin requests changes before blocked revision", (await decidePrivacyReview(db, admin.id, { id: highChangesId, action: "changes", reason: "privacy_detail" }, screenSafe)).ok)
-  const revisedHigh = await createRequest(db, actor, request(`${tag} revised high`), screenBlocked, highChangesId)
+  const revisedHigh = await createRequest(db, actor, request(`${tag} revised high at 1234 N Example Street`), localScreen, highChangesId)
   check("high-risk revision stays blocked", !revisedHigh.ok && revisedHigh.privacy?.kind === "blocked")
   check("blocked revision leaves original actionable", (await getRevisionDraft(db, poster.id, highChangesId))?.status === "changes_requested")
 

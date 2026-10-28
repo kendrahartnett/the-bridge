@@ -3,7 +3,7 @@ import "server-only"
 import Anthropic from "@anthropic-ai/sdk"
 
 import { ASSISTANT_MODEL } from "./assistant-config"
-import { evaluateScreening, parseClassification, type PrivacyClassification, type ScreeningDecision } from "./privacy-screening-core"
+import { anthropicScreeningPayload, evaluateScreening, parseClassification, type PrivacyClassification, type SanitizedNeed, type ScreeningDecision } from "./privacy-screening-core"
 import { PRIVACY_SCREENING_PROMPT } from "./privacy-screening-prompt"
 import type { NewRequestOutput } from "./validation"
 
@@ -16,7 +16,7 @@ function log(result: "none" | "flagged", code?: string) {
   console.info(`[privacy-screen] result=${result}${code ? ` code=${code}` : ""}`)
 }
 
-async function classify(items: string, notes: string, neighborhood: string): Promise<PrivacyClassification | Extract<ScreeningDecision, { kind: "unavailable" }>> {
+async function classify(need: SanitizedNeed): Promise<PrivacyClassification | Extract<ScreeningDecision, { kind: "unavailable" }>> {
   if (!process.env.ANTHROPIC_API_KEY) return { kind: "unavailable", code: "missing_key" }
   try {
     client ??= new Anthropic()
@@ -26,7 +26,7 @@ async function classify(items: string, notes: string, neighborhood: string): Pro
         max_tokens: 450,
         thinking: { type: "disabled" },
         system: PRIVACY_SCREENING_PROMPT,
-        messages: [{ role: "user", content: JSON.stringify({ items, notes, neighborhood }) }],
+        messages: [{ role: "user", content: JSON.stringify(anthropicScreeningPayload(need)) }],
       },
       { timeout: 10_000, maxRetries: 0 }
     )
