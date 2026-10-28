@@ -3,6 +3,7 @@ import Link from "next/link"
 import { Suspense } from "react"
 
 import { EmptyState } from "@/components/empty-state"
+import { CommunityImpact } from "@/components/community-impact"
 import { Card } from "@/components/ui/card"
 import { ImpactStat } from "@/components/impact-stat"
 import { LoadingState } from "@/components/loading-state"
@@ -67,6 +68,7 @@ async function DashboardContent() {
           title={DASHBOARD_COPY.greeting.replace("{name}", greeting)}
         />
       </BlurFade>
+      <CommunityImpact variant="dashboard" />
       {user.role === "outreach" ? (
         <OutreachDashboard userId={user.id} />
       ) : (

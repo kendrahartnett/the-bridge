@@ -1,7 +1,10 @@
 import Image from "next/image"
+import { Suspense } from "react"
 
 import { CtaLink } from "@/components/cta-link"
+import { CommunityImpact } from "@/components/community-impact"
 import { HeroAtmosphere } from "@/components/hero-atmosphere"
+import { LoadingState } from "@/components/loading-state"
 import { SectionHeader } from "@/components/section-header"
 import { SiteHeader } from "@/components/site-header"
 import { BlurFade } from "@/components/ui/blur-fade"
@@ -14,6 +17,7 @@ import heroArt from "../../../public/images/hero-landing-image.png"
 export default async function Home() {
   const {
     BRIDGE_IMAGE,
+    COMMUNITY_IMPACT_COPY,
     FOOTER_TEXT,
     HERO_BADGE,
     HERO_DESCRIPTION,
@@ -73,6 +77,10 @@ export default async function Home() {
             </div>
           </div>
         </section>
+
+        <Suspense fallback={<LoadingState className="mx-auto max-w-5xl px-4 py-12 sm:px-6">{COMMUNITY_IMPACT_COPY.loading}</LoadingState>}>
+          <CommunityImpact />
+        </Suspense>
 
         <section aria-labelledby="journey">
           <BlurFade inView className="mx-auto max-w-5xl px-4 py-12 sm:px-6">

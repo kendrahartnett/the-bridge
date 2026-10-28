@@ -61,6 +61,18 @@ const en = {
     { label: "Transform", description: "Communities work together toward ending homelessness." },
   ],
 
+  COMMUNITY_IMPACT_COPY: {
+    homeHeading: "Every connection makes a difference.",
+    description: "See the support happening through The Bridge, one fulfilled need at a time.",
+    dashboardHeading: "Community Impact",
+    estimatedPeopleReached: "Estimated People Reached",
+    needsFulfilled: "Needs Fulfilled",
+    openRequests: "Open Requests",
+    explanation: "Estimated reach is based on the number of people listed in fulfilled requests. Individuals may be counted more than once.",
+    loading: "Loading community impact…",
+    unavailable: "Community impact totals are temporarily unavailable.",
+  },
+
   // "What is The Bridge?" section. Verbatim; do not edit without sign-off.
   WHAT_IS_HEADING: "What is The Bridge?",
   WHAT_IS_PARAGRAPHS: [
@@ -518,6 +530,18 @@ const es: Copy = {
     { label: "Apoyar", description: "Las conexiones continuas abren caminos hacia la vivienda y los servicios esenciales." },
     { label: "Transformar", description: "Las comunidades trabajan juntas para poner fin a la falta de vivienda." },
   ],
+
+  COMMUNITY_IMPACT_COPY: {
+    homeHeading: "Cada conexión marca la diferencia.",
+    description: "Vea el apoyo que se brinda a través de The Bridge, una necesidad completada a la vez.",
+    dashboardHeading: "Impacto comunitario",
+    estimatedPeopleReached: "Personas alcanzadas (estimado)",
+    needsFulfilled: "Necesidades completadas",
+    openRequests: "Solicitudes abiertas",
+    explanation: "El alcance estimado se basa en la cantidad de personas indicada en las solicitudes completadas. Es posible que una misma persona se cuente más de una vez.",
+    loading: "Cargando el impacto comunitario…",
+    unavailable: "Los totales del impacto comunitario no están disponibles temporalmente.",
+  },
 
   // needs review: approved verbatim English copy ("What is The Bridge?").
   WHAT_IS_HEADING: "¿Qué es The Bridge?",
@@ -1013,6 +1037,7 @@ export const {
   ROLE_CTAS,
   HOW_IT_WORKS_HEADING,
   JOURNEY,
+  COMMUNITY_IMPACT_COPY,
   WHAT_IS_HEADING,
   WHAT_IS_PARAGRAPHS,
   MISSION_HEADING,

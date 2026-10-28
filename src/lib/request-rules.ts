@@ -78,6 +78,38 @@ function orgBlockedError(s: Standing | null) {
 // Needs Board and can't be claimed; they come back if the organization is approved again.
 const posterCanStillPost = sql`exists (select 1 from ${users} as poster_check where poster_check.id = ${foodRequests.createdBy} and (poster_check.role = 'outreach' or poster_check.verification_status = 'approved'))`
 
+export type CommunityImpactTotals = {
+  estimatedPeopleReached: number
+  needsFulfilled: number
+  openRequests: number
+}
+
+/** One aggregate row only; the open count follows the Needs Board's poster visibility rule. */
+export function communityImpactQuery(db: Db) {
+  return db
+    .select({
+      estimatedPeopleReached: sql<number>`coalesce(sum(coalesce(${foodRequests.peopleCount}, 0)) filter (where ${foodRequests.status} = 'delivered'), 0)::int`,
+      needsFulfilled: sql<number>`count(*) filter (where ${foodRequests.status} = 'delivered')::int`,
+      openRequests: sql<number>`count(*) filter (where ${foodRequests.status} = 'open' and ${posterCanStillPost})::int`,
+    })
+    .from(foodRequests)
+}
+
+/** Defensive normalization for empty aggregates and nullable driver results. */
+export function normalizeCommunityImpact(row?: Partial<CommunityImpactTotals> | null): CommunityImpactTotals {
+  return {
+    estimatedPeopleReached: Number(row?.estimatedPeopleReached ?? 0),
+    needsFulfilled: Number(row?.needsFulfilled ?? 0),
+    openRequests: Number(row?.openRequests ?? 0),
+  }
+}
+
+/** Current application-wide totals; only aggregate numbers leave the database. */
+export async function getCommunityImpact(db: Db): Promise<CommunityImpactTotals> {
+  const [row] = await communityImpactQuery(db)
+  return normalizeCommunityImpact(row)
+}
+
 const actorIsApprovedOrg = (actorId: string) =>
   sql`exists (select 1 from ${users} where ${users.id} = ${actorId} and ${users.role} = 'donor' and ${users.verificationStatus} = 'approved')`
 
