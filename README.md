@@ -31,7 +31,7 @@ Bridging the gap between people experiencing homelessness and the community orga
 | Light and dark themes | A theme toggle in the header (dark by default). |
 | Accessibility | Responsive down to 320px, keyboard and screen-reader support, 44px tap targets, contrast checked from real pixels, reduced motion respected. |
 
-The previously released Spanish copy was reviewed and verified by two fluent Spanish speakers. New Inbox, dashboard, and assistant wording added in this sprint still needs native-speaker review before release.
+The Spanish copy has been reviewed and verified by two fluent Spanish speakers.
 
 ## How It Works
 
@@ -70,12 +70,12 @@ Communities work together toward ending homelessness.
 - **Before publication:** items and notes receive deterministic checks and server-side Anthropic screening. Medium-risk original text is not stored in the review queue; only a separately screened safe candidate and category labels are kept. High-risk text and failed screenings are not saved as needs. Published needs carry a boolean screening flag and category names, not model output.
 - **Risk levels:** low-risk requests follow the normal publication flow; medium-risk requests wait privately for admin review of a safe draft; high-risk requests are blocked with guidance and may be revised. A suggested rewrite can fill the description for the poster to review and submit again. Admin approval screens the exact final draft again. Revised submissions keep their prior review history.
 - **Location policy:** screening checks exact addresses, unit identifiers, GPS coordinates, and details that identify vulnerable people or precise sheltering locations. General neighborhood and geographic descriptions are permitted.
-- **Anthropic data flow:** the screening request sends items, notes, and community area, without account details. [Anthropic's API retention policy](https://privacy.anthropic.com/en/articles/7996866-how-long-do-you-store-my-organization-s-data) says inputs and outputs are ordinarily deleted within 30 days, with stated exceptions. The app does not retain the screening prompt or response.
+- **Needs-screening data flow:** only when the local scan finds no recognized sensitive pattern, the server sends the locally scanned items, notes, and community area to Anthropic; it never sends account details. If the local scan finds a pattern, it blocks the submission before the provider call. [Anthropic's API retention policy](https://privacy.anthropic.com/en/articles/7996866-how-long-do-you-store-my-organization-s-data) says inputs and outputs are ordinarily deleted within 30 days, with stated exceptions. The app does not retain the screening prompt or response.
 - **Identifying details are not requested:** the schema has no dedicated fields for names, addresses, or exact locations of people being served. Screening checks free text before publication, but automated classification cannot guarantee that every sensitive detail is caught.
 - **Contact information** (account emails) is shared only between the person who posted a need and the organization that claimed it, only after the claim, and only while that organization is approved. Which emails a page may show is decided in the database queries, so a hidden email is never sent to the browser.
 - **Pages only some accounts may see** (the Needs Board, need pages, admin) answer everyone else with the same not-found page and a real 404, so they don't reveal that they exist.
 - **Passwords** are handled by the managed auth service (Neon Auth), which stores them hashed; the app never stores or logs them.
-- **The assistant** has no access to accounts, requests, or the database, and never sends email. It is told not to ask for or repeat names, locations, or health details, to point people to 988 or 211 when needed, and not to give medical, legal, or financial advice.
+- **The assistant** has no access to accounts, requests, or the database, and never sends email. The conversation is held in browser component memory and resets when the page reloads. When `ANTHROPIC_API_KEY` is configured, each chat request sends the submitted user and assistant message history to `/api/chat`, which forwards that history to Anthropic; without the key, the route returns a fixed fallback. Chat text is not stored in the app database or written to application logs. Unlike the Post a Need flow, chat has no local PII screening, so do not enter names, contact details, health information, or exact locations. The assistant's instructions not to request or repeat sensitive details are model guidance, not a technical filter. The panel displays 988 crisis guidance, and the assistant is instructed to point people to 988 or 211 when appropriate; there is no deterministic server-side crisis-response path. Anthropic's API retention policy linked above applies to chat content too.
 - **Secrets** are kept out of the repository (only `.env.example`, without values, is committed) and out of logs: every script filters its output through `src/lib/redact.ts`.
 
 ## Getting started (local development)
@@ -141,6 +141,7 @@ Then open http://localhost:3000.
 | `db:seed` | Creates or resets the test accounts, needs, and notifications | Development only |
 | `test:claims` | Tests the request, verification, and inbox rules (see Testing) | Development only; deletes only the rows it created |
 | `test:privacy-rules` | Tests privacy classification and admin review rules with synthetic data and mocked AI responses | Development only; cleans up its own rows |
+| `test:privacy-screening-boundary` | Offline checks for local redaction, the sanitized Anthropic payload, and blocked-content boundaries | None |
 | `test:assistant-reply` | Tests how assistant replies are cleaned up | None |
 | `test:assistant-scope` | Checks assistant topic coverage without calling Anthropic | None |
 | `test:redact` | Tests that scripts never print secrets | None |
@@ -158,13 +159,14 @@ Then open http://localhost:3000.
 ```sh
 npm run test:claims            # request, verification and inbox rules (development database)
 npm run test:privacy-rules      # privacy screening and admin review rules (development database)
+npm run test:privacy-screening-boundary # offline local-screening and Anthropic payload checks
 npm run test:assistant-reply   # assistant reply clean-up
 npm run test:assistant-scope   # assistant topics (offline)
 npm run test:redact            # secrets never appear in script output
 npm run test:migrate-summary   # the production migration script's summary (development database)
 ```
 
-`test:claims` calls the same rule functions as the app (`src/lib/request-rules.ts`) with the seeded accounts. It covers claiming, fulfilling, and cancelling; organization approval, rejection, and revocation; which emails each side can see; the Needs Board and need-page visibility; that each change creates exactly one notification (including a race of two organizations claiming at once, 10 times); and that people can read only their own notifications. It deletes only the rows it created and writes its results to [docs/test-results.md](docs/test-results.md). `test:assistant-scope` checks the assistant's supported topics without calling Anthropic.
+`test:claims` calls the same rule functions as the app (`src/lib/request-rules.ts`) with the seeded accounts. It covers claiming, fulfilling, and cancelling; organization approval, rejection, and revocation; which emails each side can see; the Needs Board and need-page visibility; that each change creates exactly one notification (including a race of two organizations claiming at once, 10 times); and that people can read only their own notifications. It deletes only the rows it created and writes its results to [docs/test-results.md](docs/test-results.md). `test:privacy-screening-boundary` is offline: it calls the production screening functions with synthetic text and mocked classifiers, and checks that detected content is blocked before an Anthropic payload can be made. It does not use a database or call Anthropic. `test:assistant-scope` checks the assistant's supported topics without calling Anthropic.
 
 ### Browser tests
 
@@ -203,6 +205,7 @@ Add `-- --lang=es` to run a suite with the Spanish cookie. More options are in [
 - [docs/assistant-tests.md](docs/assistant-tests.md): assistant conversation tests
 - [docs/responsive-audit.md](docs/responsive-audit.md): the responsive layout audit
 - [docs/design-system.md](docs/design-system.md): the design system and its decisions
+- [docs/privacy-screening.md](docs/privacy-screening.md): Post a Need privacy screening data flow and detection limits
 - [docs/security-notes.md](docs/security-notes.md): reviewed security advisories
 
 ## Project structure
@@ -216,7 +219,7 @@ src/
   proxy.ts      Picks the language and protects pages before they render
 drizzle/        SQL migrations and their snapshots
 scripts/        Test scripts, admin and production scripts; e2e/ holds the browser tests
-docs/           Test results, audits, design system, security notes
+docs/           Test results, audits, design system, privacy screening, security notes
 public/         Images and brand assets
 design/source/  The original logo artwork
 ```
@@ -243,14 +246,14 @@ design/source/  The original logo artwork
 
 ## Known limitations
 
-- **Rate limits are per server instance:** the assistant allows 20 questions per IP per hour, counted in each server instance's memory, so on Vercel it isn't exact across the whole site.
+- **Chat rate limits are per server instance:** the assistant allows 20 requests per IP per hour, counted in each server instance's memory, so on Vercel it isn't exact across the whole site.
 - **Neon Auth is in beta** (`@neondatabase/auth` 0.7.0-beta).
 - **No real-time updates:** notifications and the Needs Board update when the page loads.
-- **The assistant's 10-question limit resets** when the page is refreshed.
+- **The assistant's 10-question limit resets** when the page is refreshed. Conversation history is supplied by the browser on each request; the API checks the submitted history's shape and question count but has no server-side session state to verify its integrity or preserve the count across refreshes or direct API calls. Client-supplied assistant messages are not authenticated as replies previously generated by the app.
 - **The theme needs JavaScript:** without it, pages show the light theme.
 - **No text messages or email alerts yet.**
 - **Organization verification is manual,** so approval depends on an admin reviewing applications.
-- **Privacy screening can miss details or flag harmless text.** The admin queue only receives a separately screened safe candidate; admins re-screen it before approval.
+- **Privacy screening can miss details or flag harmless text.** This screening applies to Post a Need submissions, not chat messages. The admin queue only receives a separately screened safe candidate; admins re-screen it before approval.
 - **No maps or location-based features yet.**
 - **The illustrations are AI-generated** and illustrative; they don't show real people or events.
 
