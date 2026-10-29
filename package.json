@@ -15,7 +15,6 @@
     "test:privacy-screening-boundary": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-privacy-screening-boundary.ts",
     "test:assistant-reply": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-assistant-reply.ts",
     "test:assistant-scope": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-assistant-scope.ts",
-    "test:chat-security": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-chat-security.ts",
     "test:community-impact": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-community-impact.ts",
     "test:redact": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-redact.ts",
     "test:migrate-summary": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-migrate-summary.ts",

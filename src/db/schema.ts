@@ -193,39 +193,6 @@ export const privacyReviews = pgTable(
   ]
 )
 
-// Anonymous assistant state is metadata only. Never add transcript, IP address, or
-// message-content columns here; expires_at is enforced by reads and the daily cleanup.
-export const chatSessions = pgTable(
-  "chat_sessions",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    cookieHash: text("cookie_hash").notNull().unique(),
-    turnCount: integer("turn_count").notNull().default(0),
-    transcriptHmac: text("transcript_hmac").notNull(),
-    reservationId: uuid("reservation_id"),
-    reservationExpiresAt: timestamp("reservation_expires_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-  },
-  (t) => [
-    check("chat_sessions_turn_count", sql`${t.turnCount} between 0 and 10`),
-    check("chat_sessions_reservation_pair", sql`(${t.reservationId} is null) = (${t.reservationExpiresAt} is null)`),
-    index("chat_sessions_expires_at_idx").on(t.expiresAt),
-  ]
-)
-
-// key_hash is a domain-separated HMAC of the Vercel-provided client IP. hits are
-// timestamps only, pruned atomically during admission and at daily physical cleanup.
-export const chatRateLimits = pgTable(
-  "chat_rate_limits",
-  {
-    keyHash: text("key_hash").primaryKey(),
-    hits: timestamp("hits", { withTimezone: true }).array().notNull().default(sql`'{}'::timestamptz[]`),
-    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-  },
-  (t) => [index("chat_rate_limits_expires_at_idx").on(t.expiresAt)]
-)
-
 export const notifications = pgTable(
   "notifications",
   {

@@ -113,15 +113,10 @@ const en = {
 
   // AI assistant: every string the chat route and chat panel show people.
   ASSISTANT_COPY: {
-    crisisReply: "I'm sorry you're going through this. If you're thinking about suicide or hurting yourself, call or text 988 for the Suicide & Crisis Lifeline. For Spanish, call 988 and press 2, or text AYUDA to 988. If you're in immediate danger, call 911. If you can, reach someone you trust nearby right now.",
     errors: {
       tooLong: "That message is too long. Please keep it under 500 characters.",
       empty: "Please type a question first.",
-      sessionLimit: "You've reached the limit of 10 questions for this chat. Start a new conversation to continue.",
-      sessionExpired: "This chat session expired or could not be verified. Start a new conversation to continue.",
-      staleConversation: "This conversation changed or its last reply could not be verified. Start a new conversation to continue.",
-      requestPending: "A reply is already being prepared for this conversation. Please wait a moment.",
-      privacyBlocked: "This message includes personal or sensitive details, so it wasn't sent. Remove them before trying again.",
+      sessionLimit: "You've reached the limit of 10 questions for this chat. Refresh the page to start a new one.",
       rateLimited: "You've sent a lot of questions in the last hour. Please wait a bit and try again.",
       invalid: "Something went wrong with that message. Please try again.",
     },
@@ -133,13 +128,12 @@ const en = {
       phoneHint: "Ask a question",
       closeLabel: "Close the assistant",
       title: "The Bridge assistant",
-      notice: "Text you type stays in this browser. Chat text that passes local checks, including earlier messages, is sent to Anthropic. Checks can miss personal or health details; please don't share them.",
-      crisis: "In crisis? Call or text 988. Spanish: call, press 2; text AYUDA.",
+      notice: "You're chatting with an AI assistant. Don't share personal details.",
+      crisis: "In crisis? Call or text 988.",
       starters: ["What is The Bridge?", "How do I post a need?", "Can you help me look for housing resources?"],
       inputLabel: "Your question",
       placeholder: "Ask a question about The Bridge",
       send: "Send",
-      newConversation: "New conversation",
       thinking: "Thinking…",
       you: "You",
       assistant: "Assistant",
@@ -591,15 +585,10 @@ const es: Copy = {
   },
 
   ASSISTANT_COPY: {
-    crisisReply: "Siento que esté pasando por un momento difícil. Si está pensando en suicidarse o hacerse daño, llame o envíe un mensaje de texto al 988 (Línea 988 de Prevención del Suicidio y Crisis). Para recibir atención en español, al llamar marque 2 o envíe AYUDA al 988. Si corre peligro inmediato, llame al 911. Si puede, comuníquese ahora con alguien de confianza que esté cerca.",
     errors: {
       tooLong: "Ese mensaje es demasiado largo. Use menos de 500 caracteres.",
       empty: "Primero escriba una pregunta.",
-      sessionLimit: "Llegó al límite de 10 preguntas en este chat. Inicie una nueva conversación para continuar.",
-      sessionExpired: "Esta sesión de chat venció o no se pudo verificar. Inicie una nueva conversación para continuar.",
-      staleConversation: "Esta conversación cambió o no se pudo verificar su última respuesta. Inicie una nueva conversación para continuar.",
-      requestPending: "Ya se está preparando una respuesta para esta conversación. Espere un momento.",
-      privacyBlocked: "Este mensaje contiene datos personales o delicados y no se envió. Elimínelos antes de volver a intentarlo.",
+      sessionLimit: "Llegó al límite de 10 preguntas en este chat. Actualice la página para empezar uno nuevo.",
       rateLimited: "Envió muchas preguntas en la última hora. Espere un poco y vuelva a intentarlo.",
       invalid: "Algo salió mal con ese mensaje. Vuelva a intentarlo.",
     },
@@ -608,14 +597,14 @@ const es: Copy = {
       phoneHint: "Haga una pregunta",
       closeLabel: "Cerrar el asistente",
       title: "Asistente de The Bridge",
-      notice: "El texto que escribe permanece en este navegador. El texto del chat que pasa las revisiones locales, incluidos los mensajes anteriores, se envía a Anthropic. Las revisiones pueden pasar por alto datos personales o de salud; no los comparta.",
+      // needs review: AI disclosure and privacy warning.
+      notice: "Está hablando con un asistente de IA. No comparta datos personales.",
       // needs review: crisis line (safety).
-      crisis: "¿En crisis? Llame o envíe AYUDA al 988. Para llamar en español, marque 2.",
+      crisis: "¿En crisis? Llame o envíe un mensaje de texto al 988.",
       starters: ["¿Qué es The Bridge?", "¿Cómo publico una necesidad?", "¿Cómo busco recursos de vivienda?"],
       inputLabel: "Su pregunta",
       placeholder: "Haga una pregunta sobre The Bridge",
       send: "Enviar",
-      newConversation: "Nueva conversación",
       thinking: "Pensando…",
       you: "Usted",
       assistant: "Asistente",

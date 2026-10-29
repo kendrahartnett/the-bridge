@@ -64,13 +64,6 @@
       "when": 1793133677856,
       "tag": "0008_privacy_review_resubmissions",
       "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "7",
-      "when": 1793230316893,
-      "tag": "0009_chat_sessions_and_rate_limits",
-      "breakpoints": true
     }
   ]
 }
