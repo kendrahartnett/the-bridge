@@ -98,16 +98,18 @@ Copy `.env.example` to `.env.local` and fill in the values. Never commit `.env.l
 
 | Variable | What it does | Local development | Production |
 |---|---|---|---|
-| `DATABASE_URL` | Postgres connection string for the Neon database | Required (the development project) | Required (set in Vercel) |
+| `DATABASE_URL` | Postgres connection string for the Neon database | Required (the `the-bridge-dev` branch) | Required (set in Vercel) |
 | `NEON_AUTH_BASE_URL` | The Neon Auth endpoint for sign-in | Required | Required |
 | `NEON_AUTH_COOKIE_SECRET` | Signs the session cookies (at least 32 characters) | Required | Required |
 | `ANTHROPIC_API_KEY` | Server-side assistant and privacy screening key; without it, the assistant uses a fixed fallback and new requests cannot pass screening | Required to post needs | Required to post needs |
+| `CHAT_SESSION_SECRET` | Server-only HMAC key (at least 32 characters) for chat transcript integrity and pseudonymous rate-limit keys | Required for chat | Required for chat |
+| `CRON_SECRET` | Server-only Vercel Cron bearer secret (at least 32 characters) for expired chat metadata cleanup | Optional locally | Required for scheduled cleanup |
 | `ADMIN_CONTACT_EMAIL` | The address shown to organizations under review or not approved (banners, inbox, assistant) | Optional | Recommended |
 | `SEED_TEST_PASSWORD` | The password for the seeded test accounts, used by `db:seed` and the browser tests | Required for seeding and tests | Not used |
 | `E2E_BASE_URL` | The local server the browser tests use (default `http://localhost:3100`) | Optional | Not used |
 | `CHROME_PATH` | Where the browser tests find Chrome, if not in its usual place | Optional | Not used |
 
-`.env.example` lists the first four. Production's database URL also lives in `.env.prod.local` (never committed), which only `db:migrate:prod` and `admin:grant:prod` read. Don't name it `.env.production.local`: Next.js loads that file automatically in production mode and it would override `.env.local`.
+`.env.example` lists the required server-only variables without values. Production's database URL also lives in `.env.prod.local` (never committed), which only `db:migrate:prod` and `admin:grant:prod` read. Don't name it `.env.production.local`: Next.js loads that file automatically in production mode and it would override `.env.local`.
 
 ### Database
 
@@ -228,9 +230,10 @@ design/source/  The original logo artwork
 ## Deployment
 
 - **Hosting:** pushes to the `main` branch deploy to Vercel.
+- **Chat metadata cleanup:** `vercel.json` schedules `/api/cron/cleanup-chat` daily at 05:00 UTC. Once-daily schedules are compatible with Vercel Hobby; Hobby may invoke the job at any time within that hour. The project's current plan and Cron dashboard status still need verification in Vercel. `CRON_SECRET` must be set in the Vercel environment for the endpoint to authorize scheduled cleanup.
 - **Source:** [GitHub repository](https://github.com/kendrahartnett/the-bridge). The production deployment follows GitHub `main`; pushing code does not run database migrations.
-- **Environment variables in production** (names only): `DATABASE_URL`, `NEON_AUTH_BASE_URL`, `NEON_AUTH_COOKIE_SECRET`, `ANTHROPIC_API_KEY`, `ADMIN_CONTACT_EMAIL`.
-- **Separate databases:** use a dedicated development Neon database and Neon Auth configuration for local work and tests. The former development branch was removed; provision and verify a new development target before running database-writing development commands.
+- **Environment variables in production** (names only): `DATABASE_URL`, `NEON_AUTH_BASE_URL`, `NEON_AUTH_COOKIE_SECRET`, `ANTHROPIC_API_KEY`, `CHAT_SESSION_SECRET`, `CRON_SECRET`, `ADMIN_CONTACT_EMAIL`.
+- **Development target:** local work and database-writing tests use the `the-bridge-dev` branch of the `the-bridge` Neon project. The guard verifies its endpoint, project, and branch IDs before tests run; production uses the separate `production` branch.
 - **Migrations:** test a migration on development first (`npm run db:migrate`), then apply it to production:
 
   ```sh
@@ -243,10 +246,12 @@ design/source/  The original logo artwork
 
 ## Known limitations
 
-- **Rate limits are per server instance:** the assistant allows 20 questions per IP per hour, counted in each server instance's memory, so on Vercel it isn't exact across the whole site.
+- **Assistant sessions are server-limited:** each anonymous chat allows 10 questions and expires after 24 hours. Refreshing the same tab keeps the conversation in that tab's `sessionStorage`; starting a new conversation creates a fresh session, but the durable limit of 20 requests per client IP per hour still applies across sessions.
+- **Assistant retention:** the server stores only a cookie-token hash, turn count, keyed transcript digest, short-lived reservation metadata, and pseudonymous rate-limit timestamps. It does not store chat transcripts or raw IP addresses. Sessions expire logically after 24 hours; expired metadata may remain until the next successful daily cleanup, so there is no guaranteed physical deletion deadline if scheduled cleanup fails. The current tab keeps the visible transcript in browser `sessionStorage` to support refresh.
+- **Assistant chat privacy:** before a provider call, the server checks the new message and the full prior transcript (including assistant replies) for known address, contact, identity, contextual name, and personal health patterns. Recognized sensitive content is blocked; passing text is sent unchanged, not redacted. Recognized self-harm or suicide language gets fixed crisis guidance from the server without an Anthropic call; that message is not added to chat history. Pattern checks can miss details they do not recognize, so they do not make chat safe for personal information. A clean check is not a guarantee.
+- **Assistant data flow:** text being typed and blocked drafts remain in browser memory so the person can edit them; only completed conversation messages are kept in tab `sessionStorage` for refresh. “New conversation” and recognized crisis responses clear that transcript when browser storage is available. Each accepted turn sends the current question and prior transcript (including assistant replies) to Anthropic along with the server's system instructions. The application logs fixed error codes/statuses, not chat text. The server database stores session/rate-limit metadata and a keyed transcript digest, not transcript text or raw IP addresses. Session metadata expires logically after 24 hours and is physically removed by the daily cleanup only when it succeeds. Anthropic processes accepted chat content under its API terms and retention policy; see [Anthropic's API retention policy](https://privacy.anthropic.com/en/articles/7996866-how-long-do-you-store-my-organization-s-data).
 - **Neon Auth is in beta** (`@neondatabase/auth` 0.7.0-beta).
 - **No real-time updates:** notifications and the Needs Board update when the page loads.
-- **The assistant's 10-question limit resets** when the page is refreshed.
 - **The theme needs JavaScript:** without it, pages show the light theme.
 - **No text messages or email alerts yet.**
 - **Organization verification is manual,** so approval depends on an admin reviewing applications.

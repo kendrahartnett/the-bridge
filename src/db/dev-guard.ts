@@ -1,12 +1,13 @@
-// Seed and test scripts write and delete data, so they only ever run against the separate
-// development project (the-bridge-dev), never production. Call requireDevDatabase() before
+// Seed and test scripts write and delete data, so they only ever run against the
+// the-bridge-dev branch, never production. Call requireDevDatabase() before
 // anything else touches the database.
 
 import { neon } from "@neondatabase/serverless"
 
-/** The-bridge-dev Neon project and its database endpoint. */
-const DEV_PROJECT_ID = "purple-hill-95844872"
-const DEV_ENDPOINT = "ep-misty-mountain-b45ezh8o"
+/** The-bridge-dev branch of the-bridge, with its dedicated database endpoint. */
+const DEV_PROJECT_ID = "sparkling-bird-06840224"
+const DEV_BRANCH_ID = "br-tiny-poetry-b4rhh7wl"
+const DEV_ENDPOINT = "ep-soft-heart-b4tui7gu"
 const PRODUCTION_ENDPOINT = "ep-holy-block-b4xktbl8"
 
 /** A name for where a connection points, without printing the host or anything else from it. */
@@ -35,9 +36,9 @@ export async function requireDevDatabase(url = process.env.DATABASE_URL): Promis
   if (!host.startsWith(`${DEV_ENDPOINT}.`) && !host.startsWith(`${DEV_ENDPOINT}-pooler.`)) {
     refuse(`DATABASE_URL points to ${describe(host)}.`)
   }
-  const [row] = await neon(url)`select current_setting('neon.project_id', true) as project`
-  if (row?.project !== DEV_PROJECT_ID) {
-    refuse(`the database reports project ${row?.project ?? "unknown"}, not the-bridge-dev.`)
+  const [row] = await neon(url)`select current_setting('neon.project_id', true) as project, current_setting('neon.branch_id', true) as branch`
+  if (row?.project !== DEV_PROJECT_ID || row?.branch !== DEV_BRANCH_ID) {
+    refuse("the database did not confirm the-bridge-dev branch.")
   }
   console.log("Database: the-bridge-dev")
   return url

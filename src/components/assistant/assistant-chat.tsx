@@ -8,6 +8,7 @@ import { Notice } from "@/components/notice"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { MAX_MESSAGE_CHARS, MAX_USER_MESSAGES } from "@/lib/assistant-config"
+import { isCrisisMessage } from "@/lib/chat-crisis"
 import { useCopy } from "@/components/providers"
 
 type Message = { role: "user" | "assistant"; content: string }
@@ -28,11 +29,20 @@ const HINT_SEEN_KEY = "bridge-chat-hint-seen"
 // doesn't flash it.
 const TOOLTIP_DELAY_MS = 300
 const HINT_DURATION_MS = 5000
+const CHAT_STORAGE_KEY = "bridge-chat-transcript-v1"
+
+function clearStoredTranscript() {
+  try {
+    sessionStorage.removeItem(CHAT_STORAGE_KEY)
+  } catch {
+    try { sessionStorage.setItem(CHAT_STORAGE_KEY, "[]") } catch { /* Browser storage may be unavailable. */ }
+  }
+}
 
 /**
- * The assistant chat button and panel. The conversation lives only in this component's
- * state: nothing is stored, and it resets on page load. Below 640px the panel is a bottom
- * sheet; above, it sits in the bottom-right corner.
+ * The assistant chat button and panel. Completed messages are kept in tab sessionStorage
+ * for refresh recovery; server session metadata contains no transcript. Below 640px the
+ * panel is a bottom sheet; above, it sits in the bottom-right corner.
  */
 export function AssistantChat() {
   const { ASSISTANT_COPY } = useCopy()
@@ -42,6 +52,9 @@ export function AssistantChat() {
   const [draft, setDraft] = useState("")
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [canStartNew, setCanStartNew] = useState(false)
+  const [safetyNotice, setSafetyNotice] = useState<string | null>(null)
+  const [restored, setRestored] = useState(false)
   // How far the on-screen keyboard pushes into the layout viewport (iOS Safari keeps fixed
   // elements behind it), so the input stays visible above the keyboard.
   const [keyboardInset, setKeyboardInset] = useState(0)
@@ -65,6 +78,37 @@ export function AssistantChat() {
   const atLimit = questionsAsked >= MAX_USER_MESSAGES
   const charsLeft = MAX_MESSAGE_CHARS - draft.length
   const notice = error ?? (atLimit ? ASSISTANT_COPY.errors.sessionLimit : null)
+
+  // Keep the current tab's transcript across a refresh so it can be checked against the
+  // server's metadata digest. It is never written to the server database.
+  useEffect(() => {
+    const restore = window.setTimeout(() => {
+      try {
+        const saved = sessionStorage.getItem(CHAT_STORAGE_KEY)
+        if (saved) {
+          const value: unknown = JSON.parse(saved)
+          if (Array.isArray(value) && value.length <= 20 && value.every((m) =>
+            m && typeof m === "object" && (m.role === "user" || m.role === "assistant") &&
+            typeof m.content === "string" && m.content.length <= (m.role === "user" ? MAX_MESSAGE_CHARS : 4000)
+          )) setMessages(value as Message[])
+        }
+      } catch {
+        // If browser storage is unavailable or malformed, the server will require a fresh chat.
+      } finally {
+        setRestored(true)
+      }
+    }, 0)
+    return () => window.clearTimeout(restore)
+  }, [])
+
+  useEffect(() => {
+    if (!restored || pending) return
+    try {
+      sessionStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages))
+    } catch {
+      // Storage can be disabled; in that case a refresh may require a new conversation.
+    }
+  }, [messages, pending, restored])
 
   const showTooltip = useCallback(() => {
     window.clearTimeout(tooltipTimer.current)
@@ -206,35 +250,79 @@ export function AssistantChat() {
   }, [messages, pending])
 
   async function ask(question: string) {
+    if (!restored) return
     const text = question.trim()
     if (pending) return
     if (!text) return setError(ASSISTANT_COPY.errors.empty)
     if (text.length > MAX_MESSAGE_CHARS) return setError(ASSISTANT_COPY.errors.tooLong)
-    if (atLimit) return setError(ASSISTANT_COPY.errors.sessionLimit)
+    if (atLimit && !isCrisisMessage(text)) return setError(ASSISTANT_COPY.errors.sessionLimit)
 
     const history: Message[] = [...messages, { role: "user", content: text }]
     setMessages(history)
     setDraft("")
     setError(null)
+    setSafetyNotice(null)
     setPending(true)
+    let resetClientConversation = false
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ messages: history }),
+        body: JSON.stringify({ messages, question: text, expectedTurn: questionsAsked }),
       })
-      const data: { reply?: string; error?: string } = await res.json().catch(() => ({}))
-      if (!res.ok || !data.reply) throw new Error(data.error ?? ASSISTANT_COPY.errors.invalid)
-      setMessages([...history, { role: "assistant", content: data.reply }])
+      const data: { reply?: string; error?: string; code?: string; source?: "assistant" | "fallback" | "safety"; resetConversation?: boolean } = await res.json().catch(() => ({}))
+      if (res.ok && data.source === "safety" && data.reply) {
+        clearStoredTranscript()
+        setMessages([])
+        setDraft("")
+        setCanStartNew(false)
+        setSafetyNotice(data.reply)
+        return
+      }
+      if (!res.ok || !data.reply) {
+        if (data.resetConversation) {
+          resetClientConversation = true
+          clearStoredTranscript()
+          setMessages([])
+          setCanStartNew(false)
+        }
+        if (["expired", "session_limit", "busy"].includes(data.code ?? "") || data.code === "invalid" && res.status === 409) setCanStartNew(true)
+        throw new Error(data.error ?? ASSISTANT_COPY.errors.invalid)
+      }
+      const complete = [...history, { role: "assistant" as const, content: data.reply }]
+      setMessages(complete)
+      setCanStartNew(false)
     } catch (err) {
       // Roll the question back so it can be retried and the turns still alternate.
-      setMessages(messages)
+      setMessages(resetClientConversation ? [] : messages)
       setDraft(text)
-      setError(err instanceof TypeError ? COPY.networkError : (err as Error).message)
+      if (err instanceof TypeError) {
+        setCanStartNew(true)
+        setError(ASSISTANT_COPY.errors.staleConversation)
+      } else {
+        setError((err as Error).message)
+      }
     } finally {
       setPending(false)
       inputRef.current?.focus()
     }
+  }
+
+  async function startNewConversation() {
+    if (pending) return
+    try {
+      const response = await fetch("/api/chat/session", { method: "POST" })
+      if (!response.ok) throw new Error()
+    } catch {
+      setError(COPY.networkError)
+      return
+    }
+    clearStoredTranscript()
+    setMessages([])
+    setError(null)
+    setSafetyNotice(null)
+    setCanStartNew(false)
+    inputRef.current?.focus()
   }
 
   if (!open) {
@@ -308,6 +396,11 @@ export function AssistantChat() {
         </p>
 
         <div ref={logRef} className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-3">
+          {safetyNotice && (
+            <p role="alert" className="rounded-lg border border-border bg-muted/60 px-3 py-2 text-sm text-foreground">
+              {safetyNotice}
+            </p>
+          )}
           {messages.length === 0 && (
             <div className="flex flex-col gap-2">
               {COPY.starters.map((starter) => (
@@ -315,7 +408,7 @@ export function AssistantChat() {
                   key={starter}
                   type="button"
                   variant="outline"
-                  disabled={pending}
+                  disabled={pending || !restored}
                   onClick={() => ask(starter)}
                   className="h-auto min-h-tap justify-start rounded-xl border-primary/40 bg-surface-raised py-2 text-left whitespace-normal text-primary-text hover:bg-primary/10 hover:text-primary-text"
                 >
@@ -365,6 +458,11 @@ export function AssistantChat() {
               <p id={ids.error}>{notice}</p>
             </Notice>
           )}
+          {(atLimit || canStartNew) && (
+            <Button type="button" variant="outline" disabled={pending} onClick={startNewConversation} className="mb-1 min-h-tap">
+              {COPY.newConversation}
+            </Button>
+          )}
           <label htmlFor={`${ids.panel}-input`} className="sr-only">
             {COPY.inputLabel}
           </label>
@@ -375,7 +473,7 @@ export function AssistantChat() {
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               placeholder={COPY.placeholder}
-              disabled={atLimit}
+              disabled={!restored}
               autoComplete="off"
               enterKeyHint="send"
               aria-invalid={charsLeft < 0 || undefined}
@@ -388,7 +486,7 @@ export function AssistantChat() {
                 dimmed while sending; no movement with reduced motion. */}
             <button
               type="submit"
-              disabled={pending || atLimit}
+              disabled={pending || !restored || (atLimit && !isCrisisMessage(draft))}
               className="flex min-h-tap shrink-0 cursor-pointer items-center gap-1 rounded-md bg-blue-500 px-4 py-2 font-semibold tracking-widest text-gray-950 outline-none transition-[translate,gap,background-color] duration-300 hover:translate-x-3 hover:gap-2 hover:bg-blue-400 focus-visible:ring-[3px] focus-visible:ring-ring disabled:cursor-default disabled:opacity-60 disabled:hover:translate-x-0 disabled:hover:gap-1 disabled:hover:bg-blue-500 motion-reduce:duration-0 motion-reduce:hover:translate-x-0"
             >
               {COPY.send}

@@ -67,7 +67,7 @@ No test framework is installed: tests are plain Node TypeScript scripts (`script
 
 ## 4. Database
 
-Two Neon projects (Postgres 18, `aws-us-east-2`): **`the-bridge`** (production, branch `production`) and **`the-bridge-dev`** (development and tests). Schema: `src/db/schema.ts`. Connection: `src/db/index.ts` (Neon HTTP driver).
+Current database target (Postgres 18, `aws-us-east-2`): the **`the-bridge`** Neon project has separate `production` and `the-bridge-dev` branches. The older standalone `the-bridge-dev` project still exists but is no longer the target of `.env.local` or the development guard. Schema: `src/db/schema.ts`. Connection: `src/db/index.ts` (Neon HTTP driver).
 
 | Table | Purpose | Notable constraints |
 |---|---|---|
@@ -104,13 +104,15 @@ The table is still named `food_requests` and the organization role `donor` for h
   - **Need page:** decided per viewer by `getRequestForViewer`.
   - **Admin:** `users.is_admin`, granted only by `npm run admin:grant -- <email>` / `admin:grant:prod`.
   - **Contact emails:** only between the poster and the claiming organization, after the claim, while the organization is approved.
-- Each production and development project has its own Neon Auth, so accounts never cross. Production's trusted domain list contains `https://the-bridge-one.vercel.app` (checked 2026-10-27).
+- Production and development use separate Neon branches. Verify Neon Auth configuration for each branch before relying on account isolation. Production's trusted domain list contained `https://the-bridge-one.vercel.app` when checked on 2026-10-27.
 
 ## 6. API endpoints and integrations
 
 | Endpoint | Method | Purpose |
 |---|---|---|
-| `/api/chat` | POST | The assistant. Body `{ messages: [{ role, content }] }`; replies `{ reply, source: "assistant" \| "fallback" }` or `{ error, code }` (`too_long`, `empty`, `session_limit`, `rate_limited`, `invalid`). |
+| `/api/chat` | POST | The assistant. Body `{ messages, question, expectedTurn }`; server checks the prior transcript against a keyed digest, reserves one turn atomically, applies local PII screening, and returns `{ reply, source }` or `{ error, code }`. |
+| `/api/chat/session` | POST | Clears the HttpOnly anonymous chat cookie to start a fresh conversation; IP rate limits continue across sessions. |
+| `/api/cron/cleanup-chat` | GET | Vercel Cron endpoint; requires `Authorization: Bearer $CRON_SECRET` and deletes only expired chat metadata. Scheduled daily at 05:00 UTC in `vercel.json`. |
 | `/api/auth/[...path]` | GET/POST | Neon Auth handler. |
 | Server actions | — | `signInAction`, `signUpAction`, `signOutAction`; `createRequestAction`; `claimRequestAction`, `confirmDeliveryAction`, `cancelRequestAction`; `reviewOrganizationAction`; `openNotificationAction`, `markAllReadAction`. |
 
@@ -122,8 +124,13 @@ The original handoff described only **the Bridge assistant**. Privacy screening 
 
 - Route `src/app/api/chat/route.ts`; model `claude-haiku-5-5`, `max_tokens` 600, thinking disabled, 15 s timeout, no retries (`src/lib/assistant-config.ts`).
 - System prompt `src/lib/assistant-prompt.ts` (`server-only`, never sent to the browser). It embeds the mission and the Spanish glossary from `copy.ts`.
-- Order of checks: rate limit (20/hour/IP, in memory) → body validation → turn alternation → 10-question and 500-character limits → API call. Missing key, error, timeout, or refusal → fixed fallback reply. Replies are cleaned by `src/lib/assistant-reply.ts`.
-- Nothing is stored server-side; message text is never logged (failures log only the error kind).
+- Order of checks: same-origin request → durable atomic rate limit (20/hour/client IP) → bounded body validation → active anonymous session and keyed transcript verification → local PII screen → atomic turn reservation → API call → one-time finalization. Session limit is 10 questions; each user message is limited to 500 characters. Missing key, provider error, timeout, or refusal → fixed fallback reply, and an admitted provider failure still consumes that turn and rate-limit slot.
+- `chat_sessions` and `chat_rate_limits` hold metadata only: cookie-token hash, turn count, HMAC digest, reservation timestamps/IDs, pseudonymous client-key hash, and rate-limit timestamps. No transcript, raw IP, or raw chat content is stored or logged. Sessions logically expire after 24 hours. Expired rows may remain until the next successful daily cleanup; there is no guaranteed physical deletion deadline if Cron fails. The active browser tab keeps the visible transcript in `sessionStorage` to support refresh.
+- Chat messages are locally pattern-screened before every Anthropic request, including prior assistant replies. Recognized sensitive categories block the turn; accepted text is sent unchanged rather than redacted. Local detection can miss identifiers that do not match its patterns, so people should still avoid sharing personal details.
+- A chat-only contextual screen adds common personal-name and health disclosures to the existing local pattern checks; the shared Need Post Screener rules are not changed. A deterministic English/Spanish crisis check returns fixed safety guidance before any provider call, clears the browser's transcript, and does not store the crisis text in chat history. These rules are incomplete and cannot guarantee detection.
+- Text being typed and blocked drafts remain in browser memory so the person can edit them. Completed conversation text is retained in tab `sessionStorage` for refresh; New conversation and a recognized crisis response try to clear it when browser storage is available. Accepted current messages and earlier user/assistant history are sent to Anthropic after screening, together with the server system prompt. The app's chat logs contain only fixed event/error codes; the database stores only the metadata described above. Anthropic's processing and retention follow its API terms and policy.
+- `CHAT_SESSION_SECRET` (server only, at least 32 characters) protects transcript integrity and rate-limit identifiers using separate HMAC domains. `CRON_SECRET` (server only) authorizes cleanup.
+- Rate-limit admission accepts only a single valid IP from Vercel's `x-vercel-forwarded-for`; production fails closed if it is absent or malformed. Client-supplied forwarding chains are not parsed.
 
 **AI screening of request text is implemented locally.** See `src/lib/privacy-screening.ts`, `src/lib/privacy-screening-prompt.ts`, and `src/lib/privacy-review-rules.ts`.
 
@@ -135,6 +142,8 @@ The original handoff described only **the Bridge assistant**. Privacy screening 
 | `NEON_AUTH_BASE_URL` | Neon Auth endpoint | `.env.local`, Vercel |
 | `NEON_AUTH_COOKIE_SECRET` | Signs session cookies (≥32 chars) | `.env.local`, Vercel |
 | `ANTHROPIC_API_KEY` | Assistant and privacy screening (missing key blocks new need publication) | `.env.local`, Vercel |
+| `CHAT_SESSION_SECRET` | Chat transcript integrity and pseudonymous rate-limit keys | `.env.local`, Vercel |
+| `CRON_SECRET` | Vercel Cron cleanup authorization | Vercel; optional locally |
 | `ADMIN_CONTACT_EMAIL` | Address shown to organizations about their review | `.env.local` optional, Vercel recommended |
 | `SEED_TEST_PASSWORD` | Password of the seeded test accounts | `.env.local` only (seed and tests) |
 | `E2E_BASE_URL` | Browser tests' server (default `http://localhost:3100`) | optional |
@@ -257,7 +266,7 @@ Earlier in the same stretch:
 | GPS coordinates and precise map locations | **No** | No location fields; guidance only |
 | Where identifiable people sleep, shelter, or gather | **No** | Guidance on the form and pledge; the assistant's prompt refuses such details **in chat only** |
 
-The existing AI API is used **only** by the chat assistant; it never sees request text. Screening would reuse the same SDK and key with no new dependency. The proposed design, the decisions the owner must make (fail open vs. closed, block vs. warn, the privacy notice), and the tests to write are in [DEVELOPMENT_ROADMAP.md §1](DEVELOPMENT_ROADMAP.md#1-ai-screening-of-request-text-for-sensitive-details).
+The AI API is used by both the chat assistant and the implemented server-side Need Post Screener. Chat text is checked locally before the chat API call; request text follows the separate privacy-screening and review workflow documented above. The earlier proposal is historical context, not current behavior.
 
 ### Decisions already agreed (still in force)
 
@@ -301,7 +310,7 @@ At the time of writing:
 | Sensitive details in free text | Screening reduces risk but can miss details; new privacy wording needs owner review before deployment. |
 | Neon Auth beta | `@neondatabase/auth` 0.7.0-beta; a pending upgrade also fixes the bundled zod advisory. |
 | Production sign-in unverified | The trusted domain is set, but no live sign-in check is recorded. |
-| Rate limit per instance | The assistant's limits aren't global on Vercel. |
+| PII detection limits | Chat detection uses local patterns and may miss identifiers, names, health details, or crisis language it does not recognize. The interface warns people not to share personal or health information. |
 | Next.js 16 differences | APIs differ from older versions; read `node_modules/next/dist/docs/` first. |
 | Stale build cache | Can hide type errors locally; always clean-build before committing. |
 | Port 3100 | A server left running from an earlier session served an old build during this handoff. Check that nothing else holds the port before running browser tests. |
